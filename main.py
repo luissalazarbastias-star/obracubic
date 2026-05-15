@@ -11,6 +11,7 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 
 # Menú lateral
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
+st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
 option = st.sidebar.radio("Ir a:", ["Panel General", "Calculadora de Hormigón"])
 
