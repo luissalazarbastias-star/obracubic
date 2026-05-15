@@ -16,8 +16,7 @@ if option == "Panel General":
     st.image(URL_DEL_LOGO, use_container_width=True)
     st.write("---")
     st.subheader("Estado del Proyecto")
-    st.info("Aquí podrás ver el resumen de tus obras y el ahorro generado por la IA.")
-    st.metric(label="Ahorro Estimado (Mes)", value="$145.000 CLP", delta="12%")
+    st.info("Optimiza cubicaciones, reduce errores y transforma datos técnicos en decisiones constructivas precisas.")
 
 elif option == "Calculadora de Hormigón":
     # Logo encabezando la calculadora principal
