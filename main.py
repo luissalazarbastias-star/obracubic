@@ -4,9 +4,6 @@ st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
     page_icon="🏗️")
 
-st.markdown("<h1 style='text-align: center; color: #fb8c00;'>🏗️ ObraCubic</h1>", unsafe_allow_html=True)
-st.write("---")
-
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/263c7f73-0dfb-4f9c-ba56-a18242a3729b.jpg"
 
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
