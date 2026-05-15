@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
-    page_icon="🏗️"
+    page_icon="🏗️")
 
 st.markdown("<h1 style='text-align: center; color: #fb8c00;'>🏗️ ObraCubic</h1>", unsafe_allow_html=True)
 st.write("---")
