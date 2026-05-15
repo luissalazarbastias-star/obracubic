@@ -7,7 +7,10 @@ st.set_page_config(
 st.markdown("<h1 style='text-align: center; color: #fb8c00;'>🏗️ ObraCubic</h1>", unsafe_allow_html=True)
 st.write("---")
 
+URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/263c7f73-0dfb-4f9c-ba56-a18242a3729b-removebg-preview.png"
+
 # Menú lateral
+st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.header("Módulos de Trabajo")
 option = st.sidebar.radio("Ir a:", ["Panel General", "Calculadora de Hormigón"])
 
