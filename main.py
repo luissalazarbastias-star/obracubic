@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
-    page_icon="🏗️"
+    page_icon="🏗️")
 
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/263c7f73-0dfb-4f9c-ba56-a18242a3729b.jpg"
 
