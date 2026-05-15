@@ -77,7 +77,7 @@ elif option == "Calculadora de Hormigón":
         st.info(f"Volumen Neto Sobrecimiento: {vol_sc_neto:.2f} m3")
 
     # --- 4. PARTIDA: RADIER (Cambiamos nombres de variables a rad_...) ---
-    with st.expander("4. Radier", expanded=True):
+    with st.expander("4. Radier", expanded=False):
         ra1, ra2 = st.columns(2)
         with ra1:
             rad_largo = st.number_input("Largo Radier (m)", value=10.0, key="radier_largo")
