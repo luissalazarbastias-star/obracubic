@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
-    page_icon="🏗️")
+    page_icon="🏗️"
 
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/263c7f73-0dfb-4f9c-ba56-a18242a3729b.jpg"
 
@@ -12,12 +12,18 @@ st.sidebar.header("Módulos de Trabajo")
 option = st.sidebar.radio("Ir a:", ["Panel General", "Calculadora de Hormigón"])
 
 if option == "Panel General":
+    # Logo en grande en la bienvenida
+    st.image(URL_DEL_LOGO, use_container_width=True)
+    st.write("---")
     st.subheader("Estado del Proyecto")
     st.info("Aquí podrás ver el resumen de tus obras y el ahorro generado por la IA.")
     st.metric(label="Ahorro Estimado (Mes)", value="$145.000 CLP", delta="12%")
 
 elif option == "Calculadora de Hormigón":
-    st.subheader("Cubicación de cada partida de H°")
+    # Logo encabezando la calculadora principal
+    st.image(URL_DEL_LOGO, use_container_width=True)
+    st.write("---")
+    st.subheader("Cubicación de Hormigón")
 
     # --- 1. Partida: Emplantillado ---
     with st.expander("1. Emplantillado", expanded=False):
