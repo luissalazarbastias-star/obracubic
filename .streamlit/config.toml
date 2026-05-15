@@ -1,0 +1,8 @@
+[client]
+showErrorDetails = false
+
+[toolbar]
+show = false
+
+[browser]
+gatherUsageStats = false
