@@ -1,11 +1,3 @@
-[client]
-showErrorDetails = false
-
-[toolbar]
-show = false
-
-[browser]
-gatherUsageStats = false
 
 [theme]
 primaryColor = "#FF6B00"
