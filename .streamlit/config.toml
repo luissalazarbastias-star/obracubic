@@ -1,0 +1,15 @@
+[client]
+showErrorDetails = false
+
+[toolbar]
+show = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#FF6B00"
+backgroundColor = "#121212"
+secondaryBackgroundColor = "#1E1E1E"
+textColor = "#FFFFFF"
+font = "sans serif"
