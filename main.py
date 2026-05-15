@@ -1,3 +1,19 @@
+[client]
+showErrorDetails = false
+
+[toolbar]
+show = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#FF6B00"          # Naranjo brillante para sliders, botones y éxitos
+backgroundColor = "#121212"      # Fondo gris oscuro/negro para toda la app
+secondaryBackgroundColor = "#1E1E1E" # Gris un poco más claro para las tarjetas y el menú lateral
+textColor = "#FFFFFF"            # Letras completamente blancas para que contrasten impecable
+font = "sans serif"
+
 import streamlit as st
 
 st.set_page_config(
