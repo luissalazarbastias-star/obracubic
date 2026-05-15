@@ -15,7 +15,7 @@ if option == "Panel General":
     # Logo en grande en la bienvenida
     st.image(URL_DEL_LOGO, use_container_width=True)
     st.write("---")
-    st.subheader("Estado del Proyecto")
+    st.subheader("Bienvenido a OBRACUBIC")
     st.info("Optimiza cubicaciones, reduce errores y transforma datos técnicos en decisiones constructivas precisas.")
 
 elif option == "Calculadora de Hormigón":
