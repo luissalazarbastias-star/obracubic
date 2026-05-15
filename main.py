@@ -7,6 +7,10 @@ st.set_page_config(
 st.markdown("<h1 style='text-align: center; color: #fb8c00;'>🏗️ ObraCubic</h1>", unsafe_allow_html=True)
 st.write("---")
 
+# Menú lateral
+st.sidebar.header("Módulos de Trabajo")
+option = st.sidebar.radio("Ir a:", ["Panel General", "Calculadora de Hormigón"])
+
 if option == "Panel General":
     st.subheader("Bienvenido a OBRACUBIC")
     st.info("Optimiza cubicaciones, reduce errores y transforma datos técnicos en decisiones constructivas precisas.")
