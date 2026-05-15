@@ -4,24 +4,14 @@ st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
     page_icon="🏗️")
 
-URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/263c7f73-0dfb-4f9c-ba56-a18242a3729b.jpg"
-
-st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
-st.sidebar.write("---")
-st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", ["Panel General", "Calculadora de Hormigón"])
+st.markdown("<h1 style='text-align: center; color: #fb8c00;'>🏗️ ObraCubic</h1>", unsafe_allow_html=True)
+st.write("---")
 
 if option == "Panel General":
-    # Logo en grande en la bienvenida
-    st.image(URL_DEL_LOGO, use_container_width=True)
-    st.write("---")
     st.subheader("Bienvenido a OBRACUBIC")
     st.info("Optimiza cubicaciones, reduce errores y transforma datos técnicos en decisiones constructivas precisas.")
 
 elif option == "Calculadora de Hormigón":
-    # Logo encabezando la calculadora principal
-    st.image(URL_DEL_LOGO, use_container_width=True)
-    st.write("---")
     st.subheader("Cubicación de Hormigón")
 
     # --- 1. Partida: Emplantillado ---
