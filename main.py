@@ -36,10 +36,10 @@ elif option == "Calculadora de Hormigón":
             st.info(f"Volumen Emplantillado: {vol_emp:.2f} m3")
 
     # --- 2. PARTIDA: Cimiento (Pilares) ---
-   with st.expander("2. Cimiento (Pilares)", expanded=False):
+    with st.expander("2. Cimiento (Pilares)", expanded=False):
         c1, c2, c3 = st.columns(3)
         with c1:
-             n_pilares = st.number_input("Cantidad de Pilar", value=4, step=1, key="pil_cant")
+            n_pilares = st.number_input("Cantidad de Pilar", value=4, step=1, key="pil_cant")
         with c2:
             seccion_pilar = st.number_input("Sección Pilar (m)", value=0.20, key="pil_sec")
         with c3:
