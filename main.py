@@ -19,34 +19,34 @@ if option == "Panel General":
     st.info("Optimiza cubicaciones, reduce errores y transforma datos técnicos en decisiones constructivas precisas.")
 
 elif option == "Calculadora de Hormigón":
-    st.expander("Cubicación de Hormigón", expanded=False)
+    st.subheader("Cubicación de Hormigón", )
 
     # --- 1. Partida: Emplantillado ---
-        with st.expander("1. Emplantillado", expanded=False):
-              emp1, emp2, emp3 = st.columns(3)
-              with emp1:
-                 emp_largo = st.number_input("Largo emplantillado (m)", value=10.0, key="emp_largo")
-              with emp2:
-                 emp_ancho = st.number_input("Ancho emplantillado (m)", value=5.0, key="emp_ancho")
-              with emp3:
-                emp_espesor = st.number_input("Espesor emplantillado (m)", value=0.10, key="emp_espesor")
-                emp_perdida = st.slider("% Pérdida emplantillado", 0, 15, 5, key="emp_perdida")
+    with st.expander("1. Emplantillado", expanded=False):
+        emp1, emp2, emp3 = st.columns(3)
+        with emp1:
+            emp_largo = st.number_input("Largo emplantillado (m)", value=10.0, key="emp_largo")
+        with emp2:
+             emp_ancho = st.number_input("Ancho emplantillado (m)", value=5.0, key="emp_ancho")
+        with emp3:
+            emp_espesor = st.number_input("Espesor emplantillado (m)", value=0.10, key="emp_espesor")
+            emp_perdida = st.slider("% Pérdida emplantillado", 0, 15, 5, key="emp_perdida")
 
-                vol_emp = (emp_largo * emp_ancho * emp_espesor) * (1 + (emp_perdida / 100))
-                st.info(f"Volumen Emplantillado: {vol_emp:.2f} m3")
+            vol_emp = (emp_largo * emp_ancho * emp_espesor) * (1 + (emp_perdida / 100))
+            st.info(f"Volumen Emplantillado: {vol_emp:.2f} m3")
 
     # --- 2. PARTIDA: Cimiento (Pilares) ---
-       with st.expander("2. Cimiento (Pilares)", expanded=False):
-             c1, c2, c3 = st.columns(3)
-             with c1:
-                 n_pilares = st.number_input("Cantidad de Pilar", value=4, step=1, key="pil_cant")
-            with c2:
-                 seccion_pilar = st.number_input("Sección Pilar (m)", value=0.20, key="pil_sec")
-            with c3:
-                 alto_pilar = st.number_input("Profundidad Pilar (m)", value=1.0, key="pil_alto")
+   with st.expander("2. Cimiento (Pilares)", expanded=False):
+        c1, c2, c3 = st.columns(3)
+        with c1:
+             n_pilares = st.number_input("Cantidad de Pilar", value=4, step=1, key="pil_cant")
+        with c2:
+            seccion_pilar = st.number_input("Sección Pilar (m)", value=0.20, key="pil_sec")
+        with c3:
+            alto_pilar = st.number_input("Profundidad Pilar (m)", value=1.0, key="pil_alto")
 
-                 vol_pilares = (seccion_pilar * seccion_pilar * alto_pilar) * n_pilares
-                 st.info(f"Volumen Pilares: {vol_pilares:.2f} m3")
+            vol_pilares = (seccion_pilar * seccion_pilar * alto_pilar) * n_pilares
+            st.info(f"Volumen Pilares: {vol_pilares:.2f} m3")
 
     # --- 3. PARTIDA: SOBRECIMIENTO ---
     with st.expander("3. Sobrecimiento (Con Descuento de Vanos)", expanded=False):
