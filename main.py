@@ -9,7 +9,6 @@ st.write("---")
 
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Dise%C3%B1o%20sin%20t%C3%ADtulo.png"
 
-# Menú lateral
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
@@ -20,7 +19,7 @@ if option == "Panel General":
     st.info("Optimiza cubicaciones, reduce errores y transforma datos técnicos en decisiones constructivas precisas.")
 
 elif option == "Calculadora de Hormigón":
-    st.subheader("Cubicación de Hormigón")
+st.subheader("Cubicación de Hormigón")
 
     # --- 1. Partida: Emplantillado ---
     with st.expander("1. Emplantillado", expanded=False):
@@ -37,10 +36,10 @@ elif option == "Calculadora de Hormigón":
         st.info(f"Volumen Emplantillado: {vol_emp:.2f} m3")
 
     # --- 2. PARTIDA: Cimiento (Pilares) ---
-    with st.expander("2. Cimiento", expanded=False):
+    with st.expander("2. Cimiento (Pilares)", expanded=False):
         c1, c2, c3 = st.columns(3)
         with c1:
-            n_pilares = st.number_input("Cantidad de Pilares", value=4, step=1, key="pil_cant")
+            n_pilares = st.number_input("Cantidad de Pilar", value=4, step=1, key="pil_cant")
         with c2:
             seccion_pilar = st.number_input("Sección Pilar (m)", value=0.20, key="pil_sec")
         with c3:
@@ -76,7 +75,7 @@ elif option == "Calculadora de Hormigón":
         st.text(f"Descuento Vanos: -{vol_descuento_vanos:.2f} m3")
         st.info(f"Volumen Neto Sobrecimiento: {vol_sc_neto:.2f} m3")
 
-    # --- 4. PARTIDA: RADIER (Cambiamos nombres de variables a rad_...) ---
+    # --- 4. PARTIDA: RADIER ---
     with st.expander("4. Radier", expanded=False):
         ra1, ra2 = st.columns(2)
         with ra1:
@@ -94,3 +93,7 @@ elif option == "Calculadora de Hormigón":
     # --- TOTAL GENERAL ---
     total_hormigon = vol_emp + vol_pilares + vol_sc_neto + vol_radier
     st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m3")
+
+
+
+
