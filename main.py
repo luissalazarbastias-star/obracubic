@@ -12,13 +12,13 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", ["Panel General", "Calculadora de Hormigón"])
+option = st.sidebar.radio("Ir a:", ["Panel General", "Cubicación"])
 
 if option == "Panel General":
     st.subheader("Bienvenido a OBRACUBIC")
     st.info("Optimiza cubicaciones, reduce errores y transforma datos técnicos en decisiones constructivas precisas.")
 
-elif option == "Calculadora de Hormigón":
+elif option == "Cubicación":
     st.subheader("Cubicación de Hormigón", )
 
     # --- 1. Partida: Emplantillado ---
