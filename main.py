@@ -19,7 +19,7 @@ if option == "Panel General":
     st.info("Optimiza cubicaciones, reduce errores y transforma datos técnicos en decisiones constructivas precisas.")
 
 elif option == "Calculadora de Hormigón":
-    st.subheader("Cubicación de Hormigón")
+    st.expander("Cubicación de Hormigón", expanded=False)
 
     # --- 1. Partida: Emplantillado ---
     with st.expander("1. Emplantillado", expanded=False):
