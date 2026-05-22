@@ -21,36 +21,73 @@ if option == "Panel General":
 elif option == "Cubicación":
     st.subheader("Cubicación de Hormigón", )
 
-    DOSIFICACIONES = {"H-15 (1:2:3)":{ 
-        "descripcion":"Emplantillado,Sobrecimiento",
-        "cemento_kg": 275,
-        "cemento_sacos": round(275/25),
-        "gravilla_kg": 1070, 
-        "arena_kg": 800,
-        "agua_lt": 195,
+    DOSIFICACIONES = {
+    "H-15 (1:2:3)": {
+        "descripcion": "Emplantillado, sobrecimientos simples",
+        "cemento_sacos": 6.5,
+        "arena_m3": 0.52,
+        "grava_m3": 0.78,
+    },
+    "H-20 (1:2:2)": {
+        "descripcion": "Radier, cimientos normales",
+        "cemento_sacos": 8.5,
+        "arena_m3": 0.45,
+        "grava_m3": 0.65,
+    },
+    "H-25 (1:1.5:2)": {
+        "descripcion": "Losas estructurales, pilares",
+        "cemento_sacos": 11.0,
+        "arena_m3": 0.40,
+        "grava_m3": 0.55,
+    },
+    "H-30": {
+        "descripcion": "Obras especiales, alta resistencia",
+        "cemento_sacos": 13.0,
+        "arena_m3": 0.38,
+        "grava_m3": 0.52,
+    }
 }
+
+def calcular_materiales(volumen_m3, dosificacion, desperdicio=0.05):
+    dos = DOSIFICACIONES[dosificacion]
+    vol = volumen_m3 * (1 + desperdicio)
+    return {
+        "cemento_sacos":     round(vol * dos["cemento_sacos"]),
+        "arena_m3":          round(vol * dos["arena_m3"], 2),
+        "grava_m3":          round(vol * dos["grava_m3"], 2),
+        "arena_carretillas": round(vol * dos["arena_m3"] / 0.08),
+        "grava_carretillas": round(vol * dos["grava_m3"] / 0.08),
+    }
+    
     # --- 1. Partida: Emplantillado ---
-    with st.expander("1. Emplantillado", expanded=False):
-        emp1, emp2, emp3 = st.columns(3)
-        with emp1:
-            emp_largo = st.number_input("Largo emplantillado (m)", value=10.0, key="emp_largo")
-        with emp2:
-             emp_ancho = st.number_input("Ancho emplantillado (m)", value=5.0, key="emp_ancho")
-        with emp3:
-            emp_espesor = st.number_input("Espesor emplantillado (m)", value=0.10, key="emp_espesor")
-            emp_perdida = st.slider("% Pérdida emplantillado", 0, 15, 5, key="emp_perdida")
+   with st.expander("1. Emplantillado", expanded=False):
+    emp1, emp2, emp3 = st.columns(3)
+    with emp1:
+        emp_largo = st.number_input("Largo emplantillado (m)", value=10.0, key="emp_largo")
+    with emp2:
+        emp_ancho = st.number_input("Ancho emplantillado (m)", value=5.0, key="emp_ancho")
+    with emp3:
+        emp_espesor = st.number_input("Espesor emplantillado (m)", value=0.10, key="emp_espesor")
+        emp_perdida = st.slider("% Pérdida emplantillado", 0, 15, 5, key="emp_perdida")
 
-            vol_emp = (emp_largo * emp_ancho * emp_espesor) * (1 + (emp_perdida / 100))
-            st.info(f"Volumen Emplantillado: {vol_emp:.2f} m3")
+    vol_emp = (emp_largo * emp_ancho * emp_espesor) * (1 + (emp_perdida / 100))
+    st.info(f"Volumen Emplantillado: {vol_emp:.2f} m3")
 
-       def calular_materiales(volumen_m3, dosificacion, desperdicio=0.05):
-           dos = DOSIFICACIONES[dosificacion]
-           vol = volumen_m3 * (1 + desperdicio)
-           return {
-        "cemento_sacos":  round(vol * dos["cemento_sacos"]),
-        "gravilla_kg":    round(vol * dos["gravilla_kg"]),
-        "arena_kg":       round(vol * dos["arena_kg"]),
-        "agua_lt":        round(vol * dos["agua_lt"]),
+    # --- ESTO VA JUSTO DESPUÉS DEL st.info ---
+    dos_emp = st.selectbox(
+        "Dosificación", 
+        options=list(DOSIFICACIONES.keys()),
+        key="dos_emp",
+        help="H-15 es lo más común para emplantillado"
+    )
+    desp_emp = st.slider("% Desperdicio", 0, 15, 5, key="desp_emp")
+    
+    mat_emp = calcular_materiales(vol_emp, dos_emp, desp_emp / 100)
+    
+    c1, c2, c3 = st.columns(3)
+    c1.metric("🧱 Cemento", f"{mat_emp['cemento_sacos']} sacos")
+    c2.metric("🟡 Arena", f"{mat_emp['arena_m3']} m³", f"~{mat_emp['arena_carretillas']} carret.")
+    c3.metric("⚫ Grava", f"{mat_emp['grava_m3']} m³", f"~{mat_emp['grava_carretillas']} carret.")
     }
     # --- 2. PARTIDA: Cimiento (Pilares) ---
     with st.expander("2. Cimiento (Pilares)", expanded=False):
