@@ -8,7 +8,7 @@ st.set_page_config(
 
 # --- DIRECCIÓN DE TU LOGOTIPO ---
 # Asegúrate de que esta URL sea la que obtuvimos de GitHub (la versión "raw")
-URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/263c7f73-0dfb-4f9c-ba56-a18242a3729b.jpg"
+URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Dise%C3%B1o%20sin%20t%C3%ADtulo.png"
 
 # --- MENÚ LATERAL (SIDEBAR) ---
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
