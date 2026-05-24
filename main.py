@@ -137,7 +137,7 @@ def generar_pdf_cubicacion(
     story = []
     fecha_hoy = datetime.now().strftime("%d/%m/%Y %H:%M")
 
-    # Encabezado con logo
+    # Encabezado con logo arriba a la derecha
     import urllib.request
     from reportlab.platypus import Image as RLImage
     try:
@@ -149,11 +149,15 @@ def generar_pdf_cubicacion(
         logo = Paragraph("", estilo_normal)
 
     encabezado = Table(
-        [[logo, Paragraph("ObraCubic<br/><font size=9 color='grey'>Grandes Estructuras se Levantan con Decisiones Precisas</font>", estilo_titulo)]],
-        colWidths=[3.5*cm, 13.5*cm]
+        [[
+            Paragraph("ObraCubic<br/><font size=9 color='grey'>Grandes Estructuras se Levantan con Decisiones Precisas</font>", estilo_titulo),
+            logo
+        ]],
+        colWidths=[13.5*cm, 3.5*cm]
     )
     encabezado.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
     ]))
     story.append(encabezado)
     story.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=6))
