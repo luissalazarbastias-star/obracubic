@@ -144,7 +144,7 @@ def generar_pdf_cubicacion(
         logo_url = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Dise%C3%B1o%20sin%20t%C3%ADtulo.png"
         logo_data = urllib.request.urlopen(logo_url).read()
         logo_buffer = io.BytesIO(logo_data)
-        logo = RLImage(logo_buffer, width=3*cm, height=3*cm)
+        logo = RLImage(logo_buffer, width=2*cm, height=2*cm)
     except:
         logo = Paragraph("", estilo_normal)
 
@@ -153,10 +153,10 @@ def generar_pdf_cubicacion(
             Paragraph("ObraCubic<br/><font size=9 color='grey'>Grandes Estructuras se Levantan con Decisiones Precisas</font>", estilo_titulo),
             logo
         ]],
-        colWidths=[13.5*cm, 3.5*cm]
+        colWidths=[14.5*cm, 2.5*cm]
     )
     encabezado.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("ALIGN", (1, 0), (1, 0), "RIGHT"),
     ]))
     story.append(encabezado)
