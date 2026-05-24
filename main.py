@@ -916,27 +916,46 @@ if option == "Cubicacion":
             st.caption("Se instala cada 40 o 60 cm según revestimiento")
 
             montante_tipo = st.selectbox("Tipo de montante", list(MONTANTES.keys()), key="montante_tipo")
-
+            
             if "Perf" in montante_tipo:
                 st.caption("✅ Perforado: permite pasar instalaciones eléctricas y sanitarias por dentro")
             else:
                 st.caption("⚠️ Sin perforaciones: usar cuando no pasan instalaciones por el tabique")
-            
-            mo1, mo2 = st.columns(2)
+
+            mo1, mo2, mo3 = st.columns(3)
             with mo1:
-                largo_tabique_m = st.number_input("Largo del tabique (m)", value=0.0, key="largo_tab_m")
+                largo_tabique_m = st.number_input("Largo tabique (m)", value=0.0, key="largo_tab_m")
             with mo2:
-                cant_tabiques_m = st.number_input("Cantidad de tabiques", value=0, step=1, key="cant_tab_m")
-            
-            separacion_m = st.selectbox("Separación entre montantes", ["0,40m (recomendado)", "0,60m (máximo)"], key="sep_mont")
+                alto_tabique_m = st.number_input("Alto tabique (m)", value=0.0, key="alto_tab_m")
+            with mo3:
+                cant_tabiques_m = st.number_input("Cantidad tabiques", value=0, step=1, key="cant_tab_m")
+
+            separacion_m = st.selectbox("Separación entre montantes", 
+                                        ["0,40m (recomendado)", "0,60m (máximo)"], 
+                                        key="sep_mont")
             sep_valor = 0.40 if "0,40" in separacion_m else 0.60
 
-            cant_montantes = ((largo_tabique_m / sep_valor) + 1) * cant_tabiques_m
             largo_montante = MONTANTES[montante_tipo]["largo"]
+
+            # Montantes por tabique = (largo / separacion) + 1 (extremos)
+            montantes_por_tabique = int(largo_tabique_m / sep_valor) + 1
             
+            # Total montantes
+            total_montantes = montantes_por_tabique * cant_tabiques_m
+
+            # Verificar si el alto del tabique supera el largo del montante
+            necesita_empalme = alto_tabique_m > largo_montante
+
             st.write("---")
-            st.info(f"Cantidad de montantes: {cant_montantes:.0f} piezas de {largo_montante}m")
-            st.caption(f"Separación: {sep_valor}m según manual Metalcon")
+            st.info(f"Montantes por tabique: {montantes_por_tabique} piezas")
+            st.info(f"Total montantes: {total_montantes} piezas de {largo_montante}m")
+            
+            if necesita_empalme:
+                st.warning(f"⚠️ El alto del tabique ({alto_tabique_m}m) supera el largo del montante ({largo_montante}m). Se necesita empalme.")
+            else:
+                st.success(f"✅ El montante de {largo_montante}m cubre el alto del tabique ({alto_tabique_m}m)")
+            
+            st.caption(f"Separación: {sep_valor}m según manual Metalcon | +1 montante en extremo")
 
         # --- 3. Esquinero ---
         with st.expander("3. Esquinero", expanded=False):
