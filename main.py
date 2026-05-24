@@ -345,92 +345,92 @@ elif option == "Cubicacion":
                     st.text(f"Kg dirección Y: {kg_y:.1f} kg")
                     
             with st.expander("2. Pilar", expanded=False):
-                    modo_pilar = st.radio(
-                        "Modo de cálculo",
-                        ["🔨 Modo Simple", "📐 Modo Detallado"],
-                        horizontal=True,
-                        key="modo_pilar"
-                        )
-                        if modo_pilar == "🔨 Modo Simple":
-                            st.caption("Cálculo por barras longitudinales y estribos")
+                modo_pilar = st.radio(
+                    "Modo de cálculo",
+                    ["🔨 Modo Simple", "📐 Modo Detallado"],
+                    horizontal=True,
+                    key="modo_pilar"
+                    )
+                if modo_pilar == "🔨 Modo Simple":
+                        st.caption("Cálculo por barras longitudinales y estribos")
                             
-                            p1, p2, p3 = st.columns(3)
-                            with p1:
-                                cant_pilares = st.number_input("Cantidad de pilares", value=1, step=1, key="cant_pil")
-                            with p2:
-                                alto_pilar = st.number_input("Alto pilar (m)", value=2.20, key="alto_pil")
-                            with p3:
-                                barras_long = st.selectbox("Barras longitudinales", [4, 6, 8], key="barras_long")
-                            p4, p5, p6 = st.columns(3)
-                            with p4:
-                                diam_long = st.selectbox("Diámetro barra long.", list(PESO_BARRAS.keys()), index=2, key="diam_long")
-                            with p5:
-                                sep_estribo = st.selectbox("Separación estribos (m)", [0.10, 0.15, 0.20], key="sep_estribo")
-                            with p6:
-                                diam_estribo = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_estribo")
-                            p7, p8 = st.columns(2)
-                            with p7:
-                                ancho_pilar = st.number_input("Ancho pilar (m)", value=0.30, key="ancho_pil")
-                            with p8:
-                                largo_pilar = st.number_input("Largo pilar (m)", value=0.30, key="largo_pil")
+                        p1, p2, p3 = st.columns(3)
+                        with p1:
+                            cant_pilares = st.number_input("Cantidad de pilares", value=1, step=1, key="cant_pil")
+                        with p2:
+                            alto_pilar = st.number_input("Alto pilar (m)", value=2.20, key="alto_pil")
+                        with p3:
+                            barras_long = st.selectbox("Barras longitudinales", [4, 6, 8], key="barras_long")
+                        p4, p5, p6 = st.columns(3)
+                        with p4:
+                            diam_long = st.selectbox("Diámetro barra long.", list(PESO_BARRAS.keys()), index=2, key="diam_long")
+                        with p5:
+                            sep_estribo = st.selectbox("Separación estribos (m)", [0.10, 0.15, 0.20], key="sep_estribo")                            with p6:
+                        diam_estribo = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_estribo")
+                         p7, p8 = st.columns(2)
+                        with p7:
+                            ancho_pilar = st.number_input("Ancho pilar (m)", value=0.30, key="ancho_pil")
+                        with p8:
+                            largo_pilar = st.number_input("Largo pilar (m)", value=0.30, key="largo_pil")
                             
-                            # Barras longitudinales
-                            ml_long = barras_long * alto_pilar * cant_pilares
-                            kg_long = ml_long * PESO_BARRAS[diam_long]
+                        # Barras longitudinales
+                        ml_long = barras_long * alto_pilar * cant_pilares
+                        kg_long = ml_long * PESO_BARRAS[diam_long]
                             
-                            # Estribos
-                            n_estribos = (alto_pilar / sep_estribo) * cant_pilares
-                            perimetro_estribo = ((ancho_pilar + largo_pilar) * 2) + 0.20  # +20cm ganchos
-                            ml_estribos = n_estribos * perimetro_estribo
-                            kg_estribos = ml_estribos * PESO_BARRAS[diam_estribo]
+                        # Estribos
+                        n_estribos = (alto_pilar / sep_estribo) * cant_pilares
+                        perimetro_estribo = ((ancho_pilar + largo_pilar) * 2) + 0.20  # +20cm ganchos
+                        ml_estribos = n_estribos * perimetro_estribo 
+                        kg_estribos = ml_estribos * PESO_BARRAS[diam_estribo]
                             
-                            kg_total_pilar = kg_long + kg_estribos
+                        kg_total_pilar = kg_long + kg_estribos
                             
-                            st.write("---")
-                            st.info(f"Acero total pilares: {kg_total_pilar:.1f} kg")
-                            st.text(f"Barras long.: {barras_long * cant_pilares} barras {diam_long} x {alto_pilar}m")
-                            st.text(f"Estribos: {n_estribos:.0f} estribos {diam_estribo} c/{sep_estribo}m")
-                            st.text(f"Kg longitudinal: {kg_long:.1f} kg")
-                            st.text(f"Kg estribos: {kg_estribos:.1f} kg")
+                        st.write("---")
+                        st.info(f"Acero total pilares: {kg_total_pilar:.1f} kg")
+                        st.text(f"Barras long.: {barras_long * cant_pilares} barras {diam_long} x {alto_pilar}m")
+                        st.text(f"Estribos: {n_estribos:.0f} estribos {diam_estribo} c/{sep_estribo}m")
+                        st.text(f"Kg longitudinal: {kg_long:.1f} kg")
+                        st.text(f"Kg estribos: {kg_estribos:.1f} kg")
                             
-                        elif modo_pilar == "📐 Modo Detallado":
-                            st.caption("Cálculo exacto por barra")
+                elif modo_pilar == "📐 Modo Detallado":
+                        st.caption("Cálculo exacto por barra")
                             
-                            pd1, pd2 = st.columns(2)
-                            with pd1:
-                                cant_pil_d = st.number_input("Cantidad de pilares", value=1, step=1, key="cant_pil_d")
-                            with pd2:
-                                    alto_pil_d = st.number_input("Alto pilar (m)", value=2.20, key="alto_pil_d")
+                        pd1, pd2 = st.columns(2)
+                        with pd1:
+                            cant_pil_d = st.number_input("Cantidad de pilares", value=1, step=1, key="cant_pil_d")
+                        with pd2:
+                                alto_pil_d = st.number_input("Alto pilar (m)", value=2.20, key="alto_pil_d")
                            
-                            st.write("**Barras longitudinales**")
-                            bl1, bl2 = st.columns(2)
-                            with bl1:
-                                cant_bl = st.number_input("Cantidad barras", value=4, step=1, key="cant_bl")
-                            with bl2:
-                                diam_bl = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), index=2, key="diam_bl")
+                        st.write("**Barras longitudinales**")
+                        bl1, bl2 = st.columns(2)
+                        with bl1:
+                            cant_bl = st.number_input("Cantidad barras", value=4, step=1, key="cant_bl")
+                        with bl2:
+                            diam_bl = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), index=2, key="diam_bl")
                             
-                            st.write("**Estribos**")
-                            be1, be2, be3 = st.columns(3)
-                            with be1:
-                                ancho_p = st.number_input("Ancho pilar (m)", value=0.30, key="ancho_p_d")
-                            with be2:
-                                largo_p = st.number_input("Largo pilar (m)", value=0.30, key="largo_p_d")
-                            with be3:
-                                sep_be = st.selectbox("Separación (m)", [0.10, 0.15, 0.20], key="sep_be")
-                            diam_be = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_be")
+                        st.write("**Estribos**")
+                        be1, be2, be3 = st.columns(3)
+                        with be1:
+                              ancho_p = st.number_input("Ancho pilar (m)", value=0.30, key="ancho_p_d")
+                        with be2:
+                            largo_p = st.number_input("Largo pilar (m)", value=0.30, key="largo_p_d")
+                        with be3:
+                            sep_be = st.selectbox("Separación (m)", [0.10, 0.15, 0.20], key="sep_be")
+                            
+                       diam_be = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_be")
 
-                            # Cálculo
-                            ml_bl = cant_bl * alto_pil_d * cant_pil_d
-                            kg_bl = ml_bl * PESO_BARRAS[diam_bl]
+                       # Cálculo
+                        ml_bl = cant_bl * alto_pil_d * cant_pil_d
+                        kg_bl = ml_bl * PESO_BARRAS[diam_bl]
                             
-                            n_estribos_d = (alto_pil_d / sep_be) * cant_pil_d
-                            perimetro_d = ((ancho_p + largo_p) * 2) + 0.20
-                            kg_be = n_estribos_d * perimetro_d * PESO_BARRAS[diam_be]
+                        n_estribos_d = (alto_pil_d / sep_be) * cant_pil_d
+                        perimetro_d = ((ancho_p + largo_p) * 2) + 0.20
+                        kg_be = n_estribos_d * perimetro_d * PESO_BARRAS[diam_be]
                             
-                            kg_total_d = kg_bl + kg_be
+                        kg_total_d = kg_bl + kg_be
                             
-                            st.write("---")
-                            st.info(f"Acero total pilares: {kg_total_d:.1f} kg")
-                            st.text(f"Barras long.: {cant_bl * cant_pil_d} barras {diam_bl} x {alto_pil_d}m → {kg_bl:.1f} kg")
-                            st.text(f"Estribos: {n_estribos_d:.0f} estribos {diam_be} c/{sep_be}m → {kg_be:.1f} kg")
-                            
+                        st.write("---")
+                        st.info(f"Acero total pilares: {kg_total_d:.1f} kg")
+                        st.text(f"Barras long.: {cant_bl * cant_pil_d} barras {diam_bl} x {alto_pil_d}m → {kg_bl:.1f} kg")
+                        st.text(f"Estribos: {n_estribos_d:.0f} estribos {diam_be} c/{sep_be}m → {kg_be:.1f} kg")
+                
