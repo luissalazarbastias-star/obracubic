@@ -76,26 +76,25 @@ if option == "Panel General":
     st.write("---")
     st.subheader("Estado del Proyecto")
     st.info("Aquí podrás ver el resumen de tus obras y el ahorro generado por la optimización de materiales.")
+    st.subheader("Radier")
+    r1, r2 = st.columns(2)
+    with r1:
+        rad_largo = st.number_input("Largo Radier (m)", value=0.0, key="radier_largo")
+        rad_ancho = st.number_input("Ancho Radier (m)", value=0.0, key="radier_ancho")
+    with r2:
+        rad_espesor = st.number_input("Espesor Radier (m)", value=0.0, key="radier_espesor")
+        rad_perdida = st.slider("% Pérdida Radier", 0, 15, 5, key="radier_perdida")
     
-st.subheader("Radier")
-r1, r2 = st.columns(2)
-with r1:
-    rad_largo = st.number_input("Largo Radier (m)", value=0.0, key="radier_largo")
-    rad_ancho = st.number_input("Ancho Radier (m)", value=0.0, key="radier_ancho")
-with r2:
-    rad_espesor = st.number_input("Espesor Radier (m)", value=0.0, key="radier_espesor")
-    rad_perdida = st.slider("% Pérdida Radier", 0, 15, 5, key="radier_perdida")
-
-vol_radier = (rad_largo * rad_ancho * rad_espesor) * (1 + (rad_perdida / 100))
-st.info(f"Volumen Radier: {vol_radier:.2f} m³")
-
-dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                        index=1,
-                        key="dos_rad",
-                        help=DOSIFICACIONES["H-20"]["descripcion"])
-desp_rad = st.slider("% Desperdicio", 0, 15, 5, key="desp_rad")
-mat_rad = calcular_materiales(vol_radier, dos_rad, desp_rad / 100)
-mostrar_materiales(mat_rad)
+    vol_radier = (rad_largo * rad_ancho * rad_espesor) * (1 + (rad_perdida / 100))
+    st.info(f"Volumen Radier: {vol_radier:.2f} m³")
+    
+    dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
+                         index=1,
+                         key="dos_rad",
+                         help=DOSIFICACIONES["H-20"]["descripcion"])
+    desp_rad = st.slider("% Desperdicio", 0, 15, 5, key="desp_rad")
+    mat_rad = calcular_materiales(vol_radier, dos_rad, desp_rad / 100)
+    mostrar_materiales(mat_rad)
 
 # ============================
 # CALCULADORA DE HORMIGÓN
