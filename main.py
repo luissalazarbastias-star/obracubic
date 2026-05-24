@@ -344,13 +344,13 @@ elif option == "Cubicacion":
                     st.text(f"Kg dirección X: {kg_x:.1f} kg")
                     st.text(f"Kg dirección Y: {kg_y:.1f} kg")
                     
-                with st.expander("2. Pilar", expanded=False):
-                        modo_pilar = st.radio(
-                            "Modo de cálculo",
-                            ["🔨 Modo Simple", "📐 Modo Detallado"],
-                            horizontal=True,
-                            key="modo_pilar"
-                            )
+            with st.expander("2. Pilar", expanded=False):
+                    modo_pilar = st.radio(
+                        "Modo de cálculo",
+                        ["🔨 Modo Simple", "📐 Modo Detallado"],
+                        horizontal=True,
+                        key="modo_pilar"
+                        )
                         if modo_pilar == "🔨 Modo Simple":
                             st.caption("Cálculo por barras longitudinales y estribos")
                             
