@@ -312,16 +312,14 @@ if "vol_sc_neto" not in st.session_state:
     st.session_state["vol_sc_neto"] = 0.0
 if "vol_radier" not in st.session_state:
     st.session_state["vol_radier"] = 0.0
-if "total_sacos" not in st.session_state:
-    st.session_state["total_sacos"] = 0
-if "total_gravilla" not in st.session_state:
-    st.session_state["total_gravilla"] = 0
-if "total_arena" not in st.session_state:
-    st.session_state["total_arena"] = 0
-if "total_agua" not in st.session_state:
-    st.session_state["total_agua"] = 0
-if "modulo" not in st.session_state:
-    st.session_state["modulo"] = "Panel General"
+if "mat_emp" not in st.session_state:
+    st.session_state["mat_emp"] = {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}
+if "mat_cim" not in st.session_state:
+    st.session_state["mat_cim"] = {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}
+if "mat_sc" not in st.session_state:
+    st.session_state["mat_sc"] = {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}
+if "mat_rad" not in st.session_state:
+    st.session_state["mat_rad
 
 # ============================
 # LOGO Y SIDEBAR
@@ -570,6 +568,11 @@ elif option == "Cubicacion":
         st.session_state["total_gravilla"] = total_gravilla
         st.session_state["total_arena"] = total_arena
         st.session_state["total_agua"] = total_agua
+
+        st.session_state["mat_emp"] = mat_emp
+        st.session_state["mat_cim"] = mat_cim
+        st.session_state["mat_sc"] = mat_sc
+        st.session_state["mat_rad"] = mat_rad
 
         # ============================
         # EXPORTAR A PDF
