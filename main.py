@@ -76,7 +76,7 @@ if option == "Panel General":
     st.write("---")
     st.subheader("Estado del Proyecto")
     st.info("Aquí podrás ver el resumen de tus obras y el ahorro generado por la optimización de materiales.")
-    .
+    
     with st.import("5. Radier", expanded=False):
     ra1, ra2 = st.columns(2)
     with ra1:
