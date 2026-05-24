@@ -329,78 +329,8 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", 
-    ["Panel General", "Cubicacion"],
-    index=0 if st.session_state.get("modulo", "Panel General") == "Panel General" else 1
-)
+option = st.sidebar.radio("Ir a:", ["Cubicacion"])
 
-# ============================
-# PANEL GENERAL
-# ============================
-if option == "Panel General":
-    st.markdown("<h3 style='text-align: center; color: #FF6B00;'><i>'Grandes estructuras se levantan con decisiones precisas.'</i></h3>", unsafe_allow_html=True)
-    st.write("---")
-
-    # --- Información del proyecto ---
-    st.subheader("Proyecto Actual")
-    col1, col2 = st.columns(2)
-    with col1:
-        nombre_proyecto_panel = st.text_input("Nombre del proyecto", 
-            placeholder="Ej: Casa Don Pedro - Angol",
-            key="nombre_proyecto_panel")
-    with col2:
-        fecha_inicio = st.date_input("Fecha de inicio", key="fecha_inicio")
-
-    st.write("---")
-
-    # --- Resumen última cubicación ---
-    st.subheader("Resumen de Cubicación")
-
-    vol_emp_p    = st.session_state.get("vol_emp", 0)
-    vol_pilares_p = st.session_state.get("vol_pilares", 0)
-    vol_sc_p     = st.session_state.get("vol_sc_neto", 0)
-    vol_radier_p = st.session_state.get("vol_radier", 0)
-    total_vol_p  = vol_emp_p + vol_pilares_p + vol_sc_p + vol_radier_p
-
-    total_sacos_p    = st.session_state.get("total_sacos", 0)
-    total_gravilla_p = st.session_state.get("total_gravilla", 0)
-    total_arena_p    = st.session_state.get("total_arena", 0)
-    total_agua_p     = st.session_state.get("total_agua", 0)
-
-    if total_vol_p > 0:
-        m1, m2, m3, m4, m5 = st.columns(5)
-        m1.metric("Volumen Total",  f"{total_vol_p:.2f} m³")
-        m2.metric("Cemento",        f"{total_sacos_p} sacos")
-        m3.metric("Gravilla",       f"{total_gravilla_p} kg")
-        m4.metric("Arena",          f"{total_arena_p} kg")
-        m5.metric("Agua",           f"{total_agua_p} lt")
-    else:
-        st.info("Aún no hay cubicación registrada. Ve a Cubicacion para comenzar.")
-
-    st.write("---")
-
-# --- Accesos rápidos ---
-    st.subheader("Accesos Rápidos")
-    st.caption("Ir directamente a una partida")
-    a1, a2, a3, a4 = st.columns(4)
-    with a1:
-        if st.button("Excavación", use_container_width=True):
-            st.session_state["modulo"] = "Cubicacion"
-            st.rerun()
-    with a2:
-        if st.button("Hormigón", use_container_width=True):
-            st.session_state["modulo"] = "Cubicacion"
-            st.rerun()
-    with a3:
-        if st.button("Acero", use_container_width=True):
-            st.session_state["modulo"] = "Cubicacion"
-            st.rerun()
-    with a4:
-        if st.button("Exportar PDF", use_container_width=True):
-            st.session_state["modulo"] = "Cubicacion"
-            st.rerun()
-
-    st.write("---")
 # ============================
 # CUBICACIÓN
 # ============================
