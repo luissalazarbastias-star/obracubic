@@ -99,9 +99,8 @@ if option == "Panel General":
     dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                          index=1,
                          key="dos_rad",
-                         help=DOSIFICACIONES["H-20"]["descripcion"])
-    desp_rad = st.slider("% Desperdicio", 0, 15, 5, key="desp_rad")
-    mat_rad = calcular_materiales(vol_radier, dos_rad, desp_rad / 100)
+                         help=DOSIFICACIONES["G-20"])
+    mat_rad = calcular_materiales(vol_radier, dos_rad/ 100)
     mostrar_materiales(mat_rad)
 
 # ============================
@@ -140,9 +139,8 @@ elif option == "Calculadora de Obra":
 
             dos_emp = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                    key="dos_emp",
-                                   help=DOSIFICACIONES["H-15"]["descripcion"])
-            desp_emp = st.slider("% Desperdicio", 0, 15, 5, key="desp_emp")
-            mat_emp = calcular_materiales(vol_emp, dos_emp, desp_emp / 100)
+                                   help=DOSIFICACIONES["G-15"])
+            mat_emp = calcular_materiales(vol_emp, dos_emp / 100)
             mostrar_materiales(mat_emp)
 
         # --- 3. Cimiento ---
@@ -161,9 +159,8 @@ elif option == "Calculadora de Obra":
             dos_cim = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                    index=1,
                                    key="dos_cim",
-                                   help=DOSIFICACIONES["H-20"]["descripcion"])
-            desp_cim = st.slider("% Desperdicio", 0, 15, 5, key="desp_cim")
-            mat_cim = calcular_materiales(vol_pilares, dos_cim, desp_cim / 100)
+                                   help=DOSIFICACIONES["G-20"])
+            mat_cim = calcular_materiales(vol_pilares, dos_cim / 100)
             mostrar_materiales(mat_cim)
 
         # --- 4. Sobrecimiento ---
@@ -196,9 +193,8 @@ elif option == "Calculadora de Obra":
             dos_sc = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                   index=1,
                                   key="dos_sc",
-                                  help=DOSIFICACIONES["H-20"]["descripcion"])
-            desp_sc = st.slider("% Desperdicio", 0, 15, 5, key="desp_sc")
-            mat_sc = calcular_materiales(vol_sc_neto, dos_sc, desp_sc / 100)
+                                  help=DOSIFICACIONES["G-20"])
+            mat_sc = calcular_materiales(vol_sc_neto, dos_sc / 100)
             mostrar_materiales(mat_sc)
 
         # --- 5. Radier ---
@@ -217,9 +213,8 @@ elif option == "Calculadora de Obra":
             dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                    index=1,
                                    key="dos_rad",
-                                   help=DOSIFICACIONES["H-20"]["descripcion"])
-            desp_rad = st.slider("% Desperdicio", 0, 15, 5, key="desp_rad")
-            mat_rad = calcular_materiales(vol_radier, dos_rad, desp_rad / 100)
+                                   help=DOSIFICACIONES["G-20"])
+            mat_rad = calcular_materiales(vol_radier, dos_rad / 100)
             mostrar_materiales(mat_rad)
 
         # --- Total general ---
