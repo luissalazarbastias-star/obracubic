@@ -84,8 +84,8 @@ elif option == "Calculadora de Obra":
     with st.expander("Hormigón y Movimiento de tierra", expanded=False):
 
         # --- 1. Excavacion---
-        with st.expander("1. Excavación", expanded=False):
-        ex1, ex2, ex3 = st.columns(3)
+    with st.expander("1. Excavación", expanded=False):
+    ex1, ex2, ex3 = st.columns(3)
         with ex1:
             exc_largo = st.number_input("Largo excavación (m)", value=0.0, key="exc_largo")
         with ex2:
