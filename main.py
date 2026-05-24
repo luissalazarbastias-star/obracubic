@@ -295,5 +295,5 @@ elif option == "Cubicacion":
                 cant_barras = kg_acero / kg_por_barra if kg_por_barra > 0 else 0
                 
                 st.info(f"Acero estimado: {kg_acero:.1f} kg")
-                st.text(f"Cantidad de barras {diametro_simple}: {cant_barras:.0f} barras de {largo_barra_simple}m")
+                st.text(f"Cantidad de barras {diametro_simple}: {cant_barras:.0f} barras de {largo_simple}")
                 st.caption(f"Ratio usado: {RATIO_ACERO[elemento]['ratio']} {RATIO_ACERO[elemento]['unidad']}")
