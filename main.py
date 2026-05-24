@@ -438,92 +438,91 @@ elif option == "Cubicacion":
                         st.text(f"Barras long.: {cant_bl * cant_pil_d} barras {diam_bl} x {alto_pil_d}m → {kg_bl:.1f} kg")
                         st.text(f"Estribos: {n_estribos_d:.0f} estribos {diam_be} c/{sep_be}m → {kg_be:.1f} kg")
             with st.expander("3. Viga", expanded=False):
-    
-    modo_viga = st.radio(
-        "Modo de cálculo",
-        ["🔨 Modo Simple", "📐 Modo Detallado"],
-        horizontal=True,
-        key="modo_viga"
-    )
-    
-    if modo_viga == "🔨 Modo Simple":
-        st.caption("Estimación por ratio kg/m³")
-        
-        v1, v2, v3 = st.columns(3)
-        with v1:
-            cant_vigas = st.number_input("Cantidad de vigas", value=0, step=1, key="cant_vigas")
-        with v2:
-            largo_viga = st.number_input("Largo viga (m)", value=0.0, key="largo_viga")
-        with v3:
-            alto_viga = st.number_input("Alto viga (m)", value=0.0, key="alto_viga")
-        
-        ancho_viga = st.number_input("Ancho viga (m)", value=0.0, key="ancho_viga")
-        
-        vol_viga = cant_vigas * largo_viga * alto_viga * ancho_viga
-        kg_acero_viga = vol_viga * 120  # ratio 120 kg/m³
-        
-        diam_viga_s = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_viga_s")
-        largo_barra_viga_s = st.selectbox("Largo de barra", ["6m", "12m"], key="largo_viga_s")
-        largo_metros_viga_s = float(largo_barra_viga_s.replace("m", ""))
-        
-        kg_por_barra_viga = PESO_BARRAS[diam_viga_s] * largo_metros_viga_s
-        cant_barras_viga = kg_acero_viga / kg_por_barra_viga if kg_por_barra_viga > 0 else 0
-        
-        st.write("---")
-        st.info(f"Acero estimado: {kg_acero_viga:.1f} kg")
-        st.text(f"Cantidad de barras {diam_viga_s}: {cant_barras_viga:.0f} barras de {largo_barra_viga_s}")
-        st.caption(f"Volumen vigas: {vol_viga:.2f} m³ | Ratio: 120 kg/m³")
-
-    elif modo_viga == "📐 Modo Detallado":
-        st.caption("Cálculo por barras superiores, inferiores y estribos")
-        
-        vd1, vd2, vd3 = st.columns(3)
-        with vd1:
-            cant_vigas_d = st.number_input("Cantidad de vigas", value=0, step=1, key="cant_vigas_d")
-        with vd2:
-            largo_viga_d = st.number_input("Largo viga (m)", value=0.0, key="largo_viga_d")
-        with vd3:
-            ancho_viga_d = st.number_input("Ancho viga (m)", value=0.0, key="ancho_viga_d")
-        
-        st.write("**Barras superiores**")
-        vs1, vs2 = st.columns(2)
-        with vs1:
-            cant_sup = st.number_input("Cantidad barras sup.", value=0, step=1, key="cant_sup")
-        with vs2:
-            diam_sup = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_sup")
-        
-        st.write("**Barras inferiores**")
-        vi1, vi2 = st.columns(2)
-        with vi1:
-            cant_inf = st.number_input("Cantidad barras inf.", value=0, step=1, key="cant_inf")
-        with vi2:
-            diam_inf = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_inf")
-        
-        st.write("**Estribos**")
-        ve1, ve2 = st.columns(2)
-        with ve1:
-            sep_estribo_v = st.selectbox("Separación (m)", ["0.10", "0.15", "0.20"], key="sep_estribo_v")
-        with ve2:
-            diam_estribo_v = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_estribo_v")
-        sep_estribo_v = float(sep_estribo_v)
-        
-        # Cálculo barras superiores
-        ml_sup = cant_sup * largo_viga_d * cant_vigas_d
-        kg_sup = ml_sup * PESO_BARRAS[diam_sup]
-        
-        # Cálculo barras inferiores
-        ml_inf = cant_inf * largo_viga_d * cant_vigas_d
-        kg_inf = ml_inf * PESO_BARRAS[diam_inf]
-        
-        # Cálculo estribos
-        n_estribos_v = (largo_viga_d / sep_estribo_v) * cant_vigas_d
-        perimetro_estribo_v = ((ancho_viga_d + 0.30) * 2) + 0.20
-        kg_estribo_v = n_estribos_v * perimetro_estribo_v * PESO_BARRAS[diam_estribo_v]
-        
-        kg_total_viga = kg_sup + kg_inf + kg_estribo_v
-        
-        st.write("---")
-        st.info(f"Acero total vigas: {kg_total_viga:.1f} kg")
-        st.text(f"Barras sup.: {cant_sup * cant_vigas_d} barras {diam_sup} → {kg_sup:.1f} kg")
-        st.text(f"Barras inf.: {cant_inf * cant_vigas_d} barras {diam_inf} → {kg_inf:.1f} kg")
-        st.text(f"Estribos: {n_estribos_v:.0f} estribos {diam_estribo_v} c/{sep_estribo_v}m → {kg_estribo_v:.1f} kg")
+                
+                modo_viga = st.radio(
+                    "Modo de cálculo",
+                    ["🔨 Modo Simple", "📐 Modo Detallado"],
+                    horizontal=True,
+                    key="modo_viga"
+                )
+                if modo_viga == "🔨 Modo Simple":
+                    st.caption("Estimación por ratio kg/m³")
+                    
+                    v1, v2, v3 = st.columns(3)
+                    with v1:
+                        cant_vigas = st.number_input("Cantidad de vigas", value=0, step=1, key="cant_vigas")
+                    with v2:
+                        largo_viga = st.number_input("Largo viga (m)", value=0.0, key="largo_viga")
+                        with v3:
+                            alto_viga = st.number_input("Alto viga (m)", value=0.0, key="alto_viga")
+                            
+                    ancho_viga = st.number_input("Ancho viga (m)", value=0.0, key="ancho_viga")
+                    
+                    vol_viga = cant_vigas * largo_viga * alto_viga * ancho_viga
+                    kg_acero_viga = vol_viga * 120  # ratio 120 kg/m³
+                    
+                    diam_viga_s = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_viga_s")
+                    largo_barra_viga_s = st.selectbox("Largo de barra", ["6m", "12m"], key="largo_viga_s")
+                    largo_metros_viga_s = float(largo_barra_viga_s.replace("m", ""))
+                    
+                    kg_por_barra_viga = PESO_BARRAS[diam_viga_s] * largo_metros_viga_s
+                    cant_barras_viga = kg_acero_viga / kg_por_barra_viga if kg_por_barra_viga > 0 else 0
+                    
+                    st.write("---")
+                    st.info(f"Acero estimado: {kg_acero_viga:.1f} kg")
+                    st.text(f"Cantidad de barras {diam_viga_s}: {cant_barras_viga:.0f} barras de {largo_barra_viga_s}")
+                    st.caption(f"Volumen vigas: {vol_viga:.2f} m³ | Ratio: 120 kg/m³")
+                
+                elif modo_viga == "📐 Modo Detallado":
+                    st.caption("Cálculo por barras superiores, inferiores y estribos")
+                    
+                    vd1, vd2, vd3 = st.columns(3)
+                    with vd1:
+                        cant_vigas_d = st.number_input("Cantidad de vigas", value=0, step=1, key="cant_vigas_d")
+                    with vd2:
+                        largo_viga_d = st.number_input("Largo viga (m)", value=0.0, key="largo_viga_d")
+                    with vd3:
+                        ancho_viga_d = st.number_input("Ancho viga (m)", value=0.0, key="ancho_viga_d")
+                        
+                    st.write("**Barras superiores**")
+                    vs1, vs2 = st.columns(2)
+                    with vs1:
+                        cant_sup = st.number_input("Cantidad barras sup.", value=0, step=1, key="cant_sup")
+                    with vs2:
+                        diam_sup = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_sup")
+                        
+                    st.write("**Barras inferiores**") 
+                    vi1, vi2 = st.columns(2)
+                    with vi1:
+                        cant_inf = st.number_input("Cantidad barras inf.", value=0, step=1, key="cant_inf")
+                    with vi2:
+                        diam_inf = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_inf")
+                    
+                    st.write("**Estribos**")
+                    ve1, ve2 = st.columns(2)
+                    with ve1:
+                        sep_estribo_v = st.selectbox("Separación (m)", ["0.10", "0.15", "0.20"], key="sep_estribo_v")
+                    with ve2:
+                        diam_estribo_v = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_estribo_v")
+                    sep_estribo_v = float(sep_estribo_v)
+                    
+                    # Cálculo barras superiores
+                    ml_sup = cant_sup * largo_viga_d * cant_vigas_d
+                    kg_sup = ml_sup * PESO_BARRAS[diam_sup]
+                    
+                    # Cálculo barras inferiores
+                    ml_inf = cant_inf * largo_viga_d * cant_vigas_d
+                    kg_inf = ml_inf * PESO_BARRAS[diam_inf]
+                    
+                    # Cálculo estribos
+                    n_estribos_v = (largo_viga_d / sep_estribo_v) * cant_vigas_d
+                    perimetro_estribo_v = ((ancho_viga_d + 0.30) * 2) + 0.20
+                    kg_estribo_v = n_estribos_v * perimetro_estribo_v * PESO_BARRAS[diam_estribo_v]
+                    
+                    kg_total_viga = kg_sup + kg_inf + kg_estribo_v
+                    
+                    st.write("---")
+                    st.info(f"Acero total vigas: {kg_total_viga:.1f} kg")
+                    st.text(f"Barras sup.: {cant_sup * cant_vigas_d} barras {diam_sup} → {kg_sup:.1f} kg")
+                    st.text(f"Barras inf.: {cant_inf * cant_vigas_d} barras {diam_inf} → {kg_inf:.1f} kg")
+                    st.text(f"Estribos: {n_estribos_v:.0f} estribos {diam_estribo_v} c/{sep_estribo_v}m → {kg_estribo_v:.1f} kg")
