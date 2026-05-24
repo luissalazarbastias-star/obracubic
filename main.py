@@ -526,3 +526,82 @@ elif option == "Cubicacion":
                     st.text(f"Barras sup.: {cant_sup * cant_vigas_d} barras {diam_sup} → {kg_sup:.1f} kg")
                     st.text(f"Barras inf.: {cant_inf * cant_vigas_d} barras {diam_inf} → {kg_inf:.1f} kg")
                     st.text(f"Estribos: {n_estribos_v:.0f} estribos {diam_estribo_v} c/{sep_estribo_v}m → {kg_estribo_v:.1f} kg")
+
+            with st.expander("4. Radier", expanded=False):
+                
+                modo_radier = st.radio(
+                    "Modo de cálculo",
+                    ["🔨 Modo Simple", "📐 Modo Detallado"],
+                    horizontal=True,
+                    key="modo_radier"
+                    )
+                if modo_radier == "🔨 Modo Simple":
+                    st.caption("Estimación por ratio kg/m²")
+                    
+                    rr1, rr2 = st.columns(2)
+                    with rr1:
+                        largo_rad_a = st.number_input("Largo radier (m)", value=0.0, key="largo_rad_a")
+                    with rr2:
+                        ancho_rad_a = st.number_input("Ancho radier (m)", value=0.0, key="ancho_rad_a")
+                        
+                    area_rad = largo_rad_a * ancho_rad_a
+                    kg_acero_rad = area_rad * 5  # ratio 5 kg/m²
+                    
+                    diam_rad_s = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_rad_s")
+                    largo_barra_rad = st.selectbox("Largo de barra", ["6m", "12m"], key="largo_rad_s")
+                    largo_metros_rad = float(largo_barra_rad.replace("m", ""))
+                    
+                    kg_por_barra_rad = PESO_BARRAS[diam_rad_s] * largo_metros_rad
+                    cant_barras_rad = kg_acero_rad / kg_por_barra_rad if kg_por_barra_rad > 0 else 0
+                    
+                    st.write("---")
+                    st.info(f"Acero estimado: {kg_acero_rad:.1f} kg")
+                    st.text(f"Cantidad de barras {diam_rad_s}: {cant_barras_rad:.0f} barras de {largo_barra_rad}")
+                    st.caption(f"Área radier: {area_rad:.2f} m² | Ratio: 5 kg/m²")
+                elif modo_radier == "📐 Modo Detallado":
+                    st.caption("Cálculo por barras en ambas direcciones")
+                    
+                    rd1, rd2 = st.columns(2)
+                    with rd1:
+                        largo_rad_d = st.number_input("Largo radier (m)", value=0.0, key="largo_rad_d")
+                    with rd2:
+                        ancho_rad_d = st.number_input("Ancho radier (m)", value=0.0, key="ancho_rad_d")
+                        
+                    st.write("**Barras dirección X (largo)**")
+                    rx1, rx2, rx3 = st.columns(3)
+                    with rx1:
+                        diam_rx = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_rx")
+                        with rx2:
+                            sep_rx = st.selectbox("Separación (m)", ["0.10", "0.15", "0.20", "0.25"], key="sep_rx")
+                            with rx3:
+                                largo_barra_rx = st.selectbox("Largo barra", ["6m", "12m"], key="largo_rx")
+                            sep_rx = float(sep_rx)
+                            
+                            st.write("**Barras dirección Y (ancho)**")
+                            ry1, ry2, ry3 = st.columns(3)
+                            with ry1:
+                                diam_ry = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_ry")
+                            with ry2:
+                                sep_ry = st.selectbox("Separación (m)", ["0.10", "0.15", "0.20", "0.25"], key="sep_ry")
+                            with ry3:
+                                largo_barra_ry = st.selectbox("Largo barra", ["6m", "12m"], key="largo_ry")
+                            sep_ry = float(sep_ry)
+                            
+                            # Cálculo dirección X
+                            cant_barras_rx = ancho_rad_d / sep_rx if sep_rx > 0 else 0
+                            largo_m_rx = float(largo_barra_rx.replace("m", ""))
+                            kg_rx = cant_barras_rx * largo_rad_d * PESO_BARRAS[diam_rx]
+                            barras_rx = (cant_barras_rx * largo_rad_d) / largo_m_rx
+                            
+                            # Cálculo dirección Y
+                            cant_barras_ry = largo_rad_d / sep_ry if sep_ry > 0 else 0
+                            largo_m_ry = float(largo_barra_ry.replace("m", ""))
+                            kg_ry = cant_barras_ry * ancho_rad_d * PESO_BARRAS[diam_ry]
+                            barras_ry = (cant_barras_ry * ancho_rad_d) / largo_m_ry
+                            
+                            kg_total_rad = kg_rx + kg_ry
+                            
+                            st.write("---")
+                            st.info(f"Acero total radier: {kg_total_rad:.1f} kg")
+                            st.text(f"Dirección X: {barras_rx:.0f} barras {diam_rx} de {largo_barra_rx} → {kg_rx:.1f} kg")
+                            st.text(f"Dirección Y: {barras_ry:.0f} barras {diam_ry} de {largo_barra_ry} → {kg_ry:.1f} kg")
