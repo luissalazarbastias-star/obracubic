@@ -369,12 +369,13 @@ elif option == "Cubicacion":
                             sep_estribo = float(sep_estribo)  # convertir a número para el cálculo
                         with p6:
                             diam_estribo = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_estribo")
-                            
-                         p7, p8 = st.columns(2)
-                         with p7:
-                             ancho_pilar = st.number_input("Ancho pilar (m)", value=0.30, key="ancho)
-                         with p8:
-                             largo_pilar = st.number_input("Largo pilar (m)", value=0.30, key="largo_pil")
+                        p7, p8 = st.columns(2)
+
+                    
+                        with p7:
+                            ancho_pilar = st.number_input("Ancho pilar (m)", value=0.30, key="ancho)
+                        with p8:
+                            largo_pilar = st.number_input("Largo pilar (m)", value=0.30, key="largo_pil")
                             
                         # Barras longitudinales
                         ml_long = barras_long * alto_pilar * cant_pilares
