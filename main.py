@@ -5,7 +5,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 import io
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # --- CONFIGURACIÓN VISUAL DE LA APP ---
 st.set_page_config(
