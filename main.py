@@ -244,12 +244,6 @@ elif option == "Cubicacion":
         
         #--- Acero --- 
     with st.expander("Cubicación de Acero (Enfierraduras)", expanded=False):
-
-            modo_acero = st.radio(
-                "Selecciona el modo de cálculo",
-                ["Modo Simple", "Modo Detallado"],
-                horizontal=True
-            )
             
             if modo_acero == "Modo Simple":
                 st.caption("Cálculo por ratio de kg de acero según elemento")
