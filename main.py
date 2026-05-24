@@ -182,75 +182,75 @@ def generar_pdf_cubicacion(
     story.append(Spacer(1, 10))
 
     # Sección Hormigón
-    story.append(Paragraph("CUBICACION DE HORMIGON", estilo_seccion))
+    if total_hormigon and total_hormigon > 0:
+        story.append(Paragraph("CUBICACION DE HORMIGON", estilo_seccion))
 
-    partidas = [
-        ("Emplantillado",      vol_emp,      dos_emp, mat_emp),
-        ("Cimiento / Pilares", vol_pilares,  dos_cim, mat_cim),
-        ("Sobrecimiento",      vol_sc_neto,  dos_sc,  mat_sc),
-        ("Radier",             vol_radier,   dos_rad, mat_rad),
-    ]
+        partidas = [
+            ("Emplantillado",      vol_emp,      dos_emp, mat_emp),
+            ("Cimiento / Pilares", vol_pilares,  dos_cim, mat_cim),
+            ("Sobrecimiento",      vol_sc_neto,  dos_sc,  mat_sc),
+            ("Radier",             vol_radier,   dos_rad, mat_rad),
+        ]
 
-    for nombre_partida, vol, dos, mat in partidas:
-        if vol and vol > 0:
-            story.append(Paragraph(f"<b>{nombre_partida}</b>  —  Dosificacion: {dos}", estilo_normal))
-            datos_p = [
-                ["Volumen", "Cemento", "Gravilla", "Arena", "Agua"],
-                [
-                    f"{vol:.2f} m3",
-                    f"{mat['cemento_sacos']} sacos",
-                    f"{mat['gravilla_kg']} kg",
-                    f"{mat['arena_kg']} kg",
-                    f"{mat['agua_lt']} lt",
-                ],
-            ]
-            tabla_p = Table(datos_p, colWidths=[3.4*cm]*5)
-            tabla_p.setStyle(TableStyle([
-                ("BACKGROUND",  (0, 0), (-1, 0), NARANJA),
-                ("TEXTCOLOR",   (0, 0), (-1, 0), BLANCO),
-                ("FONTNAME",    (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE",    (0, 0), (-1, -1), 9),
-                ("ALIGN",       (0, 0), (-1, -1), "CENTER"),
-                ("VALIGN",      (0, 0), (-1, -1), "MIDDLE"),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [GRIS_CLARO, BLANCO]),
-                ("GRID",        (0, 0), (-1, -1), 0.5, colors.lightgrey),
-                ("TOPPADDING",  (0, 0), (-1, -1), 5),
-                ("BOTTOMPADDING",(0, 0), (-1, -1), 5),
-            ]))
-            story.append(tabla_p)
-            story.append(Spacer(1, 8))
+        for nombre_partida, vol, dos, mat in partidas:
+            if vol and vol > 0:
+                story.append(Paragraph(f"<b>{nombre_partida}</b>  —  Dosificacion: {dos}", estilo_normal))
+                datos_p = [
+                    ["Volumen", "Cemento", "Gravilla", "Arena", "Agua"],
+                    [
+                        f"{vol:.2f} m3",
+                        f"{mat['cemento_sacos']} sacos",
+                        f"{mat['gravilla_kg']} kg",
+                        f"{mat['arena_kg']} kg",
+                        f"{mat['agua_lt']} lt",
+                    ],
+                ]
+                tabla_p = Table(datos_p, colWidths=[3.4*cm]*5)
+                tabla_p.setStyle(TableStyle([
+                    ("BACKGROUND",  (0, 0), (-1, 0), NARANJA),
+                    ("TEXTCOLOR",   (0, 0), (-1, 0), BLANCO),
+                    ("FONTNAME",    (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE",    (0, 0), (-1, -1), 9),
+                    ("ALIGN",       (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN",      (0, 0), (-1, -1), "MIDDLE"),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [GRIS_CLARO, BLANCO]),
+                    ("GRID",        (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                    ("TOPPADDING",  (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING",(0, 0), (-1, -1), 5),
+                ]))
+                story.append(tabla_p)
+                story.append(Spacer(1, 8))
 
-    # Resumen total
-    story.append(HRFlowable(width="100%", thickness=1, color=NARANJA, spaceAfter=6))
-    story.append(Paragraph("RESUMEN TOTAL DE MATERIALES", estilo_seccion))
+        story.append(HRFlowable(width="100%", thickness=1, color=NARANJA, spaceAfter=6))
+        story.append(Paragraph("RESUMEN TOTAL DE MATERIALES", estilo_seccion))
 
-    datos_resumen = [
-        ["Volumen Total", "Cemento Total", "Gravilla Total", "Arena Total", "Agua Total"],
-        [
-            f"{total_hormigon:.2f} m3",
-            f"{total_sacos} sacos",
-            f"{total_gravilla} kg",
-            f"{total_arena} kg",
-            f"{total_agua} lt",
-        ],
-    ]
-    tabla_res = Table(datos_resumen, colWidths=[3.4*cm]*5)
-    tabla_res.setStyle(TableStyle([
-        ("BACKGROUND",  (0, 0), (-1, 0), GRIS_OSCURO),
-        ("TEXTCOLOR",   (0, 0), (-1, 0), BLANCO),
-        ("FONTNAME",    (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("BACKGROUND",  (0, 1), (-1, 1), NARANJA),
-        ("TEXTCOLOR",   (0, 1), (-1, 1), BLANCO),
-        ("FONTNAME",    (0, 1), (-1, 1), "Helvetica-Bold"),
-        ("FONTSIZE",    (0, 0), (-1, -1), 10),
-        ("ALIGN",       (0, 0), (-1, -1), "CENTER"),
-        ("VALIGN",      (0, 0), (-1, -1), "MIDDLE"),
-        ("GRID",        (0, 0), (-1, -1), 0.5, colors.lightgrey),
-        ("TOPPADDING",  (0, 0), (-1, -1), 7),
-        ("BOTTOMPADDING",(0, 0), (-1, -1), 7),
-    ]))
-    story.append(tabla_res)
-    story.append(Spacer(1, 12))
+        datos_resumen = [
+            ["Volumen Total", "Cemento Total", "Gravilla Total", "Arena Total", "Agua Total"],
+            [
+                f"{total_hormigon:.2f} m3",
+                f"{total_sacos} sacos",
+                f"{total_gravilla} kg",
+                f"{total_arena} kg",
+                f"{total_agua} lt",
+            ],
+        ]
+        tabla_res = Table(datos_resumen, colWidths=[3.4*cm]*5)
+        tabla_res.setStyle(TableStyle([
+            ("BACKGROUND",  (0, 0), (-1, 0), GRIS_OSCURO),
+            ("TEXTCOLOR",   (0, 0), (-1, 0), BLANCO),
+            ("FONTNAME",    (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("BACKGROUND",  (0, 1), (-1, 1), NARANJA),
+            ("TEXTCOLOR",   (0, 1), (-1, 1), BLANCO),
+            ("FONTNAME",    (0, 1), (-1, 1), "Helvetica-Bold"),
+            ("FONTSIZE",    (0, 0), (-1, -1), 10),
+            ("ALIGN",       (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN",      (0, 0), (-1, -1), "MIDDLE"),
+            ("GRID",        (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("TOPPADDING",  (0, 0), (-1, -1), 7),
+            ("BOTTOMPADDING",(0, 0), (-1, -1), 7),
+        ]))
+        story.append(tabla_res)
+        story.append(Spacer(1, 12))
 
     # Sección acero (si hay datos)
     acero_datos = {
