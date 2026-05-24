@@ -78,7 +78,7 @@ if option == "Panel General":
     st.info("Aquí podrás ver el resumen de tus obras y el ahorro generado por la optimización de materiales.")
     
     with st.subheader("Radier"):
-    rad1, rad2 = st.columns(2)
+    r1, r2 = st.columns(2)
     with ra1:
             rad_largo = st.number_input("Largo Radier (m)", value=0.0, key="radier_largo")
             rad_ancho = st.number_input("Ancho Radier (m)", value=0.0, key="radier_ancho")
@@ -229,7 +229,7 @@ elif option == "Calculadora de Obra":
         total_agua     = mat_emp["agua_lt"]       + mat_cim["agua_lt"]       + mat_sc["agua_lt"]       + mat_rad["agua_lt"]
 
         r1, r2, r3, r4 = st.columns(4)
-        r1.metric("🧱 Cemento Total",  f"{total_sacos} sacos")
-        r2.metric("⚫ Gravilla Total", f"{total_gravilla} kg")
-        r3.metric("🟡 Arena Total",    f"{total_arena} kg")
-        r4.metric("💧 Agua Total",     f"{total_agua} lt")
+        r1.metric("Cemento Total",  f"{total_sacos} sacos")
+        r2.metric("Gravilla Total", f"{total_gravilla} kg")
+        r3.metric("Arena Total",    f"{total_arena} kg")
+        r4.metric("Agua Total",     f"{total_agua} lt")
