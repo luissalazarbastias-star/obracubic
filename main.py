@@ -79,7 +79,7 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", ["Panel General", "Calculadora de Obra"])
+option = st.sidebar.radio("Ir a:", ["Panel General", "Cubicacion"])
 
 # ============================
 # PANEL GENERAL
@@ -111,7 +111,8 @@ if option == "Panel General":
 # ============================
 # CALCULADORA DE HORMIGÓN
 # ============================
-elif option == "Calculadora de Obra":
+elif option == "Cubicacion":
+    st.subheader("CUBICACIONES")
     with st.expander("Hormigón y Movimiento de tierra", expanded=False):
 
         # --- 1. Excavacion---
