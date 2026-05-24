@@ -813,3 +813,82 @@ if option == "Cubicacion":
                 st.info(f"Acero total radier: {kg_total_rad:.1f} kg")
                 st.text(f"Dirección X: {barras_rx:.0f} barras {diam_rx} de {largo_barra_rx} → {kg_rx:.1f} kg")
                 st.text(f"Dirección Y: {barras_ry:.0f} barras {diam_ry} de {largo_barra_ry} → {kg_ry:.1f} kg")
+
+        with st.expander("5. Cimiento", expanded=False):
+    
+            modo_cimiento = st.radio(
+                "Modo de cálculo",
+                ["🔨 Modo Simple", "📐 Modo Detallado"],
+                horizontal=True,
+                key="modo_cimiento"
+            )
+            
+            if modo_cimiento == "🔨 Modo Simple":
+                st.caption("Estimación por ratio kg/m³")
+                
+                ci1, ci2, ci3 = st.columns(3)
+                with ci1:
+                    cant_cim = st.number_input("Cantidad de cimientos", value=0, step=1, key="cant_cim")
+                with ci2:
+                    largo_cim = st.number_input("Largo cimiento (m)", value=0.0, key="largo_cim")
+                with ci3:
+                    ancho_cim = st.number_input("Ancho cimiento (m)", value=0.0, key="ancho_cim")
+                
+                alto_cim = st.number_input("Alto cimiento (m)", value=0.0, key="alto_cim")
+                
+                vol_cim = cant_cim * largo_cim * ancho_cim * alto_cim
+                kg_acero_cim = vol_cim * 80  # ratio 80 kg/m³
+                
+                diam_cim_s = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_cim_s")
+                largo_barra_cim = st.selectbox("Largo de barra", ["6m", "12m"], key="largo_cim_s")
+                largo_metros_cim = float(largo_barra_cim.replace("m", ""))
+                
+                kg_por_barra_cim = PESO_BARRAS[diam_cim_s] * largo_metros_cim
+                cant_barras_cim = kg_acero_cim / kg_por_barra_cim if kg_por_barra_cim > 0 else 0
+                
+                st.write("---")
+                st.info(f"Acero estimado: {kg_acero_cim:.1f} kg")
+                st.text(f"Cantidad de barras {diam_cim_s}: {cant_barras_cim:.0f} barras de {largo_barra_cim}")
+                st.caption(f"Volumen cimiento: {vol_cim:.2f} m³ | Ratio: 80 kg/m³")
+
+            elif modo_cimiento == "📐 Modo Detallado":
+                st.caption("Cálculo por barras longitudinales y estribos")
+                
+                cd1, cd2, cd3 = st.columns(3)
+                with cd1:
+                    cant_cim_d = st.number_input("Cantidad de cimientos", value=0, step=1, key="cant_cim_d")
+                with cd2:
+                    largo_cim_d = st.number_input("Largo cimiento (m)", value=0.0, key="largo_cim_d")
+                with cd3:
+                    ancho_cim_d = st.number_input("Ancho cimiento (m)", value=0.0, key="ancho_cim_d")
+
+                st.write("**Barras longitudinales**")
+                cl1, cl2 = st.columns(2)
+                with cl1:
+                    cant_bl_cim = st.number_input("Cantidad barras", value=0, step=1, key="cant_bl_cim")
+                with cl2:
+                    diam_bl_cim = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_bl_cim")
+
+                st.write("**Estribos**")
+                ce1, ce2 = st.columns(2)
+                with ce1:
+                    sep_estribo_cim = st.selectbox("Separación (m)", ["0.10", "0.15", "0.20", "0.25"], key="sep_estribo_cim")
+                with ce2:
+                    diam_estribo_cim = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_estribo_cim")
+                sep_estribo_cim = float(sep_estribo_cim)
+
+                # Cálculo barras longitudinales
+                ml_bl_cim = cant_bl_cim * largo_cim_d * cant_cim_d
+                kg_bl_cim = ml_bl_cim * PESO_BARRAS[diam_bl_cim]
+
+                # Cálculo estribos
+                n_estribos_cim = (largo_cim_d / sep_estribo_cim) * cant_cim_d
+                perimetro_estribo_cim = ((ancho_cim_d + 0.30) * 2) + 0.20
+                kg_estribo_cim = n_estribos_cim * perimetro_estribo_cim * PESO_BARRAS[diam_estribo_cim]
+
+                kg_total_cim = kg_bl_cim + kg_estribo_cim
+
+                st.write("---")
+                st.info(f"Acero total cimientos: {kg_total_cim:.1f} kg")
+                st.text(f"Barras long.: {cant_bl_cim * cant_cim_d} barras {diam_bl_cim} → {kg_bl_cim:.1f} kg")
+                st.text(f"Estribos: {n_estribos_cim:.0f} estribos {diam_estribo_cim} c/{sep_estribo_cim}m → {kg_estribo_cim:.1f} kg")        
