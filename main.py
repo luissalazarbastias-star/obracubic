@@ -105,7 +105,7 @@ if option == "Panel General":
                          index=1,
                          key="dos_rad",
                          help=DOSIFICACIONES["G-20"]["descripcion"])
-    mat_rad = calcular_materiales(vol_radier, dos_rad/ 100)
+    mat_rad = calcular_materiales(vol_radier, dos_rad / 100)
     mostrar_materiales(mat_rad)
 
 # ============================
