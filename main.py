@@ -11,43 +11,48 @@ st.set_page_config(
 # ============================
 DOSIFICACIONES = {
     "G-5": {
+        "descripcion": "Hormigón de muy baja resistencia",
         "cemento_sacos": round(170 / 25),  # 7 sacos
         "gravilla_kg": 1025,
         "arena_kg": 910,
         "agua_lt": 195,
     },
-    "G-10":{
+    "G-10": {
+        "descripcion": "Hormigón de baja resistencia",
         "cemento_sacos": round(230 / 25),  # 9 sacos
         "gravilla_kg": 1055,
         "arena_kg": 835,
-        "agua_lt": 195, 
-   },
+        "agua_lt": 195,
+    },
     "G-15": {
+        "descripcion": "Emplantillado, sobrecimientos simples",
         "cemento_sacos": round(275 / 25),  # 11 sacos
         "gravilla_kg": 1070,
         "arena_kg": 800,
         "agua_lt": 195,
     },
     "G-20": {
+        "descripcion": "Radier, cimientos normales",
         "cemento_sacos": round(340 / 25),  # 14 sacos
         "gravilla_kg": 1095,
         "arena_kg": 715,
         "agua_lt": 200,
     },
     "G-25": {
+        "descripcion": "Losas estructurales, pilares",
         "cemento_sacos": round(380 / 25),  # 15 sacos
         "gravilla_kg": 1120,
         "arena_kg": 645,
         "agua_lt": 200,
     },
     "G-30": {
+        "descripcion": "Obras especiales, alta resistencia",
         "cemento_sacos": round(440 / 25),  # 18 sacos
         "gravilla_kg": 1145,
         "arena_kg": 585,
         "agua_lt": 200,
     },
 }
-
 def calcular_materiales(volumen_m3, dosificacion):
     dos = DOSIFICACIONES[dosificacion]
     vol = volumen_m3
