@@ -410,30 +410,30 @@ elif option == "Cubicacion":
                             cant_bl = st.number_input("Cantidad barras", value=4, step=1, key="cant_bl")
                         with bl2:
                             diam_bl = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), index=2, key="diam_bl")
-                            
+                    
                         st.write("**Estribos**")
                         be1, be2, be3 = st.columns(3)
                         with be1:
-                              ancho_p = st.number_input("Ancho pilar (m)", value=0.30, key="ancho_p_d")
+                            ancho_p = st.number_input("Ancho pilar (m)", value=0.0, key="ancho_p_d")
                         with be2:
-                            largo_p = st.number_input("Largo pilar (m)", value=0.30, key="largo_p_d")
+                            largo_p = st.number_input("Largo pilar (m)", value=0.0, key="largo_p_d")
                         with be3:
-                            sep_be = st.selectbox("Separación (m)", [0.10, 0.15, 0.20], key="sep_be")
-                            
-                       diam_be = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_be")
-                
-                       # Cálculo
+                            sep_be = st.selectbox("Separación (m)", ["0.10", "0.15", "0.20"], key="sep_be")
+                        sep_be = float(sep_be)
+
+                        diam_be = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_be")
+
+                        # Cálculo
                         ml_bl = cant_bl * alto_pil_d * cant_pil_d
                         kg_bl = ml_bl * PESO_BARRAS[diam_bl]
-                            
+
                         n_estribos_d = (alto_pil_d / sep_be) * cant_pil_d
                         perimetro_d = ((ancho_p + largo_p) * 2) + 0.20
                         kg_be = n_estribos_d * perimetro_d * PESO_BARRAS[diam_be]
-                            
+
                         kg_total_d = kg_bl + kg_be
-                            
+
                         st.write("---")
                         st.info(f"Acero total pilares: {kg_total_d:.1f} kg")
                         st.text(f"Barras long.: {cant_bl * cant_pil_d} barras {diam_bl} x {alto_pil_d}m → {kg_bl:.1f} kg")
                         st.text(f"Estribos: {n_estribos_d:.0f} estribos {diam_be} c/{sep_be}m → {kg_be:.1f} kg")
-                
