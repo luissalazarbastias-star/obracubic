@@ -261,40 +261,35 @@ elif option == "Cubicacion":
                     "Radier":  {"ratio": 5,  "unidad": "kg/m²"},
                     "Cimiento":{"ratio": 80, "unidad": "kg/m³"},
                 }
-                
-                elemento = st.selectbox("Elemento estructural", list(RATIO_ACERO.keys()))
+
+                PESO_BARRAS = {
+                    "Ø8mm":  0.395,
+                    "Ø10mm": 0.617,
+                    "Ø10mm": 0.617,
+                    "Ø16mm": 1.578,
+                    "Ø16mm": 1.578,
+                    "Ø16mm": 1.578,
+                }
+
+                ms1, ms2 = st.columns(2)
+                with ms1:
+                    elemento = st.selectbox("Elemento estructural", list(RATIO_ACERO.keys()), key="elem_simple")
+
+                with ms2:
+                    diametro_simple = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_simple")
+                    
+                largo_barra_simple = st.number_input("Largo de cada barra (m)", value=6.0, key="largo_simple") 
                 
                 if RATIO_ACERO[elemento]["unidad"] == "kg/m²":
-                    area = st.number_input("Área (m²)", value=0.0)
+                    area = st.number_input("Área (m²)", value=0.0, key="area_simple")
                     kg_acero = area * RATIO_ACERO[elemento]["ratio"]
                 else:
-                    volumen = st.number_input("Volumen (m³)", value=0.0)
+                    volumen = st.number_input("Volumen (m³)", value=0.0, key="vol_simple")
                     kg_acero = volumen * RATIO_ACERO[elemento]["ratio"]
+
+                kg_por_barra = PESO_BARRAS[diametro_simple] * largo_barra_simple
+                cant_barras = kg_acero / kg_por_barra if kg_por_barra > 0 else 0
+                
                 st.info(f"Acero estimado: {kg_acero:.1f} kg")
+                st.text(f"Cantidad de barras {diametro_simple}: {cant_barras:.0f} barras de {largo_barra_simple}m")
                 st.caption(f"Ratio usado: {RATIO_ACERO[elemento]['ratio']} {RATIO_ACERO[elemento]['unidad']}")
-                
-            elif modo_acero == "Modo Detallado":
-                st.caption("Cálculo por diámetro, cantidad y longitud de barras")
-                
-                PESO_BARRAS = {
-                    "Ø8mm":  0.395,  # kg/ml
-                    "Ø10mm": 0.617,
-                    "Ø12mm": 0.888,
-                    "Ø16mm": 1.578,
-                    "Ø20mm": 2.466,
-                    "Ø25mm": 3.854,
-                }
-                diametro = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()))
-                
-                a1, a2 = st.columns(2)
-                with a1:
-                    cant_barras = st.number_input("Cantidad de barras", value=0, step=1)
-                with a2:
-                    largo_barra = st.number_input("Largo por barra (m)", value=0.0)
-                kg_acero = cant_barras * largo_barra * PESO_BARRAS[diametro]
-                ml_total = cant_barras * largo_barra
-                
-                st.info(f"Total acero: {kg_acero:.2f} kg")
-                st.text(f"Metros lineales totales: {ml_total:.2f} ml")
-                st.text(f"Peso unitario: {PESO_BARRAS[diametro]} kg/ml")
-                
