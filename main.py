@@ -71,6 +71,22 @@ def mostrar_materiales(materiales):
     m3.metric("Arena",     f"{materiales['arena_kg']} kg")
     m4.metric("Agua",      f"{materiales['agua_lt']} lt")
 
+PESO_BARRAS = {
+    "Ø8mm":  0.395,
+    "Ø10mm": 0.617,
+    "Ø12mm": 0.888,
+    "Ø16mm": 1.578,
+    "Ø20mm": 2.466,
+    "Ø25mm": 3.854,
+}
+RATIO_ACERO = {
+    "Losa":    {"ratio": 8,   "unidad": "kg/m²"},
+    "Viga":    {"ratio": 120, "unidad": "kg/m³"},
+    "Pilar":   {"ratio": 150, "unidad": "kg/m³"},
+    "Radier":  {"ratio": 5,   "unidad": "kg/m²"},
+    "Cimiento":{"ratio": 80,  "unidad": "kg/m³"},
+}
+
 # ============================
 # LOGO Y SIDEBAR
 # ============================
