@@ -271,10 +271,7 @@ elif option == "Cubicacion":
                     "Ø16mm": 1.578,
                 }
 
-                LARGO_BARRA = {
-                    "6m"
-                    "12m"
-                }
+                LARGO_BARRA = ["6m", "6.5m", "12m"]
 
                 ms1, ms2, ms3 = st.columns(3)
                 with ms1:
@@ -284,7 +281,7 @@ elif option == "Cubicacion":
                     diametro_simple = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_simple")
                     
                 with ms3:
-                    largo = st.selectbox("Largo de barra", list(LARGO_BARRA.keys()), Key="larg_simple")
+                    largo_simple = st.selectbox("Largo de barra", LARGO_BARRA, key="larg_simple")
                 
                 if RATIO_ACERO[elemento]["unidad"] == "kg/m²":
                     area = st.number_input("Área (m²)", value=0.0, key="area_simple")
@@ -293,7 +290,8 @@ elif option == "Cubicacion":
                     volumen = st.number_input("Volumen (m³)", value=0.0, key="vol_simple")
                     kg_acero = volumen * RATIO_ACERO[elemento]["ratio"]
 
-                kg_por_barra = PESO_BARRAS[diametro_simple] * LARGO_BARRA [Largo_simple]
+                largo_metros = float(largo_simple.replace("m", ""))
+                kg_por_barra = PESO_BARRAS[diametro_simple] * largo_metros
                 cant_barras = kg_acero / kg_por_barra if kg_por_barra > 0 else 0
                 
                 st.info(f"Acero estimado: {kg_acero:.1f} kg")
