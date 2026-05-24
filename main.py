@@ -242,8 +242,8 @@ elif option == "Cubicacion":
         r3.metric("Arena Total",    f"{total_arena} kg")
         r4.metric("Agua Total",     f"{total_agua} lt")
         
-        #--- Acero --- 
-    with st.expander("Cubicación de Acero (Enfierraduras)", expanded=False):
+        #--- Acero estructural --- 
+    with st.expander("Acero estructural", expanded=False):
         
             modo_acero = st.radio(
                 "Selecciona el modo de cálculo",
@@ -251,49 +251,79 @@ elif option == "Cubicacion":
                 horizontal=True
             )
         
-            if modo_acero == "Modo Simple":
-                st.caption("Cálculo por ratio de kg de acero según elemento")
+            with st.expander("1. Losa", expanded=False):
+                modo_losa = st.radio(
+                    "Modo de cálculo",
+                    ["🔨 Modo Simple", "📐 Modo Detallado"],
+                    horizontal=True,
+                    key="modo_losa"
+                )
                 
-                RATIO_ACERO = {
-                    "Losa":    {"ratio": 8,  "unidad": "kg/m²"},
-                    "Viga":    {"ratio": 120, "unidad": "kg/m³"},
-                    "Pilar":   {"ratio": 150, "unidad": "kg/m³"},
-                    "Radier":  {"ratio": 5,  "unidad": "kg/m²"},
-                    "Cimiento":{"ratio": 80, "unidad": "kg/m³"},
-                }
-
-                PESO_BARRAS = {
-                    "Ø8mm":  0.395,
-                    "Ø10mm": 0.617,
-                    "Ø10mm": 0.617,
-                    "Ø16mm": 1.578,
-                    "Ø16mm": 1.578,
-                    "Ø16mm": 1.578,
-                }
-
-                LARGO_BARRA = ["6m", "6.5m", "12m"]
-
-                ms1, ms2, ms3 = st.columns(3)
-                with ms1:
-                    elemento = st.selectbox("Elemento estructural", list(RATIO_ACERO.keys()), key="elem_simple")
-
-                with ms2:
-                    diametro_simple = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_simple")
+                if modo_losa == "🔨 Modo Simple":
+                    st.caption("Estimación por ratio kg/m²")
+                    ls1, ls2 = st.columns(2)
+                    with ls1:
+                        largo_losa = st.number_input("Largo losa (m)", value=0.0, key="ls_largo")
+                    with ls2:
+                        ancho_losa = st.number_input("Ancho losa (m)", value=0.0, key="ls_ancho")
+                        
+                    area_losa = largo_losa * ancho_losa
+                    kg_acero_losa = area_losa * 8  # ratio 8 kg/m²
                     
-                with ms3:
-                    largo_simple = st.selectbox("Largo de barra", LARGO_BARRA, key="larg_simple")
-                
-                if RATIO_ACERO[elemento]["unidad"] == "kg/m²":
-                    area = st.number_input("Área (m²)", value=0.0, key="area_simple")
-                    kg_acero = area * RATIO_ACERO[elemento]["ratio"]
-                else:
-                    volumen = st.number_input("Volumen (m³)", value=0.0, key="vol_simple")
-                    kg_acero = volumen * RATIO_ACERO[elemento]["ratio"]
+                    diametro_losa = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_losa")
+                    largo_barra_losa = st.selectbox("Largo de barra", ["6m", "12m"], key="largo_losa")
+                    largo_metros_losa = float(largo_barra_losa.replace("m", ""))
+                    
+                    kg_por_barra_losa = PESO_BARRAS[diametro_losa] * largo_metros_losa
+                    cant_barras_losa = kg_acero_losa / kg_por_barra_losa if kg_por_barra_losa > 0 else 0
+                    
+                    st.info(f"Área losa: {area_losa:.2f} m²")
+                    st.text(f"Acero estimado: {kg_acero_losa:.1f} kg")
+                    st.text(f"Cantidad de barras {diametro_losa}: {cant_barras_losa:.0f} barras de {largo_barra_losa}")
+                elif modo_losa == "📐 Modo Detallado":
+                    st.caption("Cálculo por barras en ambas direcciones")
+                    
+                    ld1, ld2 = st.columns(2)
+                    with ld1:
+                        largo_losa_d = st.number_input("Largo losa (m)", value=0.0, key="ld_largo")
+                    with ld2:
+                        ancho_losa_d = st.number_input("Ancho losa (m)", value=0.0, key="ld_ancho")
+                        
+                    st.write("**Barras dirección X (largo)**")
+                    dx1, dx2, dx3 = st.columns(3)
+                    with dx1:
+                        diam_x = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_x")
+                    with dx2:
+                        sep_x = st.selectbox("Separación (m)", [0.10, 0.15, 0.20, 0.25], key="sep_x")
+                    with dx3:
+                        largo_barra_x = st.selectbox("Largo barra", ["6m", "12m"], key="largo_x")
+                        
+                    st.write("**Barras dirección Y (ancho)**")
+                    dy1, dy2, dy3 = st.columns(3)
+                    with dy1:
+                        diam_y = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), key="diam_y")
+                    with dy2:
+                        sep_y = st.selectbox("Separación (m)", [0.10, 0.15, 0.20, 0.25], key="sep_y")
+                    with dy3:
+                        largo_barra_y = st.selectbox("Largo barra", ["6m", "12m"], key="largo_y")
+                        
+                    # Cálculo dirección X
+                    cant_barras_x = ancho_losa_d / sep_x if sep_x > 0 else 0
+                    largo_m_x = float(largo_barra_x.replace("m", ""))
+                    kg_x = cant_barras_x * largo_losa_d * PESO_BARRAS[diam_x
+                    barras_x = (cant_barras_x * largo_losa_d) / largo_m_x
 
-                largo_metros = float(largo_simple.replace("m", ""))
-                kg_por_barra = PESO_BARRAS[diametro_simple] * largo_metros
-                cant_barras = kg_acero / kg_por_barra if kg_por_barra > 0 else 0
-                
-                st.info(f"Acero estimado: {kg_acero:.1f} kg")
-                st.text(f"Cantidad de barras {diametro_simple}: {cant_barras:.0f} barras de {largo_simple}")
-                st.caption(f"Ratio usado: {RATIO_ACERO[elemento]['ratio']} {RATIO_ACERO[elemento]['unidad']}")
+                    # Cálculo dirección Y
+                    cant_barras_y = largo_losa_d / sep_y if sep_y > 0 else 0
+                    largo_m_y = float(largo_barra_y.replace("m", ""))
+                    kg_y = cant_barras_y * ancho_losa_d * PESO_BARRAS[diam_y]
+                    barras_y = (cant_barras_y * ancho_losa_d) / largo_m_y
+                            
+                    kg_total_losa = kg_x + kg_y
+
+                    st.write("---")
+                    st.info(f"Acero total losa: {kg_total_losa:.1f} kg")
+                    st.text(f"Dirección X: {barras_x:.0f} barras {diam_x} de {largo_barra_x}")
+                    st.text(f"Dirección Y: {barras_y:.0f} barras {diam_y} de {largo_barra_y}")
+        st.text(f"Kg dirección X: {kg_x:.1f} kg")
+        st.text(f"Kg dirección Y: {kg_y:.1f} kg")
