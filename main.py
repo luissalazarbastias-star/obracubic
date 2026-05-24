@@ -81,10 +81,24 @@ if option == "Panel General":
 # CALCULADORA DE HORMIGÓN
 # ============================
 elif option == "Calculadora de Obra":
-    with st.expander("Cubicación de Hormigón", expanded=False):
+    with st.expander("Hormigón y Movimiento de tierra", expanded=False):
 
-        # --- 1. Emplantillado ---
-        with st.expander("1. Emplantillado", expanded=False):
+        # --- 1. Excavacion---
+        with st.expander("1. Excavación", expanded=False):
+        ex1, ex2, ex3 = st.columns(3)
+        with ex1:
+            exc_largo = st.number_input("Largo excavación (m)", value=0.0, key="exc_largo")
+        with ex2:
+            exc_ancho = st.number_input("Ancho excavación (m)", value=0.0, key="exc_ancho")
+        with ex3:
+            exc_profundidad = st.number_input("Profundidad (m)", value=0.0, key="exc_prof")
+        exc_perdida = st.slider("% Esponjamiento", 0, 30, 20, key="exc_perdida")
+
+        vol_exc = (exc_largo * exc_ancho * exc_profundidad) * (1 + (exc_perdida / 100))
+        st.info(f"Volumen Excavación: {vol_exc:.2f} m³")
+
+        # --- 2. Emplantillado ---
+        with st.expander("2. Emplantillado", expanded=False):
             emp1, emp2, emp3 = st.columns(3)
             with emp1:
                 emp_largo = st.number_input("Largo emplantillado (m)", value=0.0, key="emp_largo")
@@ -104,8 +118,8 @@ elif option == "Calculadora de Obra":
             mat_emp = calcular_materiales(vol_emp, dos_emp, desp_emp / 100)
             mostrar_materiales(mat_emp)
 
-        # --- 2. Cimiento ---
-        with st.expander("2. Cimiento", expanded=False):
+        # --- 3. Cimiento ---
+        with st.expander("3. Cimiento", expanded=False):
             c1, c2, c3 = st.columns(3)
             with c1:
                 n_pilares = st.number_input("Cantidad de Pilares", value=4, step=1, key="pil_cant")
@@ -125,8 +139,8 @@ elif option == "Calculadora de Obra":
             mat_cim = calcular_materiales(vol_pilares, dos_cim, desp_cim / 100)
             mostrar_materiales(mat_cim)
 
-        # --- 3. Sobrecimiento ---
-        with st.expander("3. Sobrecimiento (Con Descuento de Vanos)", expanded=False):
+        # --- 4. Sobrecimiento ---
+        with st.expander("4. Sobrecimiento (Con Descuento de Vanos)", expanded=False):
             st.write("**Dimensiones Brutas**")
             sc1, sc2, sc3 = st.columns(3)
             with sc1:
@@ -160,8 +174,8 @@ elif option == "Calculadora de Obra":
             mat_sc = calcular_materiales(vol_sc_neto, dos_sc, desp_sc / 100)
             mostrar_materiales(mat_sc)
 
-        # --- 4. Radier ---
-        with st.expander("4. Radier", expanded=False):
+        # --- 5. Radier ---
+        with st.expander("5. Radier", expanded=False):
             ra1, ra2 = st.columns(2)
             with ra1:
                 rad_largo = st.number_input("Largo Radier (m)", value=0.0, key="radier_largo")
