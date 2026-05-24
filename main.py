@@ -950,9 +950,9 @@ if option == "Cubicacion":
             st.write("---")
             st.info(f"Cantidad de esquineros: {cant_esquinas} piezas de {largo_esq}m")    
 
-     # ============================
-        # EXPORTAR A PDF
-        # ============================
+# ============================
+    # EXPORTAR A PDF
+    # ============================
         st.write("---")
         st.subheader("📄 Exportar Cubicación")
         nombre_proyecto = st.text_input(
@@ -980,5 +980,5 @@ if option == "Cubicacion":
                 data=pdf_buffer,
                 file_name=nombre_archivo,
                 mime="application/pdf",
-            )            
+            )                
 
