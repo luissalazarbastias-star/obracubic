@@ -137,25 +137,26 @@ def generar_pdf_cubicacion(
     story = []
     fecha_hoy = datetime.now().strftime("%d/%m/%Y %H:%M")
 
-    # Encabezado
-    story.append(Paragraph("ObraCubic", estilo_titulo))
-    story.append(Paragraph("Grandes Estructuras se Levantan con Decisiones Precisas", estilo_subtitulo))
-    story.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=6))
+    # Encabezado con logo
+    import urllib.request
+    from reportlab.platypus import Image as RLImage
+    try:
+        logo_url = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Dise%C3%B1o%20sin%20t%C3%ADtulo.png"
+        logo_data = urllib.request.urlopen(logo_url).read()
+        logo_buffer = io.BytesIO(logo_data)
+        logo = RLImage(logo_buffer, width=3*cm, height=3*cm)
+    except:
+        logo = Paragraph("", estilo_normal)
 
-    datos_header = [
-        ["Proyecto:", nombre_proyecto or "Sin nombre"],
-        ["Fecha:", fecha_hoy],
-        ["Volumen Total:", f"{total_hormigon:.2f} m3"],
-    ]
-    tabla_header = Table(datos_header, colWidths=[4*cm, 13*cm])
-    tabla_header.setStyle(TableStyle([
-        ("TEXTCOLOR", (0, 0), (0, -1), NARANJA),
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    encabezado = Table(
+        [[logo, Paragraph("ObraCubic<br/><font size=9 color='grey'>Grandes Estructuras se Levantan con Decisiones Precisas</font>", estilo_titulo)]],
+        colWidths=[3.5*cm, 13.5*cm]
+    )
+    encabezado.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ]))
-    story.append(tabla_header)
-    story.append(Spacer(1, 10))
+    story.append(encabezado)
+    story.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=6))
 
     # Sección Hormigón
     story.append(Paragraph("CUBICACION DE HORMIGON", estilo_seccion))
