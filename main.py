@@ -84,18 +84,18 @@ elif option == "Calculadora de Obra":
     with st.expander("Hormigón y Movimiento de tierra", expanded=False):
 
         # --- 1. Excavacion---
-    with st.expander("1. Excavación", expanded=False):
-    ex1, ex2, ex3 = st.columns(3)
-        with ex1:
-            exc_largo = st.number_input("Largo excavación (m)", value=0.0, key="exc_largo")
-        with ex2:
-            exc_ancho = st.number_input("Ancho excavación (m)", value=0.0, key="exc_ancho")
-        with ex3:
-            exc_profundidad = st.number_input("Profundidad (m)", value=0.0, key="exc_prof")
-        exc_perdida = st.slider("% Esponjamiento", 0, 30, 20, key="exc_perdida")
+        with st.expander("1. Excavación", expanded=False):
+            ex1, ex2, ex3 = st.columns(3)
+            with ex1:
+                exc_largo = st.number_input("Largo excavación (m)", value=0.0, key="exc_largo")
+            with ex2:
+                exc_ancho = st.number_input("Ancho excavación (m)", value=0.0, key="exc_ancho")
+            with ex3:
+                exc_profundidad = st.number_input("Profundidad (m)", value=0.0, key="exc_prof")
+            exc_perdida = st.slider("% Esponjamiento", 0, 30, 20, key="exc_perdida")
 
-        vol_exc = (exc_largo * exc_ancho * exc_profundidad) * (1 + (exc_perdida / 100))
-        st.info(f"Volumen Excavación: {vol_exc:.2f} m³")
+            vol_exc = (exc_largo * exc_ancho * exc_profundidad) * (1 + (exc_perdida / 100))
+            st.info(f"Volumen Excavación: {vol_exc:.2f} m³")
 
         # --- 2. Emplantillado ---
         with st.expander("2. Emplantillado", expanded=False):
