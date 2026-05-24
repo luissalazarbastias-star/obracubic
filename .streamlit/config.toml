@@ -16,3 +16,6 @@ font = "sans serif"
 
 [browser]
 gatherUsageStats = false
+
+[ui]
+hideTopBar = true
