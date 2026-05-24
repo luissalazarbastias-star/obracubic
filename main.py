@@ -271,14 +271,20 @@ elif option == "Cubicacion":
                     "Ø16mm": 1.578,
                 }
 
-                ms1, ms2 = st.columns(2)
+                LARGO_BARRA = {
+                    "6m"
+                    "12m"
+                }
+
+                ms1, ms2, ms3 = st.columns(3)
                 with ms1:
                     elemento = st.selectbox("Elemento estructural", list(RATIO_ACERO.keys()), key="elem_simple")
 
                 with ms2:
                     diametro_simple = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_simple")
-                    
-                largo_barra_simple = st.number_input("Largo de cada barra (m)", value=6.0, key="largo_simple") 
+
+                with ms3:
+                    largo = st.selectbox("Largo de barra", list(LARGO_BARRA.keys()), Key="larg_simple")
                 
                 if RATIO_ACERO[elemento]["unidad"] == "kg/m²":
                     area = st.number_input("Área (m²)", value=0.0, key="area_simple")
