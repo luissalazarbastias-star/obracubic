@@ -163,6 +163,23 @@ def generar_pdf_cubicacion(
     story.append(encabezado)
     story.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=6))
 
+    datos_header = [
+        ["Proyecto:", nombre_proyecto or "Sin nombre"],
+        ["Fecha:", fecha_hoy],
+        ["Volumen Total:", f"{total_hormigon:.2f} m3"],
+    ]
+    tabla_header = Table(datos_header, colWidths=[4*cm, 13*cm])
+    tabla_header.setStyle(TableStyle([
+        ("TEXTCOLOR", (0, 0), (0, -1), NARANJA),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    story.append(tabla_header)
+    story.append(Spacer(1, 10))
+
+    # Sección Hormigón
+
     # Sección Hormigón
     story.append(Paragraph("CUBICACION DE HORMIGON", estilo_seccion))
 
