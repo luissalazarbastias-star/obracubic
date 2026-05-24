@@ -334,7 +334,7 @@ option = st.sidebar.radio("Ir a:", ["Cubicacion"])
 # ============================
 # CUBICACIÓN
 # ============================
-elif option == "Cubicacion":
+if option == "Cubicacion":
     st.subheader("CUBICACIONES")
     with st.expander("Hormigón y Movimiento de tierra", expanded=False):
 
