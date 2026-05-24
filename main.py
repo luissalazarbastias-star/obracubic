@@ -312,7 +312,10 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", ["Panel General", "Cubicacion"])
+option = st.sidebar.radio("Ir a:", 
+    ["Panel General", "Cubicacion"],
+    index=0 if st.session_state.get("modulo", "Panel General") == "Panel General" else 1
+)
 
 # ============================
 # PANEL GENERAL
@@ -359,50 +362,28 @@ if option == "Panel General":
 
     st.write("---")
 
-    # --- Accesos rápidos ---
+# --- Accesos rápidos ---
     st.subheader("Accesos Rápidos")
     st.caption("Ir directamente a una partida")
     a1, a2, a3, a4 = st.columns(4)
     with a1:
-        st.markdown("**Excavación**")
-        st.caption("Movimiento de tierra")
+        if st.button("Excavación", use_container_width=True):
+            st.session_state["modulo"] = "Cubicacion"
+            st.rerun()
     with a2:
-        st.markdown("**Hormigón**")
-        st.caption("Emplantillado, cimiento, sobrecimiento, radier")
+        if st.button("Hormigón", use_container_width=True):
+            st.session_state["modulo"] = "Cubicacion"
+            st.rerun()
     with a3:
-        st.markdown("**Acero**")
-        st.caption("Losa, pilar, viga, radier")
+        if st.button("Acero", use_container_width=True):
+            st.session_state["modulo"] = "Cubicacion"
+            st.rerun()
     with a4:
-        st.markdown("**Exportar**")
-        st.caption("Descargar PDF de cubicación")
+        if st.button("Exportar PDF", use_container_width=True):
+            st.session_state["modulo"] = "Cubicacion"
+            st.rerun()
 
     st.write("---")
-
-    # --- Estadísticas simples ---
-    st.subheader("Estadísticas de la Obra")
-
-    if total_vol_p > 0:
-        e1, e2, e3 = st.columns(3)
-        with e1:
-            st.metric("Volumen Emplantillado", f"{vol_emp_p:.2f} m³")
-            st.metric("Volumen Cimiento",      f"{vol_pilares_p:.2f} m³")
-        with e2:
-            st.metric("Volumen Sobrecimiento", f"{vol_sc_p:.2f} m³")
-            st.metric("Volumen Radier",        f"{vol_radier_p:.2f} m³")
-        with e3:
-            if total_vol_p > 0:
-                st.metric("Partida mayor", 
-                    max(
-                        [("Emplantillado", vol_emp_p),
-                         ("Cimiento", vol_pilares_p),
-                         ("Sobrecimiento", vol_sc_p),
-                         ("Radier", vol_radier_p)],
-                        key=lambda x: x[1]
-                    )[0]
-                )
-            st.metric("Total sacos cemento", f"{total_sacos_p} sacos")
-    else:
-        st.info("Las estadísticas aparecerán después de ingresar la cubicación.")
 # ============================
 # CUBICACIÓN
 # ============================
