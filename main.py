@@ -371,9 +371,8 @@ elif option == "Cubicacion":
                             diam_estribo = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_estribo")
                         p7, p8 = st.columns(2)
 
-                    
                         with p7:
-                            ancho_pilar = st.number_input("Ancho pilar (m)", value=0.30, key="ancho)
+                            ancho_pilar = st.number_input("Ancho pilar (m)", value=0.30, key="ancho_pil")
                         with p8:
                             largo_pilar = st.number_input("Largo pilar (m)", value=0.30, key="largo_pil")
                             
