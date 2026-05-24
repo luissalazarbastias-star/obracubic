@@ -421,7 +421,6 @@ elif option == "Cubicacion":
                             sep_be = st.selectbox("Separación (m)", [0.10, 0.15, 0.20], key="sep_be")
                             
                        diam_be = st.selectbox("Diámetro estribo", list(PESO_BARRAS.keys()), index=0, key="diam_be")
-
                        # Cálculo
                         ml_bl = cant_bl * alto_pil_d * cant_pil_d
                         kg_bl = ml_bl * PESO_BARRAS[diam_bl]
