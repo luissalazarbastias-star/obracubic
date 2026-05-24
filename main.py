@@ -13,6 +13,12 @@ st.set_page_config(
     page_icon="🏗️"
 )
 
+st.markdown("""
+    <style>
+    [data-testid="stToolbar"] {visibility: hidden !important;}
+    </style>
+""", unsafe_allow_html=True)
+
 # ============================
 # DATOS DE DOSIFICACIÓN (CBB)
 # ============================
