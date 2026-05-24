@@ -325,5 +325,5 @@ elif option == "Cubicacion":
                     st.info(f"Acero total losa: {kg_total_losa:.1f} kg")
                     st.text(f"Dirección X: {barras_x:.0f} barras {diam_x} de {largo_barra_x}")
                     st.text(f"Dirección Y: {barras_y:.0f} barras {diam_y} de {largo_barra_y}")
-        st.text(f"Kg dirección X: {kg_x:.1f} kg")
-        st.text(f"Kg dirección Y: {kg_y:.1f} kg")
+                    st.text(f"Kg dirección X: {kg_x:.1f} kg")
+                    st.text(f"Kg dirección Y: {kg_y:.1f} kg")
