@@ -80,8 +80,8 @@ if option == "Panel General":
 # ============================
 # CALCULADORA DE HORMIGÓN
 # ============================
-elif option == "Calculadora de Hormigón":
-    st.subheader("Cubicación Técnica de la Obra")
+elif option == "Calculadora de Obra":
+    with st.expander("Cubicación de Hormigón", expanded=False):
 
     # --- 1. Emplantillado ---
     with st.expander("1. Emplantillado", expanded=False):
