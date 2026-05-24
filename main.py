@@ -105,7 +105,7 @@ if option == "Panel General":
                          index=1,
                          key="dos_rad",
                          help=DOSIFICACIONES["G-20"]["descripcion"])
-    mat_rad = calcular_materiales(vol_radier, dos_rad / 100)
+    mat_rad = calcular_materiales(vol_radier, dos_rad)
     mostrar_materiales(mat_rad)
 
 # ============================
@@ -145,7 +145,7 @@ elif option == "Calculadora de Obra":
             dos_emp = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                    key="dos_emp",
                                    help=DOSIFICACIONES["G-15"]["descripcion"])
-            mat_emp = calcular_materiales(vol_emp, dos_emp / 100)
+            mat_emp = calcular_materiales(vol_emp, dos_emp)
             mostrar_materiales(mat_emp)
 
         # --- 3. Cimiento ---
@@ -165,7 +165,7 @@ elif option == "Calculadora de Obra":
                                    index=1,
                                    key="dos_cim",
                                    help=DOSIFICACIONES["G-20"]["descripcion"])
-            mat_cim = calcular_materiales(vol_pilares, dos_cim / 100)
+            mat_cim = calcular_materiales(vol_pilares, dos_cim)
             mostrar_materiales(mat_cim)
 
         # --- 4. Sobrecimiento ---
@@ -199,7 +199,7 @@ elif option == "Calculadora de Obra":
                                   index=1,
                                   key="dos_sc",
                                   help=DOSIFICACIONES["G-20"]["descripcion"])
-            mat_sc = calcular_materiales(vol_sc_neto, dos_sc / 100)
+            mat_sc = calcular_materiales(vol_sc_neto, dos_sc)
             mostrar_materiales(mat_sc)
 
         # --- 5. Radier ---
@@ -219,7 +219,7 @@ elif option == "Calculadora de Obra":
                                    index=1,
                                    key="dos_rad",
                                    help=DOSIFICACIONES["G-20"]["descripcion"])
-            mat_rad = calcular_materiales(vol_radier, dos_rad / 100)
+            mat_rad = calcular_materiales(vol_radier, dos_rad)
             mostrar_materiales(mat_rad)
 
         # --- Total general ---
