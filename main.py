@@ -135,7 +135,8 @@ def generar_pdf_cubicacion(
         fontSize=8, textColor=colors.grey, alignment=1)
 
     story = []
-    fecha_hoy = datetime.now().strftime("%d/%m/%Y %H:%M")
+    zona_chile = timezone(timedelta(hours=-4))
+    fecha_hoy = datetime.now(zona_chile).strftime("%d/%m/%Y %H:%M")
 
     # Encabezado con logo arriba a la derecha
     import urllib.request
