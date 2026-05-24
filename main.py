@@ -243,7 +243,7 @@ elif option == "Cubicacion":
         r4.metric("Agua Total",     f"{total_agua} lt")
         
         #--- Acero --- 
-        with st.expander("Cubicación de Acero (Enfierraduras)", expanded=False):
+    with st.expander("Cubicación de Acero (Enfierraduras)", expanded=False):
 
             modo_acero = st.radio(
                 "Selecciona el modo de cálculo",
