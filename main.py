@@ -141,7 +141,7 @@ def generar_pdf_cubicacion(
     import urllib.request
     from reportlab.platypus import Image as RLImage
     try:
-        logo_url = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Dise%C3%B1o%20sin%20t%C3%ADtulo.png"
+        logo_url = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%202.png"
         logo_data = urllib.request.urlopen(logo_url).read()
         logo_buffer = io.BytesIO(logo_data)
         logo = RLImage(logo_buffer, width=2*cm, height=2*cm)
@@ -289,7 +289,7 @@ def generar_pdf_cubicacion(
 # ============================
 # LOGO Y SIDEBAR
 # ============================
-URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Dise%C3%B1o%20sin%20t%C3%ADtulo.png"
+URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%201.png"
 
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
