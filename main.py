@@ -170,7 +170,7 @@ elif option == "Calculadora de Hormigón":
             rad_largo = st.number_input("Largo Radier (m)", value=0, key="radier_largo")
             rad_ancho = st.number_input("Ancho Radier (m)", value=0, key="radier_ancho")
         with ra2:
-            rad_espesor = st.number_input("Espesor Radier (m)", value=0, key="radier_espesor")
+            rad_espesor = st.number_input("Espesor Radier (m)", value=0.0, key="radier_espesor")
             rad_perdida = st.slider("% Pérdida Radier", 0, 15, 5, key="radier_perdida")
 
         vol_radier = (rad_largo * rad_ancho * rad_espesor) * (1 + (rad_perdida / 100))
