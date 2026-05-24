@@ -303,6 +303,25 @@ def generar_pdf_cubicacion(
     buffer.seek(0)
     return buffer
 
+# Inicializar session_state
+if "vol_emp" not in st.session_state:
+    st.session_state["vol_emp"] = 0.0
+if "vol_pilares" not in st.session_state:
+    st.session_state["vol_pilares"] = 0.0
+if "vol_sc_neto" not in st.session_state:
+    st.session_state["vol_sc_neto"] = 0.0
+if "vol_radier" not in st.session_state:
+    st.session_state["vol_radier"] = 0.0
+if "total_sacos" not in st.session_state:
+    st.session_state["total_sacos"] = 0
+if "total_gravilla" not in st.session_state:
+    st.session_state["total_gravilla"] = 0
+if "total_arena" not in st.session_state:
+    st.session_state["total_arena"] = 0
+if "total_agua" not in st.session_state:
+    st.session_state["total_agua"] = 0
+if "modulo" not in st.session_state:
+    st.session_state["modulo"] = "Panel General"
 
 # ============================
 # LOGO Y SIDEBAR
