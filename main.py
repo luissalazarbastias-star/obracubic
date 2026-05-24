@@ -900,8 +900,10 @@ if option == "Cubicacion":
         # DATOS SEGÚN MANUAL METALCON
         # ============================
         MONTANTES = {
-            "Montante Normal 60x38x0,5 - 2,40m":  {"largo": 2.40, "peso": 0.56},
-            "Montante Normal 60x38x0,5 - 3,00m":  {"largo": 3.00, "peso": 0.56},
+            # Perforados
+            "Montante Normal Perf. 60x38x0,5 - 2,40m":  {"largo": 2.40, "peso": 0.56},
+            "Montante Normal Perf. 60x38x0,5 - 3,00m":  {"largo": 3.00, "peso": 0.56},
+            # Económico (sin perforar)
             "Montante Económico 38x38x0,5 - 2,40m": {"largo": 2.40, "peso": 0.48},
             "Montante Económico 38x38x0,5 - 3,00m": {"largo": 3.00, "peso": 0.48},
         }
@@ -946,6 +948,11 @@ if option == "Cubicacion":
             st.caption("Se instala cada 40 o 60 cm según revestimiento")
 
             montante_tipo = st.selectbox("Tipo de montante", list(MONTANTES.keys()), key="montante_tipo")
+
+            if "Perf" in montante_tipo:
+                st.caption("✅ Perforado: permite pasar instalaciones eléctricas y sanitarias por dentro")
+            else:
+                st.caption("⚠️ Sin perforaciones: usar cuando no pasan instalaciones por el tabique")
             
             mo1, mo2 = st.columns(2)
             with mo1:
