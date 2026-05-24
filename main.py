@@ -72,8 +72,6 @@ option = st.sidebar.radio("Ir a:", ["Panel General", "Calculadora de Hormigón"]
 # PANEL GENERAL
 # ============================
 if option == "Panel General":
-    st.image(URL_DEL_LOGO, use_container_width=True)
-    st.write("---")
     st.markdown("<h3 style='text-align: center; color: #FF6B00;'><i>'Grandes estructuras se levantan con decisiones precisas.'</i></h3>", unsafe_allow_html=True)
     st.write("---")
     st.subheader("Estado del Proyecto")
