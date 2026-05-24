@@ -319,7 +319,7 @@ if "mat_cim" not in st.session_state:
 if "mat_sc" not in st.session_state:
     st.session_state["mat_sc"] = {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}
 if "mat_rad" not in st.session_state:
-    st.session_state["mat_rad
+    st.session_state["mat_rad"] = {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}
 
 # ============================
 # LOGO Y SIDEBAR
