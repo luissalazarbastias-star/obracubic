@@ -104,7 +104,7 @@ if option == "Panel General":
     dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                          index=1,
                          key="dos_rad",
-                         help=DOSIFICACIONES["G-20"])
+                         help=DOSIFICACIONES["G-20"]
     mat_rad = calcular_materiales(vol_radier, dos_rad/ 100)
     mostrar_materiales(mat_rad)
 
@@ -144,7 +144,7 @@ elif option == "Calculadora de Obra":
 
             dos_emp = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                    key="dos_emp",
-                                   help=DOSIFICACIONES["G-15"])
+                                   help=DOSIFICACIONES["G-15"]
             mat_emp = calcular_materiales(vol_emp, dos_emp / 100)
             mostrar_materiales(mat_emp)
 
@@ -164,7 +164,7 @@ elif option == "Calculadora de Obra":
             dos_cim = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                    index=1,
                                    key="dos_cim",
-                                   help=DOSIFICACIONES["G-20"])
+                                   help=DOSIFICACIONES["G-20"]
             mat_cim = calcular_materiales(vol_pilares, dos_cim / 100)
             mostrar_materiales(mat_cim)
 
@@ -198,7 +198,7 @@ elif option == "Calculadora de Obra":
             dos_sc = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                   index=1,
                                   key="dos_sc",
-                                  help=DOSIFICACIONES["G-20"])
+                                  help=DOSIFICACIONES["G-20"]
             mat_sc = calcular_materiales(vol_sc_neto, dos_sc / 100)
             mostrar_materiales(mat_sc)
 
@@ -218,7 +218,7 @@ elif option == "Calculadora de Obra":
             dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
                                    index=1,
                                    key="dos_rad",
-                                   help=DOSIFICACIONES["G-20"])
+                                   help=DOSIFICACIONES["G-20"]
             mat_rad = calcular_materiales(vol_radier, dos_rad / 100)
             mostrar_materiales(mat_rad)
 
