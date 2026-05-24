@@ -283,8 +283,8 @@ elif option == "Cubicacion":
                 with ms2:
                     diametro_simple = st.selectbox("Diámetro de barra", list(PESO_BARRAS.keys()), key="diam_simple")
 
-                with ms3:
-                    largo = st.selectbox("Largo de barra", list(LARGO_BARRA.keys()), Key="larg_simple")
+            with ms3:
+                largo = st.selectbox("Largo de barra", list(LARGO_BARRA.keys()), Key="larg_simple")
                 
                 if RATIO_ACERO[elemento]["unidad"] == "kg/m²":
                     area = st.number_input("Área (m²)", value=0.0, key="area_simple")
