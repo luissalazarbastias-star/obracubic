@@ -164,7 +164,7 @@ elif option == "Calculadora de Hormigón":
         mostrar_materiales(mat_sc)
 
     # --- 4. Radier ---
-    with st.expander("4. Radier", expanded=True):
+    with st.expander("4. Radier", expanded=False):
         ra1, ra2 = st.columns(2)
         with ra1:
             rad_largo = st.number_input("Largo Radier (m)", value=0, key="radier_largo")
