@@ -894,7 +894,7 @@ if option == "Cubicacion":
                 st.text(f"Estribos: {n_estribos_cim:.0f} estribos {diam_estribo_cim} c/{sep_estribo_cim}m → {kg_estribo_cim:.1f} kg") 
 
     # --- Acero No estructural ---       
-    with st.expander("🔩 Acero No Estructural (Metalcon Tabiques)", expanded=False):
+    with st.expander(" Acero No Estructural (Tabiques Metalcon)", expanded=False):
 
         # ============================
         # DATOS SEGÚN MANUAL METALCON
