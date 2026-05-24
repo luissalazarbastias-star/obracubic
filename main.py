@@ -1001,19 +1001,18 @@ if option == "Cubicacion":
             st.info(f"Cantidad de esquineros: {cant_esquinas} piezas de {largo_esq}m") 
 
             # Guardar en session_state para el PDF
-            st.session_state["canal_tipo"] = canal_tipo
-            st.session_state["cant_piezas_canal"] = cant_piezas_canal
-            st.session_state["ml_canal"] = ml_canal
-            st.session_state["largo_canal"] = largo_canal
+            st.session_state["pdf_canal_tipo"] = canal_tipo
+            st.session_state["pdf_cant_piezas_canal"] = cant_piezas_canal
+            st.session_state["pdf_ml_canal"] = ml_canal
+            st.session_state["pdf_largo_canal"] = largo_canal
 
-            st.session_state["montante_tipo"] = montante_tipo
-            st.session_state["total_montantes"] = total_montantes
-            st.session_state["largo_montante"] = largo_montante
+            st.session_state["pdf_montante_tipo"] = montante_tipo
+            st.session_state["pdf_total_montantes"] = total_montantes
+            st.session_state["pdf_largo_montante"] = largo_montante
 
-            st.session_state["esq_tipo"] = esq_tipo
-            st.session_state["cant_esquinas"] = cant_esquinas
-            st.session_state["largo_esq"] = largo_esq
-
+            st.session_state["pdf_esq_tipo"] = esq_tipo
+            st.session_state["pdf_cant_esquinas"] = cant_esquinas
+            st.session_state["pdf_largo_esq"] = largo_esq
 # ============================
 # EXPORTAR A PDF
 # ============================
@@ -1037,16 +1036,16 @@ if st.button("📄 Generar PDF", type="primary"):
                 total_gravilla=total_gravilla,
                 total_arena=total_arena,
                 total_agua=total_agua,
-                canal_tipo=st.session_state.get("canal_tipo", ""),
-                cant_piezas_canal=st.session_state.get("cant_piezas_canal", 0),
-                ml_canal=st.session_state.get("ml_canal", 0),
-                largo_canal=st.session_state.get("largo_canal", 0),
-                montante_tipo=st.session_state.get("montante_tipo", ""),
-                total_montantes=st.session_state.get("total_montantes", 0),
-                largo_montante=st.session_state.get("largo_montante", 0),
-                esq_tipo=st.session_state.get("esq_tipo", ""),
-                cant_esquinas=st.session_state.get("cant_esquinas", 0),
-                largo_esq=st.session_state.get("largo_esq", 0),
+                canal_tipo=st.session_state.get("pdf_canal_tipo", ""),
+                cant_piezas_canal=st.session_state.get("pdf_cant_piezas_canal", 0),
+                ml_canal=st.session_state.get("pdf_ml_canal", 0),
+                largo_canal=st.session_state.get("pdf_largo_canal", 0),
+                montante_tipo=st.session_state.get("pdf_montante_tipo", ""),
+                total_montantes=st.session_state.get("pdf_total_montantes", 0),
+                largo_montante=st.session_state.get("pdf_largo_montante", 0),
+                esq_tipo=st.session_state.get("pdf_esq_tipo", ""),
+                cant_esquinas=st.session_state.get("pdf_cant_esquinas", 0),
+                largo_esq=st.session_state.get("pdf_largo_esq", 0),
             )
     nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
     st.download_button(
