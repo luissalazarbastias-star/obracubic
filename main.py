@@ -1027,17 +1027,27 @@ nombre_proyecto = st.text_input(
 
 if st.button("📄 Generar PDF", type="primary"):
     pdf_buffer = generar_pdf_cubicacion(
-        nombre_proyecto=nombre_proyecto,
-        vol_emp=vol_emp, dos_emp=dos_emp, mat_emp=mat_emp,
-        vol_pilares=vol_pilares, dos_cim=dos_cim, mat_cim=mat_cim,
-        vol_sc_neto=vol_sc_neto, dos_sc=dos_sc, mat_sc=mat_sc,
-        vol_radier=vol_radier, dos_rad=dos_rad, mat_rad=mat_rad,
-        total_hormigon=total_hormigon,
-        total_sacos=total_sacos,
-        total_gravilla=total_gravilla,
-        total_arena=total_arena,
-        total_agua=total_agua,
-    )
+                nombre_proyecto=nombre_proyecto,
+                vol_emp=vol_emp, dos_emp=dos_emp, mat_emp=mat_emp,
+                vol_pilares=vol_pilares, dos_cim=dos_cim, mat_cim=mat_cim,
+                vol_sc_neto=vol_sc_neto, dos_sc=dos_sc, mat_sc=mat_sc,
+                vol_radier=vol_radier, dos_rad=dos_rad, mat_rad=mat_rad,
+                total_hormigon=total_hormigon,
+                total_sacos=total_sacos,
+                total_gravilla=total_gravilla,
+                total_arena=total_arena,
+                total_agua=total_agua,
+                canal_tipo=st.session_state.get("canal_tipo", ""),
+                cant_piezas_canal=st.session_state.get("cant_piezas_canal", 0),
+                ml_canal=st.session_state.get("ml_canal", 0),
+                largo_canal=st.session_state.get("largo_canal", 0),
+                montante_tipo=st.session_state.get("montante_tipo", ""),
+                total_montantes=st.session_state.get("total_montantes", 0),
+                largo_montante=st.session_state.get("largo_montante", 0),
+                esq_tipo=st.session_state.get("esq_tipo", ""),
+                cant_esquinas=st.session_state.get("cant_esquinas", 0),
+                largo_esq=st.session_state.get("largo_esq", 0),
+            )
     nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
     st.download_button(
         label="⬇️ Descargar PDF",
