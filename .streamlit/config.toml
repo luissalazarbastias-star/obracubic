@@ -1,5 +1,6 @@
 [client]
-showErrorDetails = false
+showSidebarNavigation = false
+toolbarMode = "minimal"
 
 [toolbar]
 show = false
