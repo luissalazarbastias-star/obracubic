@@ -78,7 +78,7 @@ if option == "Panel General":
     st.info("Aquí podrás ver el resumen de tus obras y el ahorro generado por la optimización de materiales.")
     
     with st.subheader("Radier"):
-    ra1, ra2 = st.columns(2)
+    rad1, rad2 = st.columns(2)
     with ra1:
             rad_largo = st.number_input("Largo Radier (m)", value=0.0, key="radier_largo")
             rad_ancho = st.number_input("Ancho Radier (m)", value=0.0, key="radier_ancho")
