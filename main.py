@@ -10,29 +10,37 @@ st.set_page_config(
 # DATOS DE DOSIFICACIÓN (CBB)
 # ============================
 DOSIFICACIONES = {
-    "H-15": {
-        "descripcion": "Emplantillado, sobrecimientos simples",
+    "G-5": {
+        "cemento_sacos": round(170 / 25),  # 7 sacos
+        "gravilla_kg": 1025,
+        "arena_kg": 910,
+        "agua_lt": 195,
+    },
+    "G-10":{
+        "cemento_sacos": round(230 / 25),  # 9 sacos
+        "gravilla_kg": 1055,
+        "arena_kg": 835,
+        "agua_lt": 195, 
+   },
+    "G-15": {
         "cemento_sacos": round(275 / 25),  # 11 sacos
         "gravilla_kg": 1070,
         "arena_kg": 800,
         "agua_lt": 195,
     },
-    "H-20": {
-        "descripcion": "Radier, cimientos normales",
+    "G-20": {
         "cemento_sacos": round(340 / 25),  # 14 sacos
         "gravilla_kg": 1095,
         "arena_kg": 715,
         "agua_lt": 200,
     },
-    "H-25": {
-        "descripcion": "Losas estructurales, pilares",
+    "G-25": {
         "cemento_sacos": round(380 / 25),  # 15 sacos
         "gravilla_kg": 1120,
         "arena_kg": 645,
         "agua_lt": 200,
     },
-    "H-30": {
-        "descripcion": "Obras especiales, alta resistencia",
+    "G-30": {
         "cemento_sacos": round(440 / 25),  # 18 sacos
         "gravilla_kg": 1145,
         "arena_kg": 585,
@@ -40,9 +48,9 @@ DOSIFICACIONES = {
     },
 }
 
-def calcular_materiales(volumen_m3, dosificacion, desperdicio=0.05):
+def calcular_materiales(volumen_m3, dosificacion):
     dos = DOSIFICACIONES[dosificacion]
-    vol = volumen_m3 * (1 + desperdicio)
+    vol = volumen_m3
     return {
         "cemento_sacos": round(vol * dos["cemento_sacos"]),
         "gravilla_kg":   round(vol * dos["gravilla_kg"]),
