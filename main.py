@@ -310,7 +310,7 @@ elif option == "Cubicacion":
                     # Cálculo dirección X
                     cant_barras_x = ancho_losa_d / sep_x if sep_x > 0 else 0
                     largo_m_x = float(largo_barra_x.replace("m", ""))
-                    kg_x = cant_barras_x * largo_losa_d * PESO_BARRAS[diam_x
+                    kg_x = cant_barras_x * largo_losa_d * PESO_BARRAS[diam_x]
                     barras_x = (cant_barras_x * largo_losa_d) / largo_m_x
 
                     # Cálculo dirección Y
