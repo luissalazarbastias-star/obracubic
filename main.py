@@ -114,6 +114,9 @@ def generar_pdf_cubicacion(
     acero_pilar_kg=None,
     acero_viga_kg=None,
     acero_radier_kg=None,
+    canal_tipo=None, cant_piezas_canal=0, ml_canal=0, largo_canal=0,
+    montante_tipo=None, total_montantes=0, largo_montante=0,
+    esq_tipo=None, cant_esquinas=0, largo_esq=0,
 ):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -177,8 +180,6 @@ def generar_pdf_cubicacion(
     ]))
     story.append(tabla_header)
     story.append(Spacer(1, 10))
-
-    # Sección Hormigón
 
     # Sección Hormigón
     story.append(Paragraph("CUBICACION DE HORMIGON", estilo_seccion))
@@ -284,6 +285,35 @@ def generar_pdf_cubicacion(
             ("BOTTOMPADDING",(0, 0), (-1, -1), 6),
         ]))
         story.append(tabla_acero)
+        story.append(Spacer(1, 12))
+
+    # Sección Metalcon
+    if cant_piezas_canal > 0 or total_montantes > 0 or cant_esquinas > 0:
+        story.append(HRFlowable(width="100%", thickness=1, color=NARANJA, spaceAfter=6))
+        story.append(Paragraph("ACERO NO ESTRUCTURAL - TABIQUES METALCON", estilo_seccion))
+
+        filas_metalcon = [["Elemento", "Tipo", "Cantidad"]]
+        if cant_piezas_canal > 0:
+            filas_metalcon.append(["Canal / Solera", canal_tipo, f"{cant_piezas_canal:.0f} piezas de {largo_canal}m"])
+        if total_montantes > 0:
+            filas_metalcon.append(["Montante", montante_tipo, f"{total_montantes} piezas de {largo_montante}m"])
+        if cant_esquinas > 0:
+            filas_metalcon.append(["Esquinero", esq_tipo, f"{cant_esquinas} piezas de {largo_esq}m"])
+
+        tabla_metalcon = Table(filas_metalcon, colWidths=[4*cm, 9*cm, 4*cm])
+        tabla_metalcon.setStyle(TableStyle([
+            ("BACKGROUND",  (0, 0), (-1, 0), GRIS_OSCURO),
+            ("TEXTCOLOR",   (0, 0), (-1, 0), BLANCO),
+            ("FONTNAME",    (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE",    (0, 0), (-1, -1), 9),
+            ("ALIGN",       (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN",      (0, 0), (-1, -1), "MIDDLE"),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [GRIS_CLARO, BLANCO]),
+            ("GRID",        (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("TOPPADDING",  (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING",(0, 0), (-1, -1), 5),
+        ]))
+        story.append(tabla_metalcon)
         story.append(Spacer(1, 12))
 
     # Pie de página
@@ -860,6 +890,7 @@ if option == "Cubicacion":
                 st.info(f"Acero total cimientos: {kg_total_cim:.1f} kg")
                 st.text(f"Barras long.: {cant_bl_cim * cant_cim_d} barras {diam_bl_cim} → {kg_bl_cim:.1f} kg")
                 st.text(f"Estribos: {n_estribos_cim:.0f} estribos {diam_estribo_cim} c/{sep_estribo_cim}m → {kg_estribo_cim:.1f} kg") 
+                
 
     # --- Acero No estructural ---       
     with st.expander(" Acero No Estructural (Tabiques Metalcon)", expanded=False):
@@ -967,7 +998,21 @@ if option == "Cubicacion":
             largo_esq = ESQUINEROS[esq_tipo]["largo"]
             
             st.write("---")
-            st.info(f"Cantidad de esquineros: {cant_esquinas} piezas de {largo_esq}m")    
+            st.info(f"Cantidad de esquineros: {cant_esquinas} piezas de {largo_esq}m") 
+
+            # Guardar en session_state para el PDF
+            st.session_state["canal_tipo"] = canal_tipo
+            st.session_state["cant_piezas_canal"] = cant_piezas_canal
+            st.session_state["ml_canal"] = ml_canal
+            st.session_state["largo_canal"] = largo_canal
+
+            st.session_state["montante_tipo"] = montante_tipo
+            st.session_state["total_montantes"] = total_montantes
+            st.session_state["largo_montante"] = largo_montante
+
+            st.session_state["esq_tipo"] = esq_tipo
+            st.session_state["cant_esquinas"] = cant_esquinas
+            st.session_state["largo_esq"] = largo_esq
 
 # ============================
 # EXPORTAR A PDF
