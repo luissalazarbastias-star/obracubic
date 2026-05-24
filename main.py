@@ -86,8 +86,6 @@ if option == "Panel General":
 # CALCULADORA DE HORMIGÓN
 # ============================
 elif option == "Calculadora de Hormigón":
-    st.image(URL_DEL_LOGO, use_container_width=True)
-    st.write("---")
     st.subheader("Cubicación Técnica de la Obra")
 
     # --- 1. Emplantillado ---
