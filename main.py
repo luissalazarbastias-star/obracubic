@@ -891,4 +891,86 @@ if option == "Cubicacion":
                 st.write("---")
                 st.info(f"Acero total cimientos: {kg_total_cim:.1f} kg")
                 st.text(f"Barras long.: {cant_bl_cim * cant_cim_d} barras {diam_bl_cim} → {kg_bl_cim:.1f} kg")
-                st.text(f"Estribos: {n_estribos_cim:.0f} estribos {diam_estribo_cim} c/{sep_estribo_cim}m → {kg_estribo_cim:.1f} kg")        
+                st.text(f"Estribos: {n_estribos_cim:.0f} estribos {diam_estribo_cim} c/{sep_estribo_cim}m → {kg_estribo_cim:.1f} kg") 
+
+        # --- Acero No estructural ---       
+        with st.expander("🔩 Acero No Estructural (Metalcon Tabiques)", expanded=False):
+
+            # ============================
+            # DATOS SEGÚN MANUAL METALCON
+            # ============================
+            MONTANTES = {
+                "Montante Normal 60x38x0,5 - 2,40m":  {"largo": 2.40, "peso": 0.56},
+                "Montante Normal 60x38x0,5 - 3,00m":  {"largo": 3.00, "peso": 0.56},
+                "Montante Económico 38x38x0,5 - 2,40m": {"largo": 2.40, "peso": 0.48},
+                "Montante Económico 38x38x0,5 - 3,00m": {"largo": 3.00, "peso": 0.48},
+            }
+
+            CANALES = {
+                "Canal Normal 61x20x0,5 - 2,40m":    {"largo": 2.40, "peso": 0.39},
+                "Canal Normal 61x20x0,5 - 3,00m":    {"largo": 3.00, "peso": 0.39},
+                "Canal Económico 39x20x0,5 - 2,40m": {"largo": 2.40, "peso": 0.31},
+                "Canal Económico 39x20x0,5 - 3,00m": {"largo": 3.00, "peso": 0.31},
+            }
+
+            ESQUINEROS = {
+                "Esquinero Perf. 30x30 - 2,40m":     {"largo": 2.40, "peso": 0.18},
+                "Esquinero Perf. Eco. 25x25 - 3,00m": {"largo": 3.00, "peso": 0.15},
+            }
+
+            # --- 1. Canal (Solera inf. y sup.) ---
+            with st.expander("1. Canal / Solera (inferior y superior)", expanded=False):
+                st.caption("Se usa como solera en piso y cielo del tabique")
+
+                canal_tipo = st.selectbox("Tipo de canal", list(CANALES.keys()), key="canal_tipo")
+                
+                ca1, ca2 = st.columns(2)
+                with ca1:
+                    largo_tabique_c = st.number_input("Largo del tabique (m)", value=0.0, key="largo_tab_c")
+                with ca2:
+                    cant_tabiques_c = st.number_input("Cantidad de tabiques", value=0, step=1, key="cant_tab_c")
+
+                largo_canal = CANALES[canal_tipo]["largo"]
+                
+                # Solera inf + sup = largo tabique * 2 * cantidad tabiques
+                ml_canal = largo_tabique_c * 2 * cant_tabiques_c
+                cant_piezas_canal = ml_canal / largo_canal if largo_canal > 0 else 0
+
+                st.write("---")
+                st.info(f"Metros lineales necesarios: {ml_canal:.2f} ml")
+                st.text(f"Cantidad de canales {largo_canal}m: {cant_piezas_canal:.0f} piezas")
+                st.caption("Considera solera inferior + solera superior")
+
+            # --- 2. Montante (Pie Derecho) ---
+            with st.expander("2. Montante / Pie Derecho", expanded=False):
+                st.caption("Se instala cada 40 o 60 cm según revestimiento")
+
+                montante_tipo = st.selectbox("Tipo de montante", list(MONTANTES.keys()), key="montante_tipo")
+                
+                mo1, mo2 = st.columns(2)
+                with mo1:
+                    largo_tabique_m = st.number_input("Largo del tabique (m)", value=0.0, key="largo_tab_m")
+                with mo2:
+                    cant_tabiques_m = st.number_input("Cantidad de tabiques", value=0, step=1, key="cant_tab_m")
+                
+                separacion_m = st.selectbox("Separación entre montantes", ["0,40m (recomendado)", "0,60m (máximo)"], key="sep_mont")
+                sep_valor = 0.40 if "0,40" in separacion_m else 0.60
+
+                cant_montantes = ((largo_tabique_m / sep_valor) + 1) * cant_tabiques_m
+                largo_montante = MONTANTES[montante_tipo]["largo"]
+                
+                st.write("---")
+                st.info(f"Cantidad de montantes: {cant_montantes:.0f} piezas de {largo_montante}m")
+                st.caption(f"Separación: {sep_valor}m según manual Metalcon")
+
+            # --- 3. Esquinero ---
+            with st.expander("3. Esquinero", expanded=False):
+                st.caption("Se usa en encuentros de muros y esquinas")
+
+                esq_tipo = st.selectbox("Tipo de esquinero", list(ESQUINEROS.keys()), key="esq_tipo")
+                cant_esquinas = st.number_input("Cantidad de esquinas/encuentros", value=0, step=1, key="cant_esq")
+                
+                largo_esq = ESQUINEROS[esq_tipo]["largo"]
+                
+                st.write("---")
+                st.info(f"Cantidad de esquineros: {cant_esquinas} piezas de {largo_esq}m")        
