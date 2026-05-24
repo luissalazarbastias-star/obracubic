@@ -320,26 +320,89 @@ option = st.sidebar.radio("Ir a:", ["Panel General", "Cubicacion"])
 if option == "Panel General":
     st.markdown("<h3 style='text-align: center; color: #FF6B00;'><i>'Grandes estructuras se levantan con decisiones precisas.'</i></h3>", unsafe_allow_html=True)
     st.write("---")
-    st.subheader("Estado del Proyecto")
-    st.info("Aquí podrás ver el resumen de tus obras y el ahorro generado por la optimización de materiales.")
-    st.subheader("Radier")
-    r1, r2 = st.columns(2)
-    with r1:
-        rad_largo = st.number_input("Largo Radier (m)", value=0.0, key="radier_largo")
-        rad_ancho = st.number_input("Ancho Radier (m)", value=0.0, key="radier_ancho")
-    with r2:
-        rad_espesor = st.number_input("Espesor Radier (m)", value=0.0, key="radier_espesor")
-        rad_perdida = st.slider("% Pérdida Radier", 0, 15, 5, key="radier_perdida")
-    
-    vol_radier = (rad_largo * rad_ancho * rad_espesor) * (1 + (rad_perdida / 100))
-    st.info(f"Volumen Radier: {vol_radier:.2f} m³")
-    
-    dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                         index=1, key="dos_rad",
-                         help=DOSIFICACIONES["G-20"]["descripcion"])
-    mat_rad = calcular_materiales(vol_radier, dos_rad)
-    mostrar_materiales(mat_rad)
 
+    # --- Información del proyecto ---
+    st.subheader("Proyecto Actual")
+    col1, col2 = st.columns(2)
+    with col1:
+        nombre_proyecto_panel = st.text_input("Nombre del proyecto", 
+            placeholder="Ej: Casa Don Pedro - Angol",
+            key="nombre_proyecto_panel")
+    with col2:
+        fecha_inicio = st.date_input("Fecha de inicio", key="fecha_inicio")
+
+    st.write("---")
+
+    # --- Resumen última cubicación ---
+    st.subheader("Resumen de Cubicación")
+
+    vol_emp_p    = st.session_state.get("vol_emp", 0)
+    vol_pilares_p = st.session_state.get("vol_pilares", 0)
+    vol_sc_p     = st.session_state.get("vol_sc_neto", 0)
+    vol_radier_p = st.session_state.get("vol_radier", 0)
+    total_vol_p  = vol_emp_p + vol_pilares_p + vol_sc_p + vol_radier_p
+
+    total_sacos_p    = st.session_state.get("total_sacos", 0)
+    total_gravilla_p = st.session_state.get("total_gravilla", 0)
+    total_arena_p    = st.session_state.get("total_arena", 0)
+    total_agua_p     = st.session_state.get("total_agua", 0)
+
+    if total_vol_p > 0:
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("Volumen Total",  f"{total_vol_p:.2f} m³")
+        m2.metric("Cemento",        f"{total_sacos_p} sacos")
+        m3.metric("Gravilla",       f"{total_gravilla_p} kg")
+        m4.metric("Arena",          f"{total_arena_p} kg")
+        m5.metric("Agua",           f"{total_agua_p} lt")
+    else:
+        st.info("Aún no hay cubicación registrada. Ve a Cubicacion para comenzar.")
+
+    st.write("---")
+
+    # --- Accesos rápidos ---
+    st.subheader("Accesos Rápidos")
+    st.caption("Ir directamente a una partida")
+    a1, a2, a3, a4 = st.columns(4)
+    with a1:
+        st.markdown("**Excavación**")
+        st.caption("Movimiento de tierra")
+    with a2:
+        st.markdown("**Hormigón**")
+        st.caption("Emplantillado, cimiento, sobrecimiento, radier")
+    with a3:
+        st.markdown("**Acero**")
+        st.caption("Losa, pilar, viga, radier")
+    with a4:
+        st.markdown("**Exportar**")
+        st.caption("Descargar PDF de cubicación")
+
+    st.write("---")
+
+    # --- Estadísticas simples ---
+    st.subheader("Estadísticas de la Obra")
+
+    if total_vol_p > 0:
+        e1, e2, e3 = st.columns(3)
+        with e1:
+            st.metric("Volumen Emplantillado", f"{vol_emp_p:.2f} m³")
+            st.metric("Volumen Cimiento",      f"{vol_pilares_p:.2f} m³")
+        with e2:
+            st.metric("Volumen Sobrecimiento", f"{vol_sc_p:.2f} m³")
+            st.metric("Volumen Radier",        f"{vol_radier_p:.2f} m³")
+        with e3:
+            if total_vol_p > 0:
+                st.metric("Partida mayor", 
+                    max(
+                        [("Emplantillado", vol_emp_p),
+                         ("Cimiento", vol_pilares_p),
+                         ("Sobrecimiento", vol_sc_p),
+                         ("Radier", vol_radier_p)],
+                        key=lambda x: x[1]
+                    )[0]
+                )
+            st.metric("Total sacos cemento", f"{total_sacos_p} sacos")
+    else:
+        st.info("Las estadísticas aparecerán después de ingresar la cubicación.")
 # ============================
 # CUBICACIÓN
 # ============================
@@ -499,11 +562,14 @@ elif option == "Cubicacion":
         total_arena    = mat_emp["arena_kg"]      + mat_cim["arena_kg"]      + mat_sc["arena_kg"]      + mat_rad["arena_kg"]
         total_agua     = mat_emp["agua_lt"]       + mat_cim["agua_lt"]       + mat_sc["agua_lt"]       + mat_rad["agua_lt"]
 
-        r1, r2, r3, r4 = st.columns(4)
-        r1.metric("Cemento Total",  f"{total_sacos} sacos")
-        r2.metric("Gravilla Total", f"{total_gravilla} kg")
-        r3.metric("Arena Total",    f"{total_arena} kg")
-        r4.metric("Agua Total",     f"{total_agua} lt")
+        st.session_state["vol_emp"] = vol_emp
+        st.session_state["vol_pilares"] = vol_pilares
+        st.session_state["vol_sc_neto"] = vol_sc_neto
+        st.session_state["vol_radier"] = vol_radier
+        st.session_state["total_sacos"] = total_sacos
+        st.session_state["total_gravilla"] = total_gravilla
+        st.session_state["total_arena"] = total_arena
+        st.session_state["total_agua"] = total_agua
 
         # ============================
         # EXPORTAR A PDF
