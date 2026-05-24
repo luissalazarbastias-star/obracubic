@@ -953,32 +953,32 @@ if option == "Cubicacion":
 # ============================
     # EXPORTAR A PDF
     # ============================
-        st.write("---")
-        st.subheader("📄 Exportar Cubicación")
-        nombre_proyecto = st.text_input(
-            "Nombre del proyecto (opcional)",
-            placeholder="Ej: Casa Don Pedro - Angol",
-            key="nombre_proyecto"
-        )
+st.write("---")
+st.subheader("📄 Exportar Cubicación")
+nombre_proyecto = st.text_input(
+    "Nombre del proyecto (opcional)",
+    placeholder="Ej: Casa Don Pedro - Angol",
+    key="nombre_proyecto"
+)
 
-        if st.button("📄 Generar PDF", type="primary"):
-            pdf_buffer = generar_pdf_cubicacion(
-                nombre_proyecto=nombre_proyecto,
-                vol_emp=vol_emp, dos_emp=dos_emp, mat_emp=mat_emp,
-                vol_pilares=vol_pilares, dos_cim=dos_cim, mat_cim=mat_cim,
-                vol_sc_neto=vol_sc_neto, dos_sc=dos_sc, mat_sc=mat_sc,
-                vol_radier=vol_radier, dos_rad=dos_rad, mat_rad=mat_rad,
-                total_hormigon=total_hormigon,
-                total_sacos=total_sacos,
-                total_gravilla=total_gravilla,
-                total_arena=total_arena,
-                total_agua=total_agua,
-            )
-            nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
-            st.download_button(
-                label="⬇️ Descargar PDF",
-                data=pdf_buffer,
-                file_name=nombre_archivo,
-                mime="application/pdf",
-            )                
+if st.button("📄 Generar PDF", type="primary"):
+    pdf_buffer = generar_pdf_cubicacion(
+        nombre_proyecto=nombre_proyecto,
+        vol_emp=vol_emp, dos_emp=dos_emp, mat_emp=mat_emp,
+        vol_pilares=vol_pilares, dos_cim=dos_cim, mat_cim=mat_cim,
+        vol_sc_neto=vol_sc_neto, dos_sc=dos_sc, mat_sc=mat_sc,
+        vol_radier=vol_radier, dos_rad=dos_rad, mat_rad=mat_rad,
+        total_hormigon=total_hormigon,
+        total_sacos=total_sacos,
+        total_gravilla=total_gravilla,
+        total_arena=total_arena,
+        total_agua=total_agua,
+    )
+    nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
+    st.download_button(
+        label="⬇️ Descargar PDF",
+        data=pdf_buffer,
+        file_name=nombre_archivo,
+        mime="application/pdf",
+    )                
 
