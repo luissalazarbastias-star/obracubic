@@ -82,9 +82,8 @@ if option == "Panel General":
 # ============================
 elif option == "Calculadora de Obra":
     with st.expander("Cubicación de Hormigón", expanded=False):
-
-    # --- 1. Emplantillado ---
-    with st.expander("1. Emplantillado", expanded=False):
+        
+        with st.expander("1. Emplantillado", expanded=False):
         emp1, emp2, emp3 = st.columns(3)
         with emp1:
             emp_largo = st.number_input("Largo emplantillado (m)", value=0, key="emp_largo")
@@ -104,9 +103,8 @@ elif option == "Calculadora de Obra":
         desp_emp = st.slider("% Desperdicio", 0, 15, 5, key="desp_emp")
         mat_emp = calcular_materiales(vol_emp, dos_emp, desp_emp / 100)
         mostrar_materiales(mat_emp)
-
-    # --- 2. Cimiento ---
-    with st.expander("2. Cimiento", expanded=False):
+        
+        with st.expander("2. Cimiento", expanded=False):
         c1, c2, c3 = st.columns(3)
         with c1:
             n_pilares = st.number_input("Cantidad de Pilares", value=4, step=1, key="pil_cant")
@@ -126,9 +124,8 @@ elif option == "Calculadora de Obra":
         desp_cim = st.slider("% Desperdicio", 0, 15, 5, key="desp_cim")
         mat_cim = calcular_materiales(vol_pilares, dos_cim, desp_cim / 100)
         mostrar_materiales(mat_cim)
-
-    # --- 3. Sobrecimiento ---
-    with st.expander("3. Sobrecimiento (Con Descuento de Vanos)", expanded=False):
+        
+        with st.expander("3. Sobrecimiento (Con Descuento de Vanos)", expanded=False):
         st.write("**Dimensiones Brutas**")
         sc1, sc2, sc3 = st.columns(3)
         with sc1:
@@ -162,9 +159,8 @@ elif option == "Calculadora de Obra":
         desp_sc = st.slider("% Desperdicio", 0, 15, 5, key="desp_sc")
         mat_sc = calcular_materiales(vol_sc_neto, dos_sc, desp_sc / 100)
         mostrar_materiales(mat_sc)
-
-    # --- 4. Radier ---
-    with st.expander("4. Radier", expanded=False):
+        
+        with st.expander("4. Radier", expanded=False):
         ra1, ra2 = st.columns(2)
         with ra1:
             rad_largo = st.number_input("Largo Radier (m)", value=0, key="radier_largo")
@@ -184,24 +180,21 @@ elif option == "Calculadora de Obra":
         desp_rad = st.slider("% Desperdicio", 0, 15, 5, key="desp_rad")
         mat_rad = calcular_materiales(vol_radier, dos_rad, desp_rad / 100)
         mostrar_materiales(mat_rad)
-
-    st.write("---")
-
-    # --- TOTAL GENERAL ---
-    total_hormigon = vol_emp + vol_pilares + vol_sc_neto + vol_radier
-    st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m³")
-
-    # --- RESUMEN TOTAL DE MATERIALES ---
-    st.subheader("Resumen Total de Materiales")
-    st.caption("Suma de todas las partidas con sus respectivas dosificaciones y desperdicios")
-
-    total_sacos    = mat_emp["cemento_sacos"] + mat_cim["cemento_sacos"] + mat_sc["cemento_sacos"] + mat_rad["cemento_sacos"]
-    total_gravilla = mat_emp["gravilla_kg"]   + mat_cim["gravilla_kg"]   + mat_sc["gravilla_kg"]   + mat_rad["gravilla_kg"]
-    total_arena    = mat_emp["arena_kg"]      + mat_cim["arena_kg"]      + mat_sc["arena_kg"]      + mat_rad["arena_kg"]
-    total_agua     = mat_emp["agua_lt"]       + mat_cim["agua_lt"]       + mat_sc["agua_lt"]       + mat_rad["agua_lt"]
-
-    r1, r2, r3, r4 = st.columns(4)
-    r1.metric("Cemento Total",   f"{total_sacos} sacos")
-    r2.metric("Gravilla Total",  f"{total_gravilla} kg")
-    r3.metric("Arena Total",     f"{total_arena} kg")
-    r4.metric("Agua Total",      f"{total_agua} lt")
+        
+        st.write("---")
+        
+        total_hormigon = vol_emp + vol_pilares + vol_sc_neto + vol_radier
+        st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m³")
+        st.subheader("Resumen Total de Materiales")
+        st.caption("Suma de todas las partidas con sus respectivas dosificaciones y desperdicios")
+        
+        total_sacos    = mat_emp["cemento_sacos"] + mat_cim["cemento_sacos"] + mat_sc["cemento_sacos"] + mat_rad["cemento_sacos"]
+        total_gravilla = mat_emp["gravilla_kg"]   + mat_cim["gravilla_kg"]   + mat_sc["gravilla_kg"]   + mat_rad["gravilla_kg"]
+        total_arena    = mat_emp["arena_kg"]      + mat_cim["arena_kg"]      + mat_sc["arena_kg"]      + mat_rad["arena_kg"]
+        total_agua     = mat_emp["agua_lt"]       + mat_cim["agua_lt"]       + mat_sc["agua_lt"]       + mat_rad["agua_lt"]
+        
+        r1, r2, r3, r4 = st.columns(4)
+        r1.metric("Cemento Total",   f"{total_sacos} sacos")
+        r2.metric("Gravilla Total",  f"{total_gravilla} kg")
+        r3.metric("Arena Total",     f"{total_arena} kg")
+        r4.metric("Agua Total",      f"{total_agua} lt")
