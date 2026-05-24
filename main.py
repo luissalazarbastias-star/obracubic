@@ -356,18 +356,65 @@ elif option == "Cubicacion":
 
         # --- 3. Cimiento ---
         with st.expander("3. Cimiento", expanded=False):
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                n_pilares = st.number_input("Cantidad de Pilares", value=4, step=1, key="pil_cant")
-            with c2:
-                seccion_pilar = st.number_input("Sección Pilar (m)", value=0.0, key="pil_sec")
-            with c3:
-                alto_pilar = st.number_input("Profundidad Pilar (m)", value=0.0, key="pil_alto")
-            vol_pilares = (seccion_pilar * seccion_pilar * alto_pilar) * n_pilares
-            st.info(f"Volumen Pilares: {vol_pilares:.2f} m³")
+            tipo_cimiento = st.radio(
+                "Tipo de cimiento",
+                ["Zapata Aislada", "Zapata Corrida", "Zapata Combinada", "Losa de Cimentación"],
+                horizontal=True,
+                key="tipo_cimiento"
+            )
+
+            if tipo_cimiento == "Zapata Aislada":
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    n_pilares = st.number_input("Cantidad de Zapatas", value=4, step=1, key="pil_cant")
+                with c2:
+                    seccion_pilar = st.number_input("Sección (m)", value=0.0, key="pil_sec")
+                with c3:
+                    alto_pilar = st.number_input("Profundidad (m)", value=0.0, key="pil_alto")
+                vol_pilares = (seccion_pilar * seccion_pilar * alto_pilar) * n_pilares
+                st.info(f"Volumen Zapata Aislada: {vol_pilares:.2f} m³")
+
+            elif tipo_cimiento == "Zapata Corrida":
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    largo_cim = st.number_input("Largo total (m)", value=0.0, key="cim_largo")
+                with c2:
+                    ancho_cim = st.number_input("Ancho / Espesor (m)", value=0.0, key="cim_ancho")
+                with c3:
+                    prof_cim = st.number_input("Profundidad (m)", value=0.0, key="cim_prof")
+                vol_pilares = largo_cim * ancho_cim * prof_cim
+                st.info(f"Volumen Zapata Corrida: {vol_pilares:.2f} m³")
+
+            elif tipo_cimiento == "Zapata Combinada":
+                st.caption("Une dos o más pilares cercanos en una sola zapata.")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    n_zapatas_comb = st.number_input("Cantidad de zapatas combinadas", value=1, step=1, key="comb_cant")
+                with c2:
+                    largo_comb = st.number_input("Largo zapata (m)", value=0.0, key="comb_largo")
+                with c3:
+                    ancho_comb = st.number_input("Ancho zapata (m)", value=0.0, key="comb_ancho")
+                prof_comb = st.number_input("Profundidad (m)", value=0.0, key="comb_prof")
+                vol_pilares = largo_comb * ancho_comb * prof_comb * n_zapatas_comb
+                st.info(f"Volumen Zapata Combinada: {vol_pilares:.2f} m³")
+
+            elif tipo_cimiento == "Losa de Cimentación":
+                st.caption("Placa continua bajo toda la estructura. Se usa en terrenos de baja capacidad portante.")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    largo_losa_cim = st.number_input("Largo (m)", value=0.0, key="losacim_largo")
+                with c2:
+                    ancho_losa_cim = st.number_input("Ancho (m)", value=0.0, key="losacim_ancho")
+                with c3:
+                    esp_losa_cim = st.number_input("Espesor (m)", value=0.0, key="losacim_esp")
+                vol_pilares = largo_losa_cim * ancho_losa_cim * esp_losa_cim
+                st.info(f"Volumen Losa de Cimentación: {vol_pilares:.2f} m³")
+
+            st.caption("Para pilotes o micropilotes consulte con un ingeniero especialista.")
+
             dos_cim = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                                   index=1, key="dos_cim",
-                                   help=DOSIFICACIONES["G-20"]["descripcion"])
+                                index=1, key="dos_cim",
+                                help=DOSIFICACIONES["G-20"]["descripcion"])
             mat_cim = calcular_materiales(vol_pilares, dos_cim)
             mostrar_materiales(mat_cim)
 
