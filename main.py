@@ -1076,7 +1076,7 @@ if option == "Cubicacion":
     # ============================
     # MOLDAJES
     # ============================
-    with st.expander("🪵 Moldajes", expanded=False):
+    with st.expander(" Moldajes", expanded=False):
 
         # Datos materiales
         MATERIALES_MOLDAJE = {
