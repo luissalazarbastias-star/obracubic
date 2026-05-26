@@ -2303,272 +2303,272 @@ if option == "Cubicacion":
                 st.success(f"Total fijaciones: {tornillos_sid} unidades")
                 st.caption("⚠️ Fijación a 2cm del borde superior, quedará tapada por la tabla siguiente")
 
+    # ============================
+    # PISOS Y PAVIMENTOS
+    # ============================
+    with st.expander(" Pisos y Pavimentos", expanded=False):
+
         # ============================
-        # PISOS Y PAVIMENTOS
+        # DATOS
         # ============================
-        with st.expander(" Pisos y Pavimentos", expanded=False):
+        CERAMICO_MEDIDAS = {
+            "30x30 cm":   {"largo": 0.30, "ancho": 0.30, "area": 0.09, "doble_pegado": False},
+            "45x45 cm":   {"largo": 0.45, "ancho": 0.45, "area": 0.2025, "doble_pegado": False},
+            "60x60 cm":   {"largo": 0.60, "ancho": 0.60, "area": 0.36, "doble_pegado": False},
+            "80x80 cm":   {"largo": 0.80, "ancho": 0.80, "area": 0.64, "doble_pegado": False},
+            "60x120 cm":  {"largo": 0.60, "ancho": 1.20, "area": 0.72, "doble_pegado": True},
+        }
 
-            # ============================
-            # DATOS
-            # ============================
-            CERAMICO_MEDIDAS = {
-                "30x30 cm":   {"largo": 0.30, "ancho": 0.30, "area": 0.09, "doble_pegado": False},
-                "45x45 cm":   {"largo": 0.45, "ancho": 0.45, "area": 0.2025, "doble_pegado": False},
-                "60x60 cm":   {"largo": 0.60, "ancho": 0.60, "area": 0.36, "doble_pegado": False},
-                "80x80 cm":   {"largo": 0.80, "ancho": 0.80, "area": 0.64, "doble_pegado": False},
-                "60x120 cm":  {"largo": 0.60, "ancho": 1.20, "area": 0.72, "doble_pegado": True},
-            }
+        PISO_FLOTANTE = {
+            "7mm - Tránsito Residencial (AC3)":  {"espesor": 7},
+            "8mm - Tránsito Residencial (AC4)":  {"espesor": 8},
+            "10mm - Tránsito Comercial (AC5)":   {"espesor": 10},
+            "12mm - Tránsito Comercial (AC5)":   {"espesor": 12},
+        }
 
-            PISO_FLOTANTE = {
-                "7mm - Tránsito Residencial (AC3)":  {"espesor": 7},
-                "8mm - Tránsito Residencial (AC4)":  {"espesor": 8},
-                "10mm - Tránsito Comercial (AC5)":   {"espesor": 10},
-                "12mm - Tránsito Comercial (AC5)":   {"espesor": 12},
-            }
+        MADERA_DECK = {
+            "Pino Impregnado CCA":  {"precio_ref": "económico"},
+            "Lenga":                {"precio_ref": "premium"},
+            "Raulí":                {"precio_ref": "premium"},
+            "Ipé":                  {"precio_ref": "alta gama"},
+            "Coigüe":               {"precio_ref": "alta gama"},
+        }
 
-            MADERA_DECK = {
-                "Pino Impregnado CCA":  {"precio_ref": "económico"},
-                "Lenga":                {"precio_ref": "premium"},
-                "Raulí":                {"precio_ref": "premium"},
-                "Ipé":                  {"precio_ref": "alta gama"},
-                "Coigüe":               {"precio_ref": "alta gama"},
-            }
+        # ============================
+        # 1. CERÁMICO / PORCELANATO
+        # ============================
+        with st.expander("1. Cerámico / Porcelanato", expanded=False):
 
-            # ============================
-            # 1. CERÁMICO / PORCELANATO
-            # ============================
-            with st.expander("1. Cerámico / Porcelanato", expanded=False):
+            cer_medida = st.selectbox("Medida", list(CERAMICO_MEDIDAS.keys()), key="cer_medida")
+            cer = CERAMICO_MEDIDAS[cer_medida]
 
-                cer_medida = st.selectbox("Medida", list(CERAMICO_MEDIDAS.keys()), key="cer_medida")
-                cer = CERAMICO_MEDIDAS[cer_medida]
+            if cer["doble_pegado"]:
+                st.warning("⚠️ Formato grande (60x120cm): Requiere doble pegado y pegamento de mayor adherencia (tipo AC o Flex)")
 
-                if cer["doble_pegado"]:
-                    st.warning("⚠️ Formato grande (60x120cm): Requiere doble pegado y pegamento de mayor adherencia (tipo AC o Flex)")
+            ce1, ce2 = st.columns(2)
+            with ce1:
+                largo_cer = st.number_input("Largo área (m)", value=0.0, key="largo_cer")
+            with ce2:
+                ancho_cer = st.number_input("Ancho área (m)", value=0.0, key="ancho_cer")
 
-                ce1, ce2 = st.columns(2)
-                with ce1:
-                    largo_cer = st.number_input("Largo área (m)", value=0.0, key="largo_cer")
-                with ce2:
-                    ancho_cer = st.number_input("Ancho área (m)", value=0.0, key="ancho_cer")
+            # Vanos
+            cv1, cv2 = st.columns(2)
+            with cv1:
+                cant_vanos_cer = st.number_input("Cantidad de vanos", value=0, step=1, key="cant_vanos_cer")
+            with cv2:
+                area_vano_cer = st.number_input("Área por vano (m²)", value=0.0, key="area_vano_cer")
 
-                # Vanos
-                cv1, cv2 = st.columns(2)
-                with cv1:
-                    cant_vanos_cer = st.number_input("Cantidad de vanos", value=0, step=1, key="cant_vanos_cer")
-                with cv2:
-                    area_vano_cer = st.number_input("Área por vano (m²)", value=0.0, key="area_vano_cer")
+            junta_cer = st.selectbox("Ancho de junta (cantería)", ["2mm", "3mm", "5mm"], key="junta_cer")
+            desp_cer = st.slider("% Desperdicio", 0, 20, 10, key="desp_cer")
 
-                junta_cer = st.selectbox("Ancho de junta (cantería)", ["2mm", "3mm", "5mm"], key="junta_cer")
-                desp_cer = st.slider("% Desperdicio", 0, 20, 10, key="desp_cer")
+            area_bruta_cer = largo_cer * ancho_cer
+            area_vanos_cer = cant_vanos_cer * area_vano_cer
+            area_neta_cer = area_bruta_cer - area_vanos_cer
 
-                area_bruta_cer = largo_cer * ancho_cer
-                area_vanos_cer = cant_vanos_cer * area_vano_cer
-                area_neta_cer = area_bruta_cer - area_vanos_cer
+            # Cerámicos
+            ceramicos_exactos = area_neta_cer / cer["area"] if cer["area"] > 0 else 0
+            ceramicos_desp = ceramicos_exactos * (1 + desp_cer / 100)
 
-                # Cerámicos
-                ceramicos_exactos = area_neta_cer / cer["area"] if cer["area"] > 0 else 0
-                ceramicos_desp = ceramicos_exactos * (1 + desp_cer / 100)
+            # Pegamento
+            rend_pega = 4.5  # promedio 4-5 kg/m²
+            if cer["doble_pegado"]:
+                rend_pega = 8.0  # doble pegado
+            kg_pegamento = area_neta_cer * rend_pega
+            bolsas_pegamento = kg_pegamento / 25
 
-                # Pegamento
-                rend_pega = 4.5  # promedio 4-5 kg/m²
-                if cer["doble_pegado"]:
-                    rend_pega = 8.0  # doble pegado
-                kg_pegamento = area_neta_cer * rend_pega
-                bolsas_pegamento = kg_pegamento / 25
+            # Fragüe según junta
+            junta_val = float(junta_cer.replace("mm", ""))
+            if junta_val <= 2:
+                rend_frag = 0.30
+            elif junta_val <= 3:
+                rend_frag = 0.40
+            else:
+                rend_frag = 0.50
+            kg_frag = area_neta_cer * rend_frag
+            bolsas_frag = kg_frag / 5  # bolsas de 5kg
 
-                # Fragüe según junta
-                junta_val = float(junta_cer.replace("mm", ""))
-                if junta_val <= 2:
-                    rend_frag = 0.30
-                elif junta_val <= 3:
-                    rend_frag = 0.40
-                else:
-                    rend_frag = 0.50
-                kg_frag = area_neta_cer * rend_frag
-                bolsas_frag = kg_frag / 5  # bolsas de 5kg
+            st.write("---")
+            st.info(f"Área neta: {area_neta_cer:.2f} m²")
+            st.info(f"Piezas por m²: {1/cer['area']:.1f} unidades")
+            st.info(f"Cerámicos exactos: {ceramicos_exactos:.0f} unidades")
+            st.success(f"Con {desp_cer}% desperdicio: {ceramicos_desp:.0f} unidades")
 
+            st.write("---")
+            st.subheader("🧴 Pegamento")
+            if cer["doble_pegado"]:
+                st.caption("Doble pegado: en el piso y en la trasera de la palmeta")
+            st.info(f"Pegamento necesario: {kg_pegamento:.1f} kg")
+            st.success(f"Bolsas de 25kg: {bolsas_pegamento:.0f} bolsas")
+            st.caption(f"Rendimiento: {rend_pega} kg/m² | Rinde aprox. {25/rend_pega:.1f} m² por bolsa")
+
+            st.write("---")
+            st.subheader("🪣 Fragüe")
+            st.info(f"Fragüe necesario: {kg_frag:.1f} kg")
+            st.success(f"Bolsas de 5kg: {bolsas_frag:.0f} bolsas")
+            st.caption(f"Rendimiento: {rend_frag} kg/m² para junta de {junta_cer}")
+
+        # ============================
+        # 2. PISO FLOTANTE
+        # ============================
+        with st.expander("2. Piso Flotante / Parquet", expanded=False):
+
+            pf_tipo = st.selectbox("Tipo de piso flotante", list(PISO_FLOTANTE.keys()), key="pf_tipo")
+
+            pf1, pf2 = st.columns(2)
+            with pf1:
+                largo_pf = st.number_input("Largo área (m)", value=0.0, key="largo_pf")
+            with pf2:
+                ancho_pf = st.number_input("Ancho área (m)", value=0.0, key="ancho_pf")
+
+            pfv1, pfv2 = st.columns(2)
+            with pfv1:
+                cant_vanos_pf = st.number_input("Cantidad de vanos", value=0, step=1, key="cant_vanos_pf")
+            with pfv2:
+                area_vano_pf = st.number_input("Área por vano (m²)", value=0.0, key="area_vano_pf")
+
+            sobre_losa = st.checkbox("¿Va sobre losa de hormigón (primer piso)?", key="sobre_losa")
+            desp_pf = st.slider("% Desperdicio", 0, 20, 10, key="desp_pf")
+
+            area_bruta_pf = largo_pf * ancho_pf
+            area_vanos_pf = cant_vanos_pf * area_vano_pf
+            area_neta_pf = area_bruta_pf - area_vanos_pf
+
+            area_pf_desp = area_neta_pf * (1 + desp_pf / 100)
+
+            st.write("---")
+            st.info(f"Área neta: {area_neta_pf:.2f} m²")
+            st.success(f"Piso flotante con {desp_pf}% desperdicio: {area_pf_desp:.2f} m²")
+
+            st.write("---")
+            st.subheader("🧸 Espuma Niveladora (Manta Polietileno)")
+            st.info(f"Espuma 2-3mm necesaria: {area_neta_pf:.2f} m²")
+            st.caption("1 m² de espuma por 1 m² de piso flotante")
+
+            if sobre_losa:
                 st.write("---")
-                st.info(f"Área neta: {area_neta_cer:.2f} m²")
-                st.info(f"Piezas por m²: {1/cer['area']:.1f} unidades")
-                st.info(f"Cerámicos exactos: {ceramicos_exactos:.0f} unidades")
-                st.success(f"Con {desp_cer}% desperdicio: {ceramicos_desp:.0f} unidades")
+                st.subheader("💧 Barrera de Humedad (Buna/Film Polietileno)")
+                st.warning("⚠️ Instalación sobre losa: Se requiere barrera de humedad bajo la espuma")
+                st.info(f"Film polietileno necesario: {area_neta_pf:.2f} m²")
+                st.caption("Traslapar 20cm en uniones y subir 10cm por los muros")
 
+        # ============================
+        # 3. BALDOSA
+        # ============================
+        with st.expander("3. Baldosa", expanded=False):
+            st.caption("Microvibrada o calcárea 2-4cm espesor - Mortero de pega tradicional")
+
+            ba1, ba2, ba3, ba4 = st.columns(4)
+            with ba1:
+                largo_bal = st.number_input("Largo baldosa (cm)", value=0.0, key="largo_bal")
+            with ba2:
+                ancho_bal = st.number_input("Ancho baldosa (cm)", value=0.0, key="ancho_bal")
+            with ba3:
+                largo_area_bal = st.number_input("Largo área (m)", value=0.0, key="largo_area_bal")
+            with ba4:
+                ancho_area_bal = st.number_input("Ancho área (m)", value=0.0, key="ancho_area_bal")
+
+            bv1, bv2 = st.columns(2)
+            with bv1:
+                cant_vanos_bal = st.number_input("Cantidad de vanos", value=0, step=1, key="cant_vanos_bal")
+            with bv2:
+                area_vano_bal = st.number_input("Área por vano (m²)", value=0.0, key="area_vano_bal")
+
+            espesor_bal = st.selectbox("Espesor baldosa", ["2cm", "3cm", "4cm"], key="espesor_bal")
+            junta_bal = st.selectbox("Ancho de junta", ["5mm", "8mm", "10mm"], key="junta_bal")
+            desp_bal = st.slider("% Desperdicio", 0, 20, 10, key="desp_bal")
+
+            area_baldosa = (largo_bal / 100) * (ancho_bal / 100)
+            area_bruta_bal = largo_area_bal * ancho_area_bal
+            area_vanos_bal = cant_vanos_bal * area_vano_bal
+            area_neta_bal = area_bruta_bal - area_vanos_bal
+
+            baldosas_exactas = area_neta_bal / area_baldosa if area_baldosa > 0 else 0
+            baldosas_desp = baldosas_exactas * (1 + desp_bal / 100)
+
+            # Mortero de pega (dosificación 1:3 arena:cemento)
+            # Espesor cama mortero aprox 3cm
+            espesor_mort = 0.03
+            vol_mortero_bal = area_neta_bal * espesor_mort
+            cemento_bal_kg = vol_mortero_bal * 400
+            cemento_bal_sacos = cemento_bal_kg / 25
+            arena_bal_m3 = vol_mortero_bal * 1.20
+
+            st.write("---")
+            st.info(f"Área neta: {area_neta_bal:.2f} m²")
+            st.info(f"Baldosas por m²: {1/area_baldosa:.1f} unidades" if area_baldosa > 0 else "Ingresa dimensiones")
+            st.info(f"Baldosas exactas: {baldosas_exactas:.0f} unidades")
+            st.success(f"Con {desp_bal}% desperdicio: {baldosas_desp:.0f} unidades")
+
+            st.write("---")
+            st.subheader("🧱 Mortero de Pega (1:3 cemento:arena)")
+            st.info(f"Cemento: {cemento_bal_sacos:.0f} sacos de 25kg")
+            st.info(f"Arena: {arena_bal_m3:.2f} m³")
+            st.caption(f"Espesor cama mortero: 3cm | Volumen mortero: {vol_mortero_bal:.3f} m³")
+            st.warning("⚠️ Baldosa puede requerir pulido o sellado posterior según tipo")
+
+        # ============================
+        # 4. DECK DE MADERA
+        # ============================
+        with st.expander("4. Deck de Madera Exterior", expanded=False):
+
+            dk_madera = st.selectbox("Tipo de madera", list(MADERA_DECK.keys()), key="dk_madera")
+
+            if MADERA_DECK[dk_madera]["precio_ref"] == "económico":
+                st.caption("✅ Pino Impregnado CCA: Resistente a humedad y termitas de fábrica")
+            elif MADERA_DECK[dk_madera]["precio_ref"] == "premium":
+                st.warning("⚠️ Requiere tratamiento con impregnante protector (Cerestain o Sipasol)")
+            else:
+                st.caption("🌟 Madera de alta gama - Mayor dureza y durabilidad")
+
+            dk1, dk2 = st.columns(2)
+            with dk1:
+                ancho_tabla_dk = st.selectbox("Ancho tabla", ["4\" (90mm)", "5\" (120mm)"], key="ancho_tabla_dk")
+            with dk2:
+                largo_tabla_dk = st.selectbox("Largo tabla", ["3,20m", "4,00m"], key="largo_tabla_dk")
+
+            ancho_val_dk = 0.090 if "4\"" in ancho_tabla_dk else 0.120
+            largo_val_dk = 3.20 if "3,20" in largo_tabla_dk else 4.00
+
+            espesor_dk = st.selectbox("Espesor tabla", ["1\" (19mm)", "1 1/2\" (32mm)"], key="espesor_dk")
+            sep_dk = st.selectbox("Separación entre tablas", ["5mm", "8mm", "10mm"], key="sep_dk")
+            sep_val_dk = float(sep_dk.replace("mm", "")) / 1000
+
+            dk3, dk4 = st.columns(2)
+            with dk3:
+                largo_deck = st.number_input("Largo área deck (m)", value=0.0, key="largo_deck")
+            with dk4:
+                ancho_deck = st.number_input("Ancho área deck (m)", value=0.0, key="ancho_deck")
+
+            desp_dk = st.slider("% Desperdicio", 0, 20, 10, key="desp_dk")
+
+            area_neta_dk = largo_deck * ancho_deck
+
+            # Tablas necesarias
+            ancho_util_dk = ancho_val_dk + sep_val_dk
+            tablas_por_ml = 1 / ancho_util_dk
+            ml_tablas_dk = area_neta_dk * tablas_por_ml
+            cant_tablas_dk = ml_tablas_dk / largo_val_dk
+            cant_tablas_desp_dk = cant_tablas_dk * (1 + desp_dk / 100)
+
+            # Tornillos deck (2 por tabla por vigueta, viguetas cada 40cm)
+            viguetas_dk = largo_deck / 0.40
+            tornillos_dk = cant_tablas_desp_dk * viguetas_dk * 2
+
+            st.write("---")
+            st.info(f"Área deck: {area_neta_dk:.2f} m²")
+            st.info(f"Tablas exactas: {cant_tablas_dk:.0f} unidades de {largo_val_dk}m")
+            st.success(f"Con {desp_dk}% desperdicio: {cant_tablas_desp_dk:.0f} tablas")
+            st.text(f"Metros lineales totales: {cant_tablas_desp_dk * largo_val_dk:.2f} ml")
+
+            st.write("---")
+            st.subheader("🔩 Fijaciones")
+            st.info(f"Tornillos galvanizados: {tornillos_dk:.0f} unidades")
+            st.caption("2 tornillos por tabla en cada vigueta (viguetas cada 40cm)")
+
+            if dk_madera != "Pino Impregnado CCA":
                 st.write("---")
-                st.subheader("🧴 Pegamento")
-                if cer["doble_pegado"]:
-                    st.caption("Doble pegado: en el piso y en la trasera de la palmeta")
-                st.info(f"Pegamento necesario: {kg_pegamento:.1f} kg")
-                st.success(f"Bolsas de 25kg: {bolsas_pegamento:.0f} bolsas")
-                st.caption(f"Rendimiento: {rend_pega} kg/m² | Rinde aprox. {25/rend_pega:.1f} m² por bolsa")
-
-                st.write("---")
-                st.subheader("🪣 Fragüe")
-                st.info(f"Fragüe necesario: {kg_frag:.1f} kg")
-                st.success(f"Bolsas de 5kg: {bolsas_frag:.0f} bolsas")
-                st.caption(f"Rendimiento: {rend_frag} kg/m² para junta de {junta_cer}")
-
-            # ============================
-            # 2. PISO FLOTANTE
-            # ============================
-            with st.expander("2. Piso Flotante / Parquet", expanded=False):
-
-                pf_tipo = st.selectbox("Tipo de piso flotante", list(PISO_FLOTANTE.keys()), key="pf_tipo")
-
-                pf1, pf2 = st.columns(2)
-                with pf1:
-                    largo_pf = st.number_input("Largo área (m)", value=0.0, key="largo_pf")
-                with pf2:
-                    ancho_pf = st.number_input("Ancho área (m)", value=0.0, key="ancho_pf")
-
-                pfv1, pfv2 = st.columns(2)
-                with pfv1:
-                    cant_vanos_pf = st.number_input("Cantidad de vanos", value=0, step=1, key="cant_vanos_pf")
-                with pfv2:
-                    area_vano_pf = st.number_input("Área por vano (m²)", value=0.0, key="area_vano_pf")
-
-                sobre_losa = st.checkbox("¿Va sobre losa de hormigón (primer piso)?", key="sobre_losa")
-                desp_pf = st.slider("% Desperdicio", 0, 20, 10, key="desp_pf")
-
-                area_bruta_pf = largo_pf * ancho_pf
-                area_vanos_pf = cant_vanos_pf * area_vano_pf
-                area_neta_pf = area_bruta_pf - area_vanos_pf
-
-                area_pf_desp = area_neta_pf * (1 + desp_pf / 100)
-
-                st.write("---")
-                st.info(f"Área neta: {area_neta_pf:.2f} m²")
-                st.success(f"Piso flotante con {desp_pf}% desperdicio: {area_pf_desp:.2f} m²")
-
-                st.write("---")
-                st.subheader("🧸 Espuma Niveladora (Manta Polietileno)")
-                st.info(f"Espuma 2-3mm necesaria: {area_neta_pf:.2f} m²")
-                st.caption("1 m² de espuma por 1 m² de piso flotante")
-
-                if sobre_losa:
-                    st.write("---")
-                    st.subheader("💧 Barrera de Humedad (Buna/Film Polietileno)")
-                    st.warning("⚠️ Instalación sobre losa: Se requiere barrera de humedad bajo la espuma")
-                    st.info(f"Film polietileno necesario: {area_neta_pf:.2f} m²")
-                    st.caption("Traslapar 20cm en uniones y subir 10cm por los muros")
-
-            # ============================
-            # 3. BALDOSA
-            # ============================
-            with st.expander("3. Baldosa", expanded=False):
-                st.caption("Microvibrada o calcárea 2-4cm espesor - Mortero de pega tradicional")
-
-                ba1, ba2, ba3, ba4 = st.columns(4)
-                with ba1:
-                    largo_bal = st.number_input("Largo baldosa (cm)", value=0.0, key="largo_bal")
-                with ba2:
-                    ancho_bal = st.number_input("Ancho baldosa (cm)", value=0.0, key="ancho_bal")
-                with ba3:
-                    largo_area_bal = st.number_input("Largo área (m)", value=0.0, key="largo_area_bal")
-                with ba4:
-                    ancho_area_bal = st.number_input("Ancho área (m)", value=0.0, key="ancho_area_bal")
-
-                bv1, bv2 = st.columns(2)
-                with bv1:
-                    cant_vanos_bal = st.number_input("Cantidad de vanos", value=0, step=1, key="cant_vanos_bal")
-                with bv2:
-                    area_vano_bal = st.number_input("Área por vano (m²)", value=0.0, key="area_vano_bal")
-
-                espesor_bal = st.selectbox("Espesor baldosa", ["2cm", "3cm", "4cm"], key="espesor_bal")
-                junta_bal = st.selectbox("Ancho de junta", ["5mm", "8mm", "10mm"], key="junta_bal")
-                desp_bal = st.slider("% Desperdicio", 0, 20, 10, key="desp_bal")
-
-                area_baldosa = (largo_bal / 100) * (ancho_bal / 100)
-                area_bruta_bal = largo_area_bal * ancho_area_bal
-                area_vanos_bal = cant_vanos_bal * area_vano_bal
-                area_neta_bal = area_bruta_bal - area_vanos_bal
-
-                baldosas_exactas = area_neta_bal / area_baldosa if area_baldosa > 0 else 0
-                baldosas_desp = baldosas_exactas * (1 + desp_bal / 100)
-
-                # Mortero de pega (dosificación 1:3 arena:cemento)
-                # Espesor cama mortero aprox 3cm
-                espesor_mort = 0.03
-                vol_mortero_bal = area_neta_bal * espesor_mort
-                cemento_bal_kg = vol_mortero_bal * 400
-                cemento_bal_sacos = cemento_bal_kg / 25
-                arena_bal_m3 = vol_mortero_bal * 1.20
-
-                st.write("---")
-                st.info(f"Área neta: {area_neta_bal:.2f} m²")
-                st.info(f"Baldosas por m²: {1/area_baldosa:.1f} unidades" if area_baldosa > 0 else "Ingresa dimensiones")
-                st.info(f"Baldosas exactas: {baldosas_exactas:.0f} unidades")
-                st.success(f"Con {desp_bal}% desperdicio: {baldosas_desp:.0f} unidades")
-
-                st.write("---")
-                st.subheader("🧱 Mortero de Pega (1:3 cemento:arena)")
-                st.info(f"Cemento: {cemento_bal_sacos:.0f} sacos de 25kg")
-                st.info(f"Arena: {arena_bal_m3:.2f} m³")
-                st.caption(f"Espesor cama mortero: 3cm | Volumen mortero: {vol_mortero_bal:.3f} m³")
-                st.warning("⚠️ Baldosa puede requerir pulido o sellado posterior según tipo")
-
-            # ============================
-            # 4. DECK DE MADERA
-            # ============================
-            with st.expander("4. Deck de Madera Exterior", expanded=False):
-
-                dk_madera = st.selectbox("Tipo de madera", list(MADERA_DECK.keys()), key="dk_madera")
-
-                if MADERA_DECK[dk_madera]["precio_ref"] == "económico":
-                    st.caption("✅ Pino Impregnado CCA: Resistente a humedad y termitas de fábrica")
-                elif MADERA_DECK[dk_madera]["precio_ref"] == "premium":
-                    st.warning("⚠️ Requiere tratamiento con impregnante protector (Cerestain o Sipasol)")
-                else:
-                    st.caption("🌟 Madera de alta gama - Mayor dureza y durabilidad")
-
-                dk1, dk2 = st.columns(2)
-                with dk1:
-                    ancho_tabla_dk = st.selectbox("Ancho tabla", ["4\" (90mm)", "5\" (120mm)"], key="ancho_tabla_dk")
-                with dk2:
-                    largo_tabla_dk = st.selectbox("Largo tabla", ["3,20m", "4,00m"], key="largo_tabla_dk")
-
-                ancho_val_dk = 0.090 if "4\"" in ancho_tabla_dk else 0.120
-                largo_val_dk = 3.20 if "3,20" in largo_tabla_dk else 4.00
-
-                espesor_dk = st.selectbox("Espesor tabla", ["1\" (19mm)", "1 1/2\" (32mm)"], key="espesor_dk")
-                sep_dk = st.selectbox("Separación entre tablas", ["5mm", "8mm", "10mm"], key="sep_dk")
-                sep_val_dk = float(sep_dk.replace("mm", "")) / 1000
-
-                dk3, dk4 = st.columns(2)
-                with dk3:
-                    largo_deck = st.number_input("Largo área deck (m)", value=0.0, key="largo_deck")
-                with dk4:
-                    ancho_deck = st.number_input("Ancho área deck (m)", value=0.0, key="ancho_deck")
-
-                desp_dk = st.slider("% Desperdicio", 0, 20, 10, key="desp_dk")
-
-                area_neta_dk = largo_deck * ancho_deck
-
-                # Tablas necesarias
-                ancho_util_dk = ancho_val_dk + sep_val_dk
-                tablas_por_ml = 1 / ancho_util_dk
-                ml_tablas_dk = area_neta_dk * tablas_por_ml
-                cant_tablas_dk = ml_tablas_dk / largo_val_dk
-                cant_tablas_desp_dk = cant_tablas_dk * (1 + desp_dk / 100)
-
-                # Tornillos deck (2 por tabla por vigueta, viguetas cada 40cm)
-                viguetas_dk = largo_deck / 0.40
-                tornillos_dk = cant_tablas_desp_dk * viguetas_dk * 2
-
-                st.write("---")
-                st.info(f"Área deck: {area_neta_dk:.2f} m²")
-                st.info(f"Tablas exactas: {cant_tablas_dk:.0f} unidades de {largo_val_dk}m")
-                st.success(f"Con {desp_dk}% desperdicio: {cant_tablas_desp_dk:.0f} tablas")
-                st.text(f"Metros lineales totales: {cant_tablas_desp_dk * largo_val_dk:.2f} ml")
-
-                st.write("---")
-                st.subheader("🔩 Fijaciones")
-                st.info(f"Tornillos galvanizados: {tornillos_dk:.0f} unidades")
-                st.caption("2 tornillos por tabla en cada vigueta (viguetas cada 40cm)")
-
-                if dk_madera != "Pino Impregnado CCA":
-                    st.write("---")
-                    st.subheader("🪵 Tratamiento recomendado")
-                    st.warning(f"⚠️ {dk_madera}: Aplicar impregnante protector tipo Cerestain o Sipasol antes de instalar")
+                st.subheader("🪵 Tratamiento recomendado")
+                st.warning(f"⚠️ {dk_madera}: Aplicar impregnante protector tipo Cerestain o Sipasol antes de instalar")
 # ============================
 # EXPORTAR A PDF
 # ============================
