@@ -1871,6 +1871,344 @@ if option == "Cubicacion":
             - 📏 Nivel
             - 📐 Huincha de medir
             """)
+
+    # ============================
+    # REVESTIMIENTOS
+    # ============================
+    with st.expander("🎨 Revestimientos", expanded=False):
+
+        # ============================
+        # DATOS
+        # ============================
+        YESO_CARTON = {
+            "ST Estándar 10mm (Zonas secas)":        {"espesor": 10,   "area": 2.88, "tipo": "ST"},
+            "ST Estándar 12,5mm (Zonas secas)":      {"espesor": 12.5, "area": 2.88, "tipo": "ST"},
+            "RH Humedad 12,5mm (Baños/Cocinas)":     {"espesor": 12.5, "area": 2.88, "tipo": "RH"},
+            "RH Humedad 15mm (Baños/Cocinas)":       {"espesor": 15,   "area": 2.88, "tipo": "RH"},
+            "RF Fuego 12,5mm (Shaft/Bodegas)":       {"espesor": 12.5, "area": 2.88, "tipo": "RF"},
+            "RF Fuego 15mm (Shaft/Bodegas)":         {"espesor": 15,   "area": 2.88, "tipo": "RF"},
+        }
+
+        TERCIADO_RANURADO = {
+            "Terciado Ranurado 5,5-6mm (Colonial liviano)": {"area": 2.98},
+            "Terciado Ranurado 9mm (Uso general)":          {"area": 2.98},
+            "Terciado Ranurado 12mm (Alta resistencia)":    {"area": 2.98},
+        }
+
+        OSB_TIPOS = {
+            "OSB 9,5mm":  {"area": 2.98},
+            "OSB 11,1mm": {"area": 2.98},
+            "OSB 15,1mm": {"area": 2.98},
+        }
+
+        FIBROCEMENTO = {
+            "Lisa 4mm (Sobre tablero madera)":      {"area": 2.88},
+            "Lisa 5mm (Cielos y aleros húmedos)":   {"area": 2.88},
+            "Simplísima 6mm (Fachada)":             {"area": 2.88},
+            "Textura Madera 6mm (Fachada)":         {"area": 2.88},
+        }
+
+        TERCIADO_ESTRUCTURAL = {
+            "Terciado Estructural 9mm":  {"area": 2.98},
+            "Terciado Estructural 12mm": {"area": 2.98},
+            "Terciado Estructural 15mm": {"area": 2.98},
+            "Terciado Estructural 18mm": {"area": 2.98},
+        }
+
+        def calcular_planchas(area_neta, area_plancha, desperdicio):
+            """Calcula planchas necesarias con desperdicio y muestra resultado"""
+            cant_exacta = area_neta / area_plancha if area_plancha > 0 else 0
+            cant_con_desp = cant_exacta * (1 + desperdicio / 100)
+            sobra_ultima = (cant_exacta % 1) * area_plancha
+            desperdicio_m2 = (cant_con_desp - cant_exacta) * area_plancha
+            return cant_exacta, cant_con_desp, sobra_ultima, desperdicio_m2
+
+        # ============================
+        # INTERIOR
+        # ============================
+        with st.expander("1. Revestimiento Interior", expanded=False):
+
+            # --- Yeso Cartón ---
+            with st.expander("1.1 Yeso Cartón", expanded=False):
+
+                yeso_tipo = st.selectbox("Tipo de Yeso Cartón", list(YESO_CARTON.keys()), key="yeso_tipo")
+
+                if YESO_CARTON[yeso_tipo]["tipo"] == "ST":
+                    st.caption("🏠 Uso: dormitorios, living, zonas secas")
+                elif YESO_CARTON[yeso_tipo]["tipo"] == "RH":
+                    st.caption("💧 Uso: baños, cocinas - color verde")
+                else:
+                    st.caption("🔥 Uso: shaft, bodegas, vías escape - color rojo/rosado")
+
+                yc1, yc2, yc3 = st.columns(3)
+                with yc1:
+                    largo_yc = st.number_input("Largo muro/tabique (m)", value=0.0, key="largo_yc")
+                with yc2:
+                    alto_yc = st.number_input("Alto muro/tabique (m)", value=0.0, key="alto_yc")
+                with yc3:
+                    cant_yc = st.number_input("Cantidad muros/tabiques", value=0, step=1, key="cant_yc")
+
+                caras_yc = st.selectbox("Cantidad de caras a revestir", ["1 cara", "2 caras"], key="caras_yc")
+                n_caras_yc = 1 if "1" in caras_yc else 2
+
+                yv1, yv2 = st.columns(2)
+                with yv1:
+                    cant_puertas_yc = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_yc")
+                    ancho_puerta_yc = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_yc")
+                    alto_puerta_yc = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_yc")
+                with yv2:
+                    cant_ventanas_yc = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_yc")
+                    ancho_ventana_yc = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_yc")
+                    alto_ventana_yc = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_yc")
+
+                desp_yc = st.slider("% Desperdicio", 0, 20, 10, key="desp_yc")
+
+                area_bruta_yc = largo_yc * alto_yc * cant_yc * n_caras_yc
+                area_vanos_yc = ((cant_puertas_yc * ancho_puerta_yc * alto_puerta_yc) +
+                                (cant_ventanas_yc * ancho_ventana_yc * alto_ventana_yc)) * n_caras_yc
+                area_neta_yc = area_bruta_yc - area_vanos_yc
+
+                area_plancha_yc = YESO_CARTON[yeso_tipo]["area"]
+                cant_exacta_yc, cant_desp_yc, sobra_yc, desp_m2_yc = calcular_planchas(
+                    area_neta_yc, area_plancha_yc, desp_yc)
+
+                st.write("---")
+                st.info(f"Área neta: {area_neta_yc:.2f} m²")
+                st.info(f"Planchas exactas: {cant_exacta_yc:.1f} unidades")
+                st.success(f"Planchas con {desp_yc}% desperdicio: {cant_desp_yc:.0f} unidades")
+                st.text(f"Sobra última plancha: {sobra_yc:.2f} m²")
+                st.text(f"Desperdicio estimado: {desp_m2_yc:.2f} m²")
+
+            # --- Terciado Ranurado ---
+            with st.expander("1.2 Terciado Ranurado", expanded=False):
+                st.caption("Revestimiento muros y cielos interiores")
+
+                tr_tipo = st.selectbox("Tipo de Terciado Ranurado", list(TERCIADO_RANURADO.keys()), key="tr_tipo")
+
+                tr1, tr2, tr3 = st.columns(3)
+                with tr1:
+                    largo_tr = st.number_input("Largo muro (m)", value=0.0, key="largo_tr")
+                with tr2:
+                    alto_tr = st.number_input("Alto muro (m)", value=0.0, key="alto_tr")
+                with tr3:
+                    cant_tr = st.number_input("Cantidad muros", value=0, step=1, key="cant_tr")
+
+                tv1, tv2 = st.columns(2)
+                with tv1:
+                    cant_puertas_tr = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_tr")
+                    ancho_puerta_tr = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_tr")
+                    alto_puerta_tr = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_tr")
+                with tv2:
+                    cant_ventanas_tr = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_tr")
+                    ancho_ventana_tr = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_tr")
+                    alto_ventana_tr = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_tr")
+
+                desp_tr = st.slider("% Desperdicio", 0, 20, 10, key="desp_tr")
+
+                area_bruta_tr = largo_tr * alto_tr * cant_tr
+                area_vanos_tr = ((cant_puertas_tr * ancho_puerta_tr * alto_puerta_tr) +
+                                (cant_ventanas_tr * ancho_ventana_tr * alto_ventana_tr))
+                area_neta_tr = area_bruta_tr - area_vanos_tr
+
+                area_plancha_tr = TERCIADO_RANURADO[tr_tipo]["area"]
+                cant_exacta_tr, cant_desp_tr, sobra_tr, desp_m2_tr = calcular_planchas(
+                    area_neta_tr, area_plancha_tr, desp_tr)
+
+                st.write("---")
+                st.info(f"Área neta: {area_neta_tr:.2f} m²")
+                st.info(f"Planchas exactas: {cant_exacta_tr:.1f} unidades")
+                st.success(f"Planchas con {desp_tr}% desperdicio: {cant_desp_tr:.0f} unidades")
+                st.text(f"Sobra última plancha: {sobra_tr:.2f} m²")
+                st.text(f"Desperdicio estimado: {desp_m2_tr:.2f} m²")
+
+        # ============================
+        # EXTERIOR
+        # ============================
+        with st.expander("2. Revestimiento Exterior", expanded=False):
+
+            # --- OSB ---
+            with st.expander("2.1 OSB", expanded=False):
+                st.caption("Tablero estructural para exterior - 1,22x2,44m")
+
+                osb_tipo = st.selectbox("Espesor OSB", list(OSB_TIPOS.keys()), key="osb_tipo")
+
+                ob1, ob2, ob3 = st.columns(3)
+                with ob1:
+                    largo_osb = st.number_input("Largo muro (m)", value=0.0, key="largo_osb")
+                with ob2:
+                    alto_osb = st.number_input("Alto muro (m)", value=0.0, key="alto_osb")
+                with ob3:
+                    cant_osb = st.number_input("Cantidad muros", value=0, step=1, key="cant_osb")
+
+                ov1, ov2 = st.columns(2)
+                with ov1:
+                    cant_puertas_osb = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_osb")
+                    ancho_puerta_osb = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_osb")
+                    alto_puerta_osb = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_osb")
+                with ov2:
+                    cant_ventanas_osb = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_osb")
+                    ancho_ventana_osb = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_osb")
+                    alto_ventana_osb = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_osb")
+
+                desp_osb = st.slider("% Desperdicio", 0, 20, 10, key="desp_osb")
+
+                # Opción fibrocemento encima
+                fibro_encima = st.checkbox("¿Agregar fibrocemento encima del OSB?", key="fibro_encima")
+                if fibro_encima:
+                    fibro_osb_tipo = st.selectbox("Tipo fibrocemento", list(FIBROCEMENTO.keys()), key="fibro_osb_tipo")
+
+                area_bruta_osb = largo_osb * alto_osb * cant_osb
+                area_vanos_osb = ((cant_puertas_osb * ancho_puerta_osb * alto_puerta_osb) +
+                                    (cant_ventanas_osb * ancho_ventana_osb * alto_ventana_osb))
+                area_neta_osb = area_bruta_osb - area_vanos_osb
+
+                area_plancha_osb = OSB_TIPOS[osb_tipo]["area"]
+                cant_exacta_osb, cant_desp_osb, sobra_osb, desp_m2_osb = calcular_planchas(
+                    area_neta_osb, area_plancha_osb, desp_osb)
+
+                st.write("---")
+                st.info(f"Área neta: {area_neta_osb:.2f} m²")
+                st.info(f"Planchas OSB exactas: {cant_exacta_osb:.1f} unidades")
+                st.success(f"Planchas OSB con {desp_osb}% desperdicio: {cant_desp_osb:.0f} unidades")
+                st.text(f"Sobra última plancha: {sobra_osb:.2f} m²")
+                st.text(f"Desperdicio estimado: {desp_m2_osb:.2f} m²")
+
+                if fibro_encima:
+                    area_plancha_fibro_osb = FIBROCEMENTO[fibro_osb_tipo]["area"]
+                    cant_exacta_fo, cant_desp_fo, sobra_fo, desp_m2_fo = calcular_planchas(
+                        area_neta_osb, area_plancha_fibro_osb, desp_osb)
+                    st.write("---")
+                    st.subheader("Fibrocemento sobre OSB")
+                    st.info(f"Planchas fibrocemento exactas: {cant_exacta_fo:.1f} unidades")
+                    st.success(f"Planchas fibrocemento con desperdicio: {cant_desp_fo:.0f} unidades")
+
+            # --- Fibrocemento ---
+            with st.expander("2.2 Fibrocemento", expanded=False):
+                st.caption("Placa fibrocemento exterior - 1,20x2,40m")
+
+                fc_tipo = st.selectbox("Tipo de Fibrocemento", list(FIBROCEMENTO.keys()), key="fc_tipo")
+
+                fc1, fc2, fc3 = st.columns(3)
+                with fc1:
+                    largo_fc = st.number_input("Largo muro (m)", value=0.0, key="largo_fc")
+                with fc2:
+                    alto_fc = st.number_input("Alto muro (m)", value=0.0, key="alto_fc")
+                with fc3:
+                    cant_fc = st.number_input("Cantidad muros", value=0, step=1, key="cant_fc")
+
+                fv1, fv2 = st.columns(2)
+                with fv1:
+                    cant_puertas_fc = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_fc")
+                    ancho_puerta_fc = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_fc")
+                    alto_puerta_fc = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_fc")
+                with fv2:
+                    cant_ventanas_fc = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_fc")
+                    ancho_ventana_fc = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_fc")
+                    alto_ventana_fc = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_fc")
+
+                desp_fc = st.slider("% Desperdicio", 0, 20, 10, key="desp_fc")
+
+                area_bruta_fc = largo_fc * alto_fc * cant_fc
+                area_vanos_fc = ((cant_puertas_fc * ancho_puerta_fc * alto_puerta_fc) +
+                                (cant_ventanas_fc * ancho_ventana_fc * alto_ventana_fc))
+                area_neta_fc = area_bruta_fc - area_vanos_fc
+
+                area_plancha_fc = FIBROCEMENTO[fc_tipo]["area"]
+                cant_exacta_fc, cant_desp_fc, sobra_fc, desp_m2_fc = calcular_planchas(
+                    area_neta_fc, area_plancha_fc, desp_fc)
+
+                st.write("---")
+                st.info(f"Área neta: {area_neta_fc:.2f} m²")
+                st.info(f"Planchas exactas: {cant_exacta_fc:.1f} unidades")
+                st.success(f"Planchas con {desp_fc}% desperdicio: {cant_desp_fc:.0f} unidades")
+                st.text(f"Sobra última plancha: {sobra_fc:.2f} m²")
+                st.text(f"Desperdicio estimado: {desp_m2_fc:.2f} m²")
+
+            # --- Terciado Estructural ---
+            with st.expander("2.3 Terciado Estructural", expanded=False):
+                st.caption("Placa estructural exterior - 1,22x2,44m")
+
+                te_tipo = st.selectbox("Espesor Terciado Estructural", list(TERCIADO_ESTRUCTURAL.keys()), key="te_tipo")
+
+                te1, te2, te3 = st.columns(3)
+                with te1:
+                    largo_te = st.number_input("Largo muro (m)", value=0.0, key="largo_te")
+                with te2:
+                    alto_te = st.number_input("Alto muro (m)", value=0.0, key="alto_te")
+                with te3:
+                    cant_te = st.number_input("Cantidad muros", value=0, step=1, key="cant_te")
+
+                tv1, tv2 = st.columns(2)
+                with tv1:
+                    cant_puertas_te = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_te")
+                    ancho_puerta_te = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_te")
+                    alto_puerta_te = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_te")
+                with tv2:
+                    cant_ventanas_te = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_te")
+                    ancho_ventana_te = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_te")
+                    alto_ventana_te = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_te")
+
+                desp_te = st.slider("% Desperdicio", 0, 20, 10, key="desp_te")
+
+                area_bruta_te = largo_te * alto_te * cant_te
+                area_vanos_te = ((cant_puertas_te * ancho_puerta_te * alto_puerta_te) +
+                                (cant_ventanas_te * ancho_ventana_te * alto_ventana_te))
+                area_neta_te = area_bruta_te - area_vanos_te
+
+                area_plancha_te = TERCIADO_ESTRUCTURAL[te_tipo]["area"]
+                cant_exacta_te, cant_desp_te, sobra_te, desp_m2_te = calcular_planchas(
+                    area_neta_te, area_plancha_te, desp_te)
+
+                st.write("---")
+                st.info(f"Área neta: {area_neta_te:.2f} m²")
+                st.info(f"Planchas exactas: {cant_exacta_te:.1f} unidades")
+                st.success(f"Planchas con {desp_te}% desperdicio: {cant_desp_te:.0f} unidades")
+                st.text(f"Sobra última plancha: {sobra_te:.2f} m²")
+                st.text(f"Desperdicio estimado: {desp_m2_te:.2f} m²")
+
+            # --- Siding Fibrocemento ---
+            with st.expander("2.4 Siding Fibrocemento", expanded=False):
+                st.caption("Volcan, Pizarreño Cedral, Nativa - 19cm x 3,66m")
+
+                sd1, sd2, sd3 = st.columns(3)
+                with sd1:
+                    largo_sid = st.number_input("Largo muro (m)", value=0.0, key="largo_sid")
+                with sd2:
+                    alto_sid = st.number_input("Alto muro (m)", value=0.0, key="alto_sid")
+                with sd3:
+                    cant_sid = st.number_input("Cantidad muros", value=0, step=1, key="cant_sid")
+
+                sv1, sv2 = st.columns(2)
+                with sv1:
+                    cant_puertas_sid = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_sid")
+                    ancho_puerta_sid = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_sid")
+                    alto_puerta_sid = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_sid")
+                with sv2:
+                    cant_ventanas_sid = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_sid")
+                    ancho_ventana_sid = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_sid")
+                    alto_ventana_sid = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_sid")
+
+                traslape_sid = st.selectbox("Traslape", ["25mm", "30mm"], key="traslape_sid")
+                desp_sid = st.slider("% Desperdicio", 0, 20, 10, key="desp_sid")
+
+                # Rendimiento útil por tabla según traslape
+                rend_tabla = 0.70 if "25" in traslape_sid else 0.44
+
+                area_bruta_sid = largo_sid * alto_sid * cant_sid
+                area_vanos_sid = ((cant_puertas_sid * ancho_puerta_sid * alto_puerta_sid) +
+                                    (cant_ventanas_sid * ancho_ventana_sid * alto_ventana_sid))
+                area_neta_sid = area_bruta_sid - area_vanos_sid
+
+                cant_tablas_sid = area_neta_sid / rend_tabla if rend_tabla > 0 else 0
+                cant_tablas_desp = cant_tablas_sid * (1 + desp_sid / 100)
+                ml_tablas_sid = cant_tablas_desp * 3.66
+
+                st.write("---")
+                st.info(f"Área neta: {area_neta_sid:.2f} m²")
+                st.info(f"Rendimiento por tabla: {rend_tabla} m² (traslape {traslape_sid})")
+                st.info(f"Tablas exactas: {cant_tablas_sid:.0f} unidades")
+                st.success(f"Tablas con {desp_sid}% desperdicio: {cant_tablas_desp:.0f} unidades")
+                st.text(f"Metros lineales totales: {ml_tablas_sid:.2f} ml")
 # ============================
 # EXPORTAR A PDF
 # ============================
