@@ -1875,7 +1875,7 @@ if option == "Cubicacion":
     # ============================
     # REVESTIMIENTOS
     # ============================
-    with st.expander("🎨 Revestimientos", expanded=False):
+    with st.expander("Revestimientos", expanded=False):
 
         # ============================
         # DATOS
