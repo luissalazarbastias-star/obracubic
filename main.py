@@ -948,12 +948,12 @@ if option == "Cubicacion":
             st.text(f"Cantidad de canales {largo_canal}m: {cant_piezas_canal:.0f} piezas")
             st.caption("Considera solera inferior + solera superior")
 
-        # --- 2. Montante (Pie Derecho) ---
+        # --- 2. Montante / Pie Derecho ---
         with st.expander("2. Montante / Pie Derecho", expanded=False):
             st.caption("Se instala cada 40 o 60 cm según revestimiento")
 
             montante_tipo = st.selectbox("Tipo de montante", list(MONTANTES.keys()), key="montante_tipo")
-            
+
             if "Perf" in montante_tipo:
                 st.caption("✅ Perforado: permite pasar instalaciones eléctricas y sanitarias por dentro")
             else:
@@ -967,31 +967,53 @@ if option == "Cubicacion":
             with mo3:
                 cant_tabiques_m = st.number_input("Cantidad tabiques", value=0, step=1, key="cant_tab_m")
 
-            separacion_m = st.selectbox("Separación entre montantes", 
-                                        ["0,40m (recomendado)", "0,60m (máximo)"], 
+            separacion_m = st.selectbox("Separación entre montantes",
+                                        ["0,40m (recomendado)", "0,60m (máximo)"],
                                         key="sep_mont")
             sep_valor = 0.40 if "0,40" in separacion_m else 0.60
 
             largo_montante = MONTANTES[montante_tipo]["largo"]
 
-            # Montantes por tabique = (largo / separacion) + 1 (extremos)
+            # Cálculo montantes
             montantes_por_tabique = int(largo_tabique_m / sep_valor) + 1
-            
-            # Total montantes
             total_montantes = montantes_por_tabique * cant_tabiques_m
 
-            # Verificar si el alto del tabique supera el largo del montante
-            necesita_empalme = alto_tabique_m > largo_montante
+            # Desperdicio
+            corte_por_perfil = largo_montante - alto_tabique_m
+            desperdicio_total = corte_por_perfil * total_montantes
+            perfiles_desperdiciados = desperdicio_total / largo_montante if largo_montante > 0 else 0
+
+            # Sugerencia de perfil óptimo
+            desperdicio_240 = 2.40 - alto_tabique_m if alto_tabique_m <= 2.40 else None
+            desperdicio_300 = 3.00 - alto_tabique_m if alto_tabique_m <= 3.00 else None
 
             st.write("---")
             st.info(f"Montantes por tabique: {montantes_por_tabique} piezas")
             st.info(f"Total montantes: {total_montantes} piezas de {largo_montante}m")
-            
-            if necesita_empalme:
-                st.warning(f"⚠️ El alto del tabique ({alto_tabique_m}m) supera el largo del montante ({largo_montante}m). Se necesita empalme.")
-            else:
-                st.success(f"✅ El montante de {largo_montante}m cubre el alto del tabique ({alto_tabique_m}m)")
-            
+
+            if alto_tabique_m > 0 and largo_montante > 0:
+                if corte_por_perfil < 0:
+                    st.error(f"⚠️ El tabique ({alto_tabique_m}m) supera el montante ({largo_montante}m). Necesita empalme.")
+                else:
+                    st.write("---")
+                    st.subheader("📐 Análisis de desperdicio")
+                    st.text(f"Corte por perfil: {corte_por_perfil:.2f}m")
+                    st.text(f"Desperdicio total: {desperdicio_total:.2f}m lineales")
+                    st.text(f"Equivale a: {perfiles_desperdiciados:.1f} perfiles desperdiciados")
+
+                    # Sugerencia perfil óptimo
+                    st.write("**💡 Sugerencia de perfil más conveniente:**")
+                    if desperdicio_240 is not None and desperdicio_300 is not None:
+                        if desperdicio_240 <= desperdicio_300:
+                            st.success(f"✅ Usa montante de 2,40m → sobran {desperdicio_240:.2f}m por perfil")
+                            st.warning(f"Con 3,00m → sobrarían {desperdicio_300:.2f}m por perfil")
+                        else:
+                            st.success(f"✅ Usa montante de 3,00m → sobran {desperdicio_300:.2f}m por perfil")
+                            st.warning(f"Con 2,40m → sobrarían {desperdicio_240:.2f}m por perfil")
+                    elif desperdicio_240 is None:
+                        st.success(f"✅ Usa montante de 3,00m → sobran {desperdicio_300:.2f}m por perfil")
+                        st.error("❌ Montante de 2,40m no alcanza para este tabique")
+                    
             st.caption(f"Separación: {sep_valor}m según manual Metalcon | +1 montante en extremo")
 
         # --- 3. Esquinero ---
