@@ -1072,6 +1072,65 @@ if option == "Cubicacion":
             st.session_state["pdf_esq_tipo"] = esq_tipo
             st.session_state["pdf_cant_esquinas"] = cant_esquinas
             st.session_state["pdf_largo_esq"] = largo_esq
+
+    # ============================
+    # MOLDAJES
+    # ============================
+    with st.expander("🪵 Moldajes", expanded=False):
+
+        # Datos materiales
+        MATERIALES_MOLDAJE = {
+            "Tabla 1\"x8\" (ancho 19cm)": {"ancho": 0.19, "largo": 3.20},
+            "Tabla 1\"x10\" (ancho 24cm)": {"ancho": 0.24, "largo": 3.20},
+            "Terciado Film 18mm (1,22x2,44m)": {"area_plancha": 2.98},
+            "Moldaje Metálico": {"solo_m2": True},
+        }
+
+        # --- 1. Cimiento ---
+        with st.expander("1. Moldaje de Cimiento", expanded=False):
+            st.caption("Moldaje para caras laterales del cimiento")
+
+            material_cim = st.selectbox(
+                "Material de moldaje",
+                list(MATERIALES_MOLDAJE.keys()),
+                key="mat_mold_cim"
+            )
+
+            mc1, mc2, mc3 = st.columns(3)
+            with mc1:
+                largo_cim_m = st.number_input("Largo cimiento (m)", value=0.0, key="largo_cim_mold")
+            with mc2:
+                alto_cim_m = st.number_input("Alto cimiento (m)", value=0.0, key="alto_cim_mold")
+            with mc3:
+                cant_cim_m = st.number_input("Cantidad cimientos", value=0, step=1, key="cant_cim_mold")
+
+            # m² = largo * alto * 2 caras * cantidad
+            m2_cimiento = largo_cim_m * alto_cim_m * 2 * cant_cim_m
+
+            st.write("---")
+            st.info(f"Superficie de moldaje: {m2_cimiento:.2f} m²")
+
+            mat = MATERIALES_MOLDAJE[material_cim]
+
+            if "solo_m2" in mat:
+                st.text(f"Moldaje metálico requerido: {m2_cimiento:.2f} m²")
+
+            elif "area_plancha" in mat:
+                cant_planchas = m2_cimiento / mat["area_plancha"]
+                st.text(f"Planchas terciado 1,22x2,44m: {cant_planchas:.0f} unidades")
+                st.caption("Considera un 10% de desperdicio por cortes")
+                cant_planchas_real = cant_planchas * 1.10
+                st.text(f"Con 10% desperdicio: {cant_planchas_real:.0f} planchas")
+
+            else:
+                # Tabla
+                ml_tabla = m2_cimiento / mat["ancho"]
+                cant_tablas = ml_tabla / mat["largo"]
+                st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
+                st.text(f"Cantidad de tablas de {mat['largo']}m: {cant_tablas:.0f} unidades")
+                st.caption("Considera un 10% de desperdicio por cortes")
+                cant_tablas_real = cant_tablas * 1.10
+                st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")        
 # ============================
 # EXPORTAR A PDF
 # ============================
