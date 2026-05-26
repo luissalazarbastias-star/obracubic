@@ -1298,7 +1298,222 @@ if option == "Cubicacion":
                 st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
                 st.text(f"Cantidad de tablas de {mat_p['largo']}m: {cant_tablas:.0f} unidades")
                 st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")     
-                
+
+    # ============================
+    # Muros
+    # ============================   
+
+    with st.expander("🧱 Muros", expanded=False):
+        # ============================
+        # MURO DE HORMIGÓN
+        # ============================
+        with st.expander("3. Muro de Hormigón (con Enfierradura)", expanded=False):
+
+            st.subheader("📐 Dimensiones del muro")
+            mh1, mh2, mh3, mh4 = st.columns(4)
+            with mh1:
+                largo_muro_h = st.number_input("Largo muro (m)", value=0.0, key="largo_muro_h")
+            with mh2:
+                alto_muro_h = st.number_input("Alto muro (m)", value=0.0, key="alto_muro_h")
+            with mh3:
+                espesor_muro_h = st.number_input("Espesor muro (m)", value=0.0, key="espesor_muro_h")
+            with mh4:
+                cant_muros_h = st.number_input("Cantidad muros", value=0, step=1, key="cant_muros_h")
+
+            # Vanos
+            st.subheader("🚪 Vanos")
+            vh1, vh2 = st.columns(2)
+            with vh1:
+                cant_puertas_h = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_h")
+                ancho_puerta_h = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_h")
+                alto_puerta_h = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_h")
+            with vh2:
+                cant_ventanas_h = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_h")
+                ancho_ventana_h = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_h")
+                alto_ventana_h = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_h")
+
+            # Volumen neto
+            vol_bruto_h = largo_muro_h * alto_muro_h * espesor_muro_h * cant_muros_h
+            vol_vanos_h = ((cant_puertas_h * ancho_puerta_h * alto_puerta_h) +
+                          (cant_ventanas_h * ancho_ventana_h * alto_ventana_h)) * espesor_muro_h
+            vol_neto_h = vol_bruto_h - vol_vanos_h
+
+            # Dosificación
+            dos_muro_h = st.selectbox("Dosificación hormigón", list(DOSIFICACIONES.keys()),
+                                      index=2, key="dos_muro_h",
+                                      help=DOSIFICACIONES["G-25"]["descripcion"])
+            mat_muro_h = calcular_materiales(vol_neto_h, dos_muro_h)
+
+            st.write("---")
+            st.subheader("📊 Modo de cálculo enfierradura")
+            modo_muro_h = st.radio(
+                "Selecciona el modo",
+                ["🔨 Modo Simple (estimación)", "📐 Modo Detallado (con planos)"],
+                horizontal=True,
+                key="modo_muro_h"
+            )
+
+            # ============================
+            # MODO SIMPLE
+            # ============================
+            if modo_muro_h == "🔨 Modo Simple (estimación)":
+                st.caption("Valores típicos según NCh430 para muros estructurales en Chile")
+
+                if espesor_muro_h >= 0.20:
+                    st.warning("⚠️ Espesor ≥ 20cm: NCh430 exige doble malla obligatoriamente")
+                    tipo_malla = "Doble"
+                else:
+                    st.info("ℹ️ Espesor < 20cm: Se puede usar malla simple o doble según cálculo")
+                    tipo_malla = st.selectbox("Tipo de malla", ["Simple", "Doble"], key="malla_simple_h")
+
+                ms1, ms2 = st.columns(2)
+                with ms1:
+                    diam_vert_s = st.selectbox("Diámetro barra vertical",
+                                               ["Ø8mm", "Ø10mm", "Ø12mm"],
+                                               index=1, key="diam_vert_s")
+                    sep_vert_s = st.selectbox("Separación vertical (m)",
+                                              ["0.15", "0.20", "0.25"],
+                                              index=1, key="sep_vert_s")
+                with ms2:
+                    diam_horiz_s = st.selectbox("Diámetro barra horizontal",
+                                                ["Ø8mm", "Ø10mm", "Ø12mm"],
+                                                index=1, key="diam_horiz_s")
+                    sep_horiz_s = st.selectbox("Separación horizontal (m)",
+                                               ["0.15", "0.20", "0.25"],
+                                               index=1, key="sep_horiz_s")
+
+                sep_v_s = float(sep_vert_s)
+                sep_h_s = float(sep_horiz_s)
+                n_mallas = 2 if tipo_malla == "Doble" else 1
+
+                # Barras verticales
+                cant_barras_v_s = (largo_muro_h / sep_v_s + 1) * cant_muros_h * n_mallas
+                ml_v_s = cant_barras_v_s * alto_muro_h
+                kg_v_s = ml_v_s * PESO_BARRAS[diam_vert_s]
+
+                # Barras horizontales
+                cant_barras_h_s = (alto_muro_h / sep_h_s + 1) * cant_muros_h * n_mallas
+                ml_h_s = cant_barras_h_s * largo_muro_h
+                kg_h_s = ml_h_s * PESO_BARRAS[diam_horiz_s]
+
+                # Barras de borde (4 barras Ø12mm en cada extremo)
+                st.info("💡 NCh430: Se recomiendan barras de borde en extremos del muro")
+                diam_borde = st.selectbox("Diámetro barra de borde",
+                                          ["Ø12mm", "Ø16mm", "Ø20mm"],
+                                          index=0, key="diam_borde_s")
+                ml_borde = alto_muro_h * 4 * cant_muros_h
+                kg_borde = ml_borde * PESO_BARRAS[diam_borde]
+
+                # Refuerzo diagonal vanos
+                kg_diag = 0
+                if cant_puertas_h > 0 or cant_ventanas_h > 0:
+                    st.info("💡 NCh430: Se requieren barras diagonales Ø12mm en esquinas de vanos")
+                    ml_diag = (cant_puertas_h + cant_ventanas_h) * 4 * 0.60 * cant_muros_h
+                    kg_diag = ml_diag * PESO_BARRAS["Ø12mm"]
+
+                kg_total_h = kg_v_s + kg_h_s + kg_borde + kg_diag
+
+                st.write("---")
+                st.subheader("📦 Resultados Hormigón")
+                mostrar_materiales(mat_muro_h)
+
+                st.subheader("📦 Resultados Enfierradura")
+                re1, re2 = st.columns(2)
+                with re1:
+                    st.info(f"Volumen neto muro: {vol_neto_h:.2f} m³")
+                    st.info(f"Malla: {tipo_malla} ({n_mallas} capa/s)")
+                    st.info(f"Barras verticales {diam_vert_s}: {cant_barras_v_s:.0f} barras → {kg_v_s:.1f} kg")
+                    st.info(f"Barras horizontales {diam_horiz_s}: {cant_barras_h_s:.0f} barras → {kg_h_s:.1f} kg")
+                with re2:
+                    st.info(f"Barras de borde {diam_borde}: {ml_borde:.1f} ml → {kg_borde:.1f} kg")
+                    if kg_diag > 0:
+                        st.info(f"Refuerzo diagonal vanos: {kg_diag:.1f} kg")
+                    st.success(f"TOTAL ACERO: {kg_total_h:.1f} kg")
+
+            # ============================
+            # MODO DETALLADO
+            # ============================
+            elif modo_muro_h == "📐 Modo Detallado (con planos)":
+                st.caption("Ingresa los datos exactos según planos estructurales")
+
+                if espesor_muro_h >= 0.20:
+                    st.warning("⚠️ Espesor ≥ 20cm: NCh430 exige doble malla obligatoriamente")
+                    tipo_malla_d = "Doble"
+                else:
+                    tipo_malla_d = st.selectbox("Tipo de malla", ["Simple", "Doble"], key="malla_det_h")
+
+                n_mallas_d = 2 if tipo_malla_d == "Doble" else 1
+
+                st.write("**Armadura vertical**")
+                dv1, dv2 = st.columns(2)
+                with dv1:
+                    diam_vert_d = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), index=1, key="diam_vert_d")
+                with dv2:
+                    sep_vert_d = st.selectbox("Separación (m)", ["0.10", "0.15", "0.20", "0.25", "0.30"], index=2, key="sep_vert_d")
+
+                st.write("**Armadura horizontal**")
+                dh1, dh2 = st.columns(2)
+                with dh1:
+                    diam_horiz_d = st.selectbox("Diámetro", list(PESO_BARRAS.keys()), index=1, key="diam_horiz_d")
+                with dh2:
+                    sep_horiz_d = st.selectbox("Separación (m)", ["0.10", "0.15", "0.20", "0.25", "0.30"], index=2, key="sep_horiz_d")
+
+                st.write("**Barras de borde**")
+                bb1, bb2, bb3 = st.columns(3)
+                with bb1:
+                    cant_barras_borde_d = st.number_input("Cantidad barras borde", value=4, step=1, key="cant_bb_d")
+                with bb2:
+                    diam_borde_d = st.selectbox("Diámetro borde", list(PESO_BARRAS.keys()), index=3, key="diam_borde_d")
+                with bb3:
+                    sep_estribos_d = st.selectbox("Sep. estribos borde (m)", ["0.08", "0.10", "0.15"], key="sep_est_d")
+
+                st.write("**Refuerzo diagonal vanos**")
+                rd1, rd2 = st.columns(2)
+                with rd1:
+                    diam_diag_d = st.selectbox("Diámetro diagonal", list(PESO_BARRAS.keys()), index=2, key="diam_diag_d")
+                with rd2:
+                    largo_diag_d = st.number_input("Largo diagonal (m)", value=0.60, key="largo_diag_d")
+
+                sep_v_d = float(sep_vert_d)
+                sep_h_d = float(sep_horiz_d)
+
+                # Cálculos
+                cant_v_d = (largo_muro_h / sep_v_d + 1) * cant_muros_h * n_mallas_d
+                ml_v_d = cant_v_d * alto_muro_h
+                kg_v_d = ml_v_d * PESO_BARRAS[diam_vert_d]
+
+                cant_h_d = (alto_muro_h / sep_h_d + 1) * cant_muros_h * n_mallas_d
+                ml_h_d = cant_h_d * largo_muro_h
+                kg_h_d = ml_h_d * PESO_BARRAS[diam_horiz_d]
+
+                ml_borde_d = alto_muro_h * cant_barras_borde_d * cant_muros_h
+                kg_borde_d = ml_borde_d * PESO_BARRAS[diam_borde_d]
+
+                n_estribos_borde = (alto_muro_h / float(sep_estribos_d)) * cant_muros_h
+                kg_estribos_borde = n_estribos_borde * (espesor_muro_h * 2 + 0.20) * PESO_BARRAS["Ø8mm"]
+
+                ml_diag_d = (cant_puertas_h + cant_ventanas_h) * 4 * largo_diag_d * cant_muros_h
+                kg_diag_d = ml_diag_d * PESO_BARRAS[diam_diag_d]
+
+                kg_total_d = kg_v_d + kg_h_d + kg_borde_d + kg_estribos_borde + kg_diag_d
+
+                st.write("---")
+                st.subheader("📦 Resultados Hormigón")
+                mostrar_materiales(mat_muro_h)
+
+                st.subheader("📦 Resultados Enfierradura")
+                rd1, rd2 = st.columns(2)
+                with rd1:
+                    st.info(f"Volumen neto: {vol_neto_h:.2f} m³")
+                    st.info(f"Malla: {tipo_malla_d} ({n_mallas_d} capa/s)")
+                    st.info(f"Barras vert. {diam_vert_d}: {cant_v_d:.0f} barras → {kg_v_d:.1f} kg")
+                    st.info(f"Barras horiz. {diam_horiz_d}: {cant_h_d:.0f} barras → {kg_h_d:.1f} kg")
+                with rd2:
+                    st.info(f"Barras borde {diam_borde_d}: {ml_borde_d:.1f} ml → {kg_borde_d:.1f} kg")
+                    st.info(f"Estribos borde Ø8mm: {n_estribos_borde:.0f} unid → {kg_estribos_borde:.1f} kg")
+                    if kg_diag_d > 0:
+                        st.info(f"Diagonal vanos {diam_diag_d}: {kg_diag_d:.1f} kg")
+                    st.success(f"TOTAL ACERO: {kg_total_d:.1f} kg")         
 # ============================
 # EXPORTAR A PDF
 # ============================
