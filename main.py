@@ -1130,7 +1130,175 @@ if option == "Cubicacion":
                 st.text(f"Cantidad de tablas de {mat['largo']}m: {cant_tablas:.0f} unidades")
                 st.caption("Considera un 10% de desperdicio por cortes")
                 cant_tablas_real = cant_tablas * 1.10
-                st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")        
+                st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")   
+
+        # --- 2. Moldaje de Muro ---
+        with st.expander("2. Moldaje de Muro", expanded=False):
+            st.caption("Moldaje para ambas caras del muro")
+
+            material_muro = st.selectbox(
+                "Material de moldaje",
+                list(MATERIALES_MOLDAJE.keys()),
+                key="mat_mold_muro"
+            )
+
+            mm1, mm2, mm3 = st.columns(3)
+            with mm1:
+                largo_muro_m = st.number_input("Largo muro (m)", value=0.0, key="largo_muro_mold")
+            with mm2:
+                alto_muro_m = st.number_input("Alto muro (m)", value=0.0, key="alto_muro_mold")
+            with mm3:
+                cant_muro_m = st.number_input("Cantidad de muros", value=0, step=1, key="cant_muro_mold")
+
+            # m² = largo * alto * 2 caras * cantidad
+            m2_muro = largo_muro_m * alto_muro_m * 2 * cant_muro_m
+
+            st.write("---")
+            st.info(f"Superficie de moldaje: {m2_muro:.2f} m²")
+
+            mat_m = MATERIALES_MOLDAJE[material_muro]
+
+            if "solo_m2" in mat_m:
+                st.text(f"Moldaje metálico requerido: {m2_muro:.2f} m²")
+            elif "area_plancha" in mat_m:
+                cant_planchas = m2_muro / mat_m["area_plancha"]
+                cant_planchas_real = cant_planchas * 1.10
+                st.text(f"Planchas terciado 1,22x2,44m: {cant_planchas:.0f} unidades")
+                st.text(f"Con 10% desperdicio: {cant_planchas_real:.0f} planchas")
+            else:
+                ml_tabla = m2_muro / mat_m["ancho"]
+                cant_tablas = ml_tabla / mat_m["largo"]
+                cant_tablas_real = cant_tablas * 1.10
+                st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
+                st.text(f"Cantidad de tablas de {mat_m['largo']}m: {cant_tablas:.0f} unidades")
+                st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")
+
+        # --- 3. Moldaje de Losa ---
+        with st.expander("3. Moldaje de Losa", expanded=False):
+            st.caption("Moldaje para cara inferior de la losa")
+
+            material_losa = st.selectbox(
+                "Material de moldaje",
+                list(MATERIALES_MOLDAJE.keys()),
+                key="mat_mold_losa"
+            )
+
+            ml1, ml2 = st.columns(2)
+            with ml1:
+                largo_losa_m = st.number_input("Largo losa (m)", value=0.0, key="largo_losa_mold")
+            with ml2:
+                ancho_losa_m = st.number_input("Ancho losa (m)", value=0.0, key="ancho_losa_mold")
+
+            # m² = largo * ancho (solo cara inferior)
+            m2_losa = largo_losa_m * ancho_losa_m
+
+            st.write("---")
+            st.info(f"Superficie de moldaje: {m2_losa:.2f} m²")
+
+            mat_l = MATERIALES_MOLDAJE[material_losa]
+
+            if "solo_m2" in mat_l:
+                st.text(f"Moldaje metálico requerido: {m2_losa:.2f} m²")
+            elif "area_plancha" in mat_l:
+                cant_planchas = m2_losa / mat_l["area_plancha"]
+                cant_planchas_real = cant_planchas * 1.10
+                st.text(f"Planchas terciado 1,22x2,44m: {cant_planchas:.0f} unidades")
+                st.text(f"Con 10% desperdicio: {cant_planchas_real:.0f} planchas")
+            else:
+                ml_tabla = m2_losa / mat_l["ancho"]
+                cant_tablas = ml_tabla / mat_l["largo"]
+                cant_tablas_real = cant_tablas * 1.10
+                st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
+                st.text(f"Cantidad de tablas de {mat_l['largo']}m: {cant_tablas:.0f} unidades")
+                st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")
+
+        # --- 4. Moldaje de Viga ---
+        with st.expander("4. Moldaje de Viga", expanded=False):
+            st.caption("Moldaje para fondo y caras laterales de la viga")
+
+            material_viga = st.selectbox(
+                "Material de moldaje",
+                list(MATERIALES_MOLDAJE.keys()),
+                key="mat_mold_viga"
+            )
+
+            mv1, mv2, mv3, mv4 = st.columns(4)
+            with mv1:
+                largo_viga_m = st.number_input("Largo viga (m)", value=0.0, key="largo_viga_mold")
+            with mv2:
+                alto_viga_m = st.number_input("Alto viga (m)", value=0.0, key="alto_viga_mold")
+            with mv3:
+                ancho_viga_m = st.number_input("Ancho viga (m)", value=0.0, key="ancho_viga_mold")
+            with mv4:
+                cant_viga_m = st.number_input("Cantidad vigas", value=0, step=1, key="cant_viga_mold")
+
+            # m² = (fondo + 2 caras laterales) * largo * cantidad
+            m2_viga = (ancho_viga_m + (alto_viga_m * 2)) * largo_viga_m * cant_viga_m
+
+            st.write("---")
+            st.info(f"Superficie de moldaje: {m2_viga:.2f} m²")
+
+            mat_v = MATERIALES_MOLDAJE[material_viga]
+
+            if "solo_m2" in mat_v:
+                st.text(f"Moldaje metálico requerido: {m2_viga:.2f} m²")
+            elif "area_plancha" in mat_v:
+                cant_planchas = m2_viga / mat_v["area_plancha"]
+                cant_planchas_real = cant_planchas * 1.10
+                st.text(f"Planchas terciado 1,22x2,44m: {cant_planchas:.0f} unidades")
+                st.text(f"Con 10% desperdicio: {cant_planchas_real:.0f} planchas")
+            else:
+                ml_tabla = m2_viga / mat_v["ancho"]
+                cant_tablas = ml_tabla / mat_v["largo"]
+                cant_tablas_real = cant_tablas * 1.10
+                st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
+                st.text(f"Cantidad de tablas de {mat_v['largo']}m: {cant_tablas:.0f} unidades")
+                st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")
+
+        # --- 5. Moldaje de Pilar ---
+        with st.expander("5. Moldaje de Pilar", expanded=False):
+            st.caption("Moldaje para las 4 caras del pilar")
+
+            material_pilar = st.selectbox(
+                "Material de moldaje",
+                list(MATERIALES_MOLDAJE.keys()),
+                key="mat_mold_pilar"
+            )
+
+            mp1, mp2, mp3, mp4 = st.columns(4)
+            with mp1:
+                ancho_pilar_m = st.number_input("Ancho pilar (m)", value=0.0, key="ancho_pilar_mold")
+            with mp2:
+                largo_pilar_m = st.number_input("Largo pilar (m)", value=0.0, key="largo_pilar_mold")
+            with mp3:
+                alto_pilar_m = st.number_input("Alto pilar (m)", value=0.0, key="alto_pilar_mold")
+            with mp4:
+                cant_pilar_m = st.number_input("Cantidad pilares", value=0, step=1, key="cant_pilar_mold")
+
+            # m² = perimetro * alto * cantidad
+            perimetro_pilar = (ancho_pilar_m + largo_pilar_m) * 2
+            m2_pilar = perimetro_pilar * alto_pilar_m * cant_pilar_m
+
+            st.write("---")
+            st.info(f"Superficie de moldaje: {m2_pilar:.2f} m²")
+
+            mat_p = MATERIALES_MOLDAJE[material_pilar]
+
+            if "solo_m2" in mat_p:
+                st.text(f"Moldaje metálico requerido: {m2_pilar:.2f} m²")
+            elif "area_plancha" in mat_p:
+                cant_planchas = m2_pilar / mat_p["area_plancha"]
+                cant_planchas_real = cant_planchas * 1.10
+                st.text(f"Planchas terciado 1,22x2,44m: {cant_planchas:.0f} unidades")
+                st.text(f"Con 10% desperdicio: {cant_planchas_real:.0f} planchas")
+            else:
+                ml_tabla = m2_pilar / mat_p["ancho"]
+                cant_tablas = ml_tabla / mat_p["largo"]
+                cant_tablas_real = cant_tablas * 1.10
+                st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
+                st.text(f"Cantidad de tablas de {mat_p['largo']}m: {cant_tablas:.0f} unidades")
+                st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")     
+                
 # ============================
 # EXPORTAR A PDF
 # ============================
