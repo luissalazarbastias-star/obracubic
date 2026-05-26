@@ -925,12 +925,12 @@ if option == "Cubicacion":
             "Esquinero Perf. Eco. 25x25 - 3,00m": {"largo": 3.00, "peso": 0.15},
         }
 
-        # --- 1. Canal (Solera inf. y sup.) ---
+        # --- 1. Canal / Solera ---
         with st.expander("1. Canal / Solera (inferior y superior)", expanded=False):
             st.caption("Se usa como solera en piso y cielo del tabique")
 
             canal_tipo = st.selectbox("Tipo de canal", list(CANALES.keys()), key="canal_tipo")
-            
+
             ca1, ca2 = st.columns(2)
             with ca1:
                 largo_tabique_c = st.number_input("Largo del tabique (m)", value=0.0, key="largo_tab_c")
@@ -938,14 +938,45 @@ if option == "Cubicacion":
                 cant_tabiques_c = st.number_input("Cantidad de tabiques", value=0, step=1, key="cant_tab_c")
 
             largo_canal = CANALES[canal_tipo]["largo"]
-            
+
             # Solera inf + sup = largo tabique * 2 * cantidad tabiques
             ml_canal = largo_tabique_c * 2 * cant_tabiques_c
             cant_piezas_canal = ml_canal / largo_canal if largo_canal > 0 else 0
 
+            # Desperdicio solera
+            ultimo_tramo = ml_canal % largo_canal
+            desperdicio_canal = (largo_canal - ultimo_tramo) if ultimo_tramo > 0 else 0
+            
+            # Sugerencia canal óptimo
+            desperdicio_canal_240 = None
+            desperdicio_canal_300 = None
+            
+            if largo_tabique_c > 0:
+                ml_total_240 = largo_tabique_c * 2 * (cant_tabiques_c if cant_tabiques_c > 0 else 1)
+                ml_total_300 = ml_total_240
+                sobra_240 = ml_total_240 % 2.40
+                sobra_300 = ml_total_300 % 3.00
+                desperdicio_canal_240 = (2.40 - sobra_240) if sobra_240 > 0 else 0
+                desperdicio_canal_300 = (3.00 - sobra_300) if sobra_300 > 0 else 0
+
             st.write("---")
             st.info(f"Metros lineales necesarios: {ml_canal:.2f} ml")
             st.text(f"Cantidad de canales {largo_canal}m: {cant_piezas_canal:.0f} piezas")
+
+            if largo_tabique_c > 0:
+                st.write("---")
+                st.subheader("📐 Análisis de desperdicio")
+                st.text(f"Desperdicio último tramo: {desperdicio_canal:.2f}m")
+
+                st.write("**💡 Sugerencia de canal más conveniente:**")
+                if desperdicio_canal_240 is not None and desperdicio_canal_300 is not None:
+                    if desperdicio_canal_240 <= desperdicio_canal_300:
+                        st.success(f"✅ Usa canal de 2,40m → desperdicio {desperdicio_canal_240:.2f}m")
+                        st.warning(f"Con 3,00m → desperdicio {desperdicio_canal_300:.2f}m")
+                    else:
+                        st.success(f"✅ Usa canal de 3,00m → desperdicio {desperdicio_canal_300:.2f}m")
+                        st.warning(f"Con 2,40m → desperdicio {desperdicio_canal_240:.2f}m")
+
             st.caption("Considera solera inferior + solera superior")
 
         # --- 2. Montante / Pie Derecho ---
