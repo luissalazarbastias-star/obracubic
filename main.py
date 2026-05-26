@@ -1303,11 +1303,11 @@ if option == "Cubicacion":
     # Muros
     # ============================   
 
-    with st.expander("🧱 Muros", expanded=False):
+    with st.expander(" Muros", expanded=False):
         # ============================
         # MURO DE HORMIGÓN
         # ============================
-        with st.expander("3. Muro de Hormigón (con Enfierradura)", expanded=False):
+        with st.expander("1. Muro de Hormigón (con Enfierradura)", expanded=False):
 
             st.subheader("📐 Dimensiones del muro")
             mh1, mh2, mh3, mh4 = st.columns(4)
@@ -1513,7 +1513,335 @@ if option == "Cubicacion":
                     st.info(f"Estribos borde Ø8mm: {n_estribos_borde:.0f} unid → {kg_estribos_borde:.1f} kg")
                     if kg_diag_d > 0:
                         st.info(f"Diagonal vanos {diam_diag_d}: {kg_diag_d:.1f} kg")
-                    st.success(f"TOTAL ACERO: {kg_total_d:.1f} kg")         
+                    st.success(f"TOTAL ACERO: {kg_total_d:.1f} kg") 
+
+        # ============================
+        # MURO DE LADRILLO
+        # ============================
+        with st.expander("2. Muro de Ladrillo", expanded=False):
+
+            LADRILLOS = {
+                "Fiscal (29x14x5cm)": {
+                    "largo": 0.29, "ancho": 0.14, "alto": 0.05,
+                    "junta": 0.013,  # promedio 1,0 a 1,5cm
+                    "descripcion": "Muros estructurales y de carga"
+                },
+                "Princesa (29x14x7,1cm)": {
+                    "largo": 0.29, "ancho": 0.14, "alto": 0.071,
+                    "junta": 0.010,
+                    "descripcion": "Tabiques y muros no soportantes"
+                },
+                "Mechón/Hueco Titán (29x14x9,4cm)": {
+                    "largo": 0.29, "ancho": 0.14, "alto": 0.094,
+                    "junta": 0.010,
+                    "descripcion": "Tabiquería interior y muros divisorios"
+                },
+                "Caravista (29x14x7,1cm)": {
+                    "largo": 0.29, "ancho": 0.14, "alto": 0.071,
+                    "junta": 0.010,
+                    "descripcion": "Terminación estética, exteriores sin estuco"
+                },
+            }
+
+            ladrillo_tipo = st.selectbox(
+                "Tipo de ladrillo",
+                list(LADRILLOS.keys()),
+                key="ladrillo_tipo"
+            )
+            st.caption(LADRILLOS[ladrillo_tipo]["descripcion"])
+
+            st.subheader("📐 Dimensiones del muro")
+            lb1, lb2, lb3 = st.columns(3)
+            with lb1:
+                largo_muro_l = st.number_input("Largo muro (m)", value=0.0, key="largo_muro_l")
+            with lb2:
+                alto_muro_l = st.number_input("Alto muro (m)", value=0.0, key="alto_muro_l")
+            with lb3:
+                cant_muros_l = st.number_input("Cantidad muros", value=0, step=1, key="cant_muros_l")
+
+            # Vanos
+            st.subheader("🚪 Vanos")
+            vl1, vl2 = st.columns(2)
+            with vl1:
+                cant_puertas_l = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_l")
+                ancho_puerta_l = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_l")
+                alto_puerta_l = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_l")
+            with vl2:
+                cant_ventanas_l = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_l")
+                ancho_ventana_l = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_l")
+                alto_ventana_l = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_l")
+
+            # Desperdicio
+            desp_ladrillo = st.slider("% Desperdicio ladrillos", 0, 15, 5, key="desp_ladrillo")
+
+            lad = LADRILLOS[ladrillo_tipo]
+
+            # Área bruta y neta
+            area_bruta_l = largo_muro_l * alto_muro_l * cant_muros_l
+            area_vanos_l = ((cant_puertas_l * ancho_puerta_l * alto_puerta_l) +
+                           (cant_ventanas_l * ancho_ventana_l * alto_ventana_l))
+            area_neta_l = area_bruta_l - area_vanos_l
+
+            # Ladrillos por m²
+            largo_con_junta = lad["largo"] + lad["junta"]
+            alto_con_junta = lad["alto"] + lad["junta"]
+            ladrillos_por_m2 = 1 / (largo_con_junta * alto_con_junta)
+
+            # Total ladrillos
+            total_ladrillos = area_neta_l * ladrillos_por_m2
+            total_ladrillos_desp = total_ladrillos * (1 + desp_ladrillo / 100)
+
+            # Mortero de pega (dosificación 1:4)
+            # Volumen de junta aprox = 20% del volumen total del muro
+            vol_mortero = area_neta_l * lad["ancho"] * 0.20
+            # Dosificación 1:4 → por m³ de mortero: 0.25m³ cemento + 1m³ arena
+            cemento_mortero_kg = vol_mortero * 400  # ~400 kg cemento por m³ mortero
+            cemento_mortero_sacos = cemento_mortero_kg / 25
+            arena_mortero_m3 = vol_mortero * 1.10
+
+            st.write("---")
+            st.subheader("📦 Resultados")
+
+            rl1, rl2 = st.columns(2)
+            with rl1:
+                st.info(f"Área neta muro: {area_neta_l:.2f} m²")
+                st.info(f"Ladrillos por m²: {ladrillos_por_m2:.1f} unidades")
+                st.info(f"Total ladrillos: {total_ladrillos:.0f} unidades")
+                st.success(f"Con {desp_ladrillo}% desperdicio: {total_ladrillos_desp:.0f} ladrillos")
+            with rl2:
+                st.info(f"Volumen mortero: {vol_mortero:.3f} m³")
+                st.info(f"Cemento mortero: {cemento_mortero_sacos:.0f} sacos de 25kg")
+                st.info(f"Arena mortero: {arena_mortero_m3:.2f} m³")
+
+            # Advertencia caravista
+            if "Caravista" in ladrillo_tipo:
+                st.warning("⚠️ Ladrillo Caravista: Requiere mortero especial de color y junta vista. Considerar maestro especializado.")
+
+            st.write("---")
+            st.subheader("💡 Datos técnicos")
+            st.text(f"Dimensiones ladrillo: {lad['largo']*100:.0f}x{lad['ancho']*100:.0f}x{lad['alto']*100:.1f}cm")
+            st.text(f"Junta de mortero: {lad['junta']*10:.0f}mm")
+            st.text(f"Dosificación mortero: 1:4 (cemento:arena)") 
+
+        # ============================
+        # TABIQUE METALCON
+        # ============================
+        with st.expander("3. Tabique Metalcon", expanded=False):
+
+            MONTANTES_MU = {
+                "Montante Normal Perf. 60x38x0,5 - 2,40m": {"largo": 2.40, "peso": 0.56},
+                "Montante Normal Perf. 60x38x0,5 - 3,00m": {"largo": 3.00, "peso": 0.56},
+                "Montante Económico 38x38x0,5 - 2,40m":    {"largo": 2.40, "peso": 0.48},
+                "Montante Económico 38x38x0,5 - 3,00m":    {"largo": 3.00, "peso": 0.48},
+            }
+            CANALES_MU = {
+                "Canal Normal 61x20x0,5 - 3,00m":    {"largo": 3.00, "peso": 0.39},
+                "Canal Económico 39x20x0,5 - 3,00m": {"largo": 3.00, "peso": 0.31},
+            }
+
+            st.subheader("📐 Dimensiones del tabique")
+            tm1, tm2, tm3 = st.columns(3)
+            with tm1:
+                largo_tab_mu = st.number_input("Largo tabique (m)", value=0.0, key="largo_tab_mu")
+            with tm2:
+                alto_tab_mu = st.number_input("Alto tabique (m)", value=0.0, key="alto_tab_mu")
+            with tm3:
+                cant_tab_mu = st.number_input("Cantidad tabiques", value=0, step=1, key="cant_tab_mu")
+
+            sep_mu = st.selectbox("Separación montantes", ["0,40m (recomendado)", "0,60m (máximo)"], key="sep_mu")
+            sep_valor_mu = 0.40 if "0,40" in sep_mu else 0.60
+
+            canal_tipo_mu = st.selectbox("Tipo de canal", list(CANALES_MU.keys()), key="canal_mu")
+            montante_tipo_mu = st.selectbox("Tipo de montante", list(MONTANTES_MU.keys()), key="montante_mu")
+
+            st.subheader("🚪 Vanos")
+            v1, v2 = st.columns(2)
+            with v1:
+                cant_puertas_mu = st.number_input("Cantidad de puertas", value=0, step=1, key="cant_puertas_mu")
+                ancho_puerta_mu = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_mu")
+            with v2:
+                cant_ventanas_mu = st.number_input("Cantidad de ventanas", value=0, step=1, key="cant_ventanas_mu")
+                ancho_ventana_mu = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_mu")
+
+            st.subheader("🔲 Esquinas y Encuentros")
+            ec1, ec2 = st.columns(2)
+            with ec1:
+                cant_esquinas_mu = st.number_input("Cantidad de esquinas", value=0, step=1, key="cant_esq_mu")
+            with ec2:
+                cant_encuentros_mu = st.number_input("Cantidad de encuentros de muros", value=0, step=1, key="cant_enc_mu")
+
+            largo_canal_mu = CANALES_MU[canal_tipo_mu]["largo"]
+            largo_mont_mu = MONTANTES_MU[montante_tipo_mu]["largo"]
+
+            # Cálculo canales (solera inf + sup)
+            ml_canal_mu = largo_tab_mu * 2 * cant_tab_mu
+            cant_canales_mu = ml_canal_mu / largo_canal_mu if largo_canal_mu > 0 else 0
+
+            # Cálculo montantes
+            montantes_por_tab = int(largo_tab_mu / sep_valor_mu) + 1
+            total_montantes_mu = montantes_por_tab * cant_tab_mu
+
+            # Montantes extra por vanos (2 por cada vano)
+            mont_extra_vanos = (cant_puertas_mu + cant_ventanas_mu) * 2
+
+            # Montantes extra por esquinas (3 por esquina)
+            mont_extra_esq = cant_esquinas_mu * 3
+
+            # Montantes extra por encuentros (4 por encuentro)
+            mont_extra_enc = cant_encuentros_mu * 4
+
+            total_montantes_final = total_montantes_mu + mont_extra_vanos + mont_extra_esq + mont_extra_enc
+
+            # Diagonales (2 por tabique)
+            total_diagonales = cant_tab_mu * 2
+
+            # Canales extra por vanos (1 canal por cada lado del vano)
+            canales_extra_vanos = (cant_puertas_mu + cant_ventanas_mu) * 2
+            total_canales_final = cant_canales_mu + canales_extra_vanos
+
+            # Tornillos autoperforantes
+            tornillos = (total_montantes_final * 4) + (total_canales_final * 2)
+
+            # Aislación lana de vidrio
+            m2_aislacion = largo_tab_mu * alto_tab_mu * cant_tab_mu
+            m2_vanos = (cant_puertas_mu * ancho_puerta_mu * alto_tab_mu) + (cant_ventanas_mu * ancho_ventana_mu * alto_tab_mu)
+            m2_aislacion_neta = m2_aislacion - m2_vanos
+
+            st.write("---")
+            st.subheader("📦 Resultados")
+
+            r1, r2 = st.columns(2)
+            with r1:
+                st.info(f"Canales totales: {total_canales_final:.0f} piezas de {largo_canal_mu}m")
+                st.info(f"Montantes totales: {total_montantes_final:.0f} piezas de {largo_mont_mu}m")
+                st.info(f"Diagonales: {total_diagonales} piezas")
+            with r2:
+                st.info(f"Pletinas esquinas: {cant_esquinas_mu} unidades")
+                st.info(f"Tornillos autoperf.: {tornillos:.0f} unidades")
+                st.info(f"Lana de vidrio: {m2_aislacion_neta:.2f} m²")
+
+            st.write("---")
+            st.subheader("🔧 Herramientas necesarias")
+            st.markdown("""
+            - 🔩 Atornillador
+            - 🔧 Alicates
+            - ⚙️ Amoladora (para cortar perfiles)
+            - 🔨 Taladro
+            - 📏 Nivel
+            - 📐 Huincha de medir
+            """)
+
+        # ============================
+        # TABIQUE DE MADERA
+        # ============================
+        with st.expander("4. Tabique de Madera", expanded=False):
+
+            MADERA_TIPOS = {
+                "2x2 Pino Dimensionado Verde 3,2m":      {"largo": 3.20, "ancho": 0.038, "alto": 0.038},
+                "2x3 Pino Dimensionado Verde 3,2m":      {"largo": 3.20, "ancho": 0.038, "alto": 0.063},
+                "1x2 Pino Certificado Seco Cepillado 3,2m": {"largo": 3.20, "ancho": 0.025, "alto": 0.038},
+            }
+
+            st.subheader("📐 Dimensiones del tabique")
+            tw1, tw2, tw3 = st.columns(3)
+            with tw1:
+                largo_tab_ma = st.number_input("Largo tabique (m)", value=0.0, key="largo_tab_ma")
+            with tw2:
+                alto_tab_ma = st.number_input("Alto tabique (m)", value=0.0, key="alto_tab_ma")
+            with tw3:
+                cant_tab_ma = st.number_input("Cantidad tabiques", value=0, step=1, key="cant_tab_ma")
+
+            madera_tipo = st.selectbox("Tipo de madera", list(MADERA_TIPOS.keys()), key="madera_tipo")
+
+            sep_ma = st.selectbox("Separación entre montantes", ["0,40m", "0,60m"], key="sep_ma")
+            sep_valor_ma = 0.40 if "0,40" in sep_ma else 0.60
+
+            cant_cad = st.selectbox("Filas de cadenetas", ["1 fila (cada 80cm)", "2 filas (cada 60cm)", "3 filas (cada 50cm)"], key="cant_cad")
+            n_cadenetas = int(cant_cad[0])
+
+            st.subheader("🚪 Vanos")
+            vw1, vw2 = st.columns(2)
+            with vw1:
+                cant_puertas_ma = st.number_input("Cantidad de puertas", value=0, step=1, key="cant_puertas_ma")
+                ancho_puerta_ma = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_ma")
+            with vw2:
+                cant_ventanas_ma = st.number_input("Cantidad de ventanas", value=0, step=1, key="cant_ventanas_ma")
+                ancho_ventana_ma = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_ma")
+
+            st.subheader("🔲 Esquinas")
+            cant_esq_ma = st.number_input("Cantidad de esquinas", value=0, step=1, key="cant_esq_ma")
+
+            largo_mad = MADERA_TIPOS[madera_tipo]["largo"]
+
+            # Soleras y carreras (inf + sup)
+            ml_solera_ma = largo_tab_ma * 2 * cant_tab_ma
+            cant_soleras_ma = ml_solera_ma / largo_mad if largo_mad > 0 else 0
+
+            # Montantes
+            montantes_por_tab_ma = int(largo_tab_ma / sep_valor_ma) + 1
+            total_mont_ma = montantes_por_tab_ma * cant_tab_ma
+
+            # Diagonales (2 por tabique)
+            total_diag_ma = cant_tab_ma * 2
+
+            # Cadenetas
+            ml_cadenetas = largo_tab_ma * n_cadenetas * cant_tab_ma
+            cant_cadenetas = ml_cadenetas / largo_mad if largo_mad > 0 else 0
+
+            # Vanos puertas (1/4 pieza = 0,8m aprox)
+            piezas_puertas = cant_puertas_ma * 1
+            # Vanos ventanas (dintel y peana = 2 piezas)
+            piezas_ventanas = cant_ventanas_ma * 2
+
+            # Esquinas (1 pieza cuadrada 10x10cm por esquina)
+            piezas_esquinas = cant_esq_ma
+
+            # Total listones
+            total_listones = cant_soleras_ma + total_mont_ma + total_diag_ma + cant_cadenetas + piezas_puertas + piezas_ventanas + piezas_esquinas
+
+            # Clavos (aprox 2 por unión)
+            clavos = total_listones * 4
+
+            # Papel kraft (m²)
+            m2_papel = largo_tab_ma * alto_tab_ma * cant_tab_ma
+            m2_vanos_ma = (cant_puertas_ma * ancho_puerta_ma * alto_tab_ma) + (cant_ventanas_ma * ancho_ventana_ma * alto_tab_ma)
+            m2_papel_neto = m2_papel - m2_vanos_ma
+
+            # Aislante (m²)
+            m2_aislante_ma = m2_papel_neto
+
+            st.write("---")
+            st.subheader("📦 Resultados")
+
+            rm1, rm2 = st.columns(2)
+            with rm1:
+                st.info(f"Soleras y carreras: {cant_soleras_ma:.0f} piezas de {largo_mad}m")
+                st.info(f"Montantes: {total_mont_ma:.0f} piezas de {largo_mad}m")
+                st.info(f"Diagonales: {total_diag_ma} piezas de {largo_mad}m")
+                st.info(f"Cadenetas: {cant_cadenetas:.0f} piezas de {largo_mad}m")
+            with rm2:
+                st.info(f"Vanos puertas: {piezas_puertas} piezas")
+                st.info(f"Vanos ventanas: {piezas_ventanas} piezas")
+                st.info(f"Esquinas: {piezas_esquinas} piezas")
+                st.info(f"Total listones: {total_listones:.0f} piezas")
+
+            st.write("---")
+            rm3, rm4 = st.columns(2)
+            with rm3:
+                st.info(f"Papel kraft: {m2_papel_neto:.2f} m²")
+                st.info(f"Aislante: {m2_aislante_ma:.2f} m²")
+            with rm4:
+                st.info(f"Clavos aprox.: {clavos:.0f} unidades")
+
+            st.write("---")
+            st.subheader("🔧 Herramientas necesarias")
+            st.markdown("""
+            - 🔨 Martillo
+            - 🪚 Sierra circular
+            - 🪚 Serrucho
+            - 📏 Nivel
+            - 📐 Huincha de medir
+            """)
 # ============================
 # EXPORTAR A PDF
 # ============================
