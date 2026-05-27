@@ -2570,336 +2570,336 @@ if option == "Cubicacion":
                 st.subheader("🪵 Tratamiento recomendado")
                 st.warning(f"⚠️ {dk_madera}: Aplicar impregnante protector tipo Cerestain o Sipasol antes de instalar")
 
+    # ============================
+    # TERMINACIONES
+    # ============================
+    with st.expander("Terminaciones", expanded=False):
+
         # ============================
-        # TERMINACIONES
+        # DATOS
         # ============================
-        with st.expander("Terminaciones", expanded=False):
+        PINTURAS = {
+            "Látex Interior": {
+                "rendimiento": 10,  # m² por litro por mano
+                "descripcion": "Dormitorios, living, zonas secas"
+            },
+            "Látex Exterior": {
+                "rendimiento": 8,
+                "descripcion": "Fachadas y muros exteriores"
+            },
+            "Esmalte": {
+                "rendimiento": 12,
+                "descripcion": "Puertas, ventanas, metales"
+            },
+            "Anticorrosivo": {
+                "rendimiento": 8,
+                "descripcion": "Superficies metálicas expuestas"
+            },
+        }
 
-            # ============================
-            # DATOS
-            # ============================
-            PINTURAS = {
-                "Látex Interior": {
-                    "rendimiento": 10,  # m² por litro por mano
-                    "descripcion": "Dormitorios, living, zonas secas"
-                },
-                "Látex Exterior": {
-                    "rendimiento": 8,
-                    "descripcion": "Fachadas y muros exteriores"
-                },
-                "Esmalte": {
-                    "rendimiento": 12,
-                    "descripcion": "Puertas, ventanas, metales"
-                },
-                "Anticorrosivo": {
-                    "rendimiento": 8,
-                    "descripcion": "Superficies metálicas expuestas"
-                },
-            }
+        ESTUCOS = {
+            "Premezclado Exterior (Sika/Melón/Weber)": {
+                "rendimiento_saco": 1.5,  # m² por saco de 25kg a 15mm
+                "peso_saco": 25,
+                "tipo": "premezclado"
+            },
+            "Premezclado Antihumedad (Hidrófugo)": {
+                "rendimiento_saco": 1.5,
+                "peso_saco": 25,
+                "tipo": "premezclado"
+            },
+            "Tradicional (Cemento+Arena+Cal)": {
+                "rendimiento_saco": None,
+                "tipo": "tradicional"
+            },
+            "Fino (Maquillaje/Terminación)": {
+                "rendimiento_saco": 3.0,  # m² por saco a 5mm
+                "peso_saco": 25,
+                "tipo": "fino"
+            },
+        }
 
-            ESTUCOS = {
-                "Premezclado Exterior (Sika/Melón/Weber)": {
-                    "rendimiento_saco": 1.5,  # m² por saco de 25kg a 15mm
-                    "peso_saco": 25,
-                    "tipo": "premezclado"
-                },
-                "Premezclado Antihumedad (Hidrófugo)": {
-                    "rendimiento_saco": 1.5,
-                    "peso_saco": 25,
-                    "tipo": "premezclado"
-                },
-                "Tradicional (Cemento+Arena+Cal)": {
-                    "rendimiento_saco": None,
-                    "tipo": "tradicional"
-                },
-                "Fino (Maquillaje/Terminación)": {
-                    "rendimiento_saco": 3.0,  # m² por saco a 5mm
-                    "peso_saco": 25,
-                    "tipo": "fino"
-                },
-            }
+        CIELOS_TIPOS = {
+            "Yeso Cartón ST 10mm":   {"area_plancha": 2.88, "tipo": "plancha"},
+            "Yeso Cartón ST 12,5mm": {"area_plancha": 2.88, "tipo": "plancha"},
+            "Volcanita 10mm":        {"area_plancha": 2.88, "tipo": "plancha"},
+            "MDF 3mm":               {"area_plancha": 2.98, "tipo": "plancha"},
+            "MDF 6mm":               {"area_plancha": 2.98, "tipo": "plancha"},
+            "Madera Machihembrada":  {"area_plancha": None, "tipo": "madera"},
+        }
 
-            CIELOS_TIPOS = {
-                "Yeso Cartón ST 10mm":   {"area_plancha": 2.88, "tipo": "plancha"},
-                "Yeso Cartón ST 12,5mm": {"area_plancha": 2.88, "tipo": "plancha"},
-                "Volcanita 10mm":        {"area_plancha": 2.88, "tipo": "plancha"},
-                "MDF 3mm":               {"area_plancha": 2.98, "tipo": "plancha"},
-                "MDF 6mm":               {"area_plancha": 2.98, "tipo": "plancha"},
-                "Madera Machihembrada":  {"area_plancha": None, "tipo": "madera"},
-            }
+        ZOCALOS = {
+            "MDF 7cm":    {"alto": 0.07, "tipo": "MDF"},
+            "MDF 10cm":   {"alto": 0.10, "tipo": "MDF"},
+            "MDF 15cm":   {"alto": 0.15, "tipo": "MDF"},
+            "Madera 7cm": {"alto": 0.07, "tipo": "Madera"},
+            "Madera 10cm":{"alto": 0.10, "tipo": "Madera"},
+            "Madera 15cm":{"alto": 0.15, "tipo": "Madera"},
+            "PVC 7cm":    {"alto": 0.07, "tipo": "PVC"},
+            "PVC 10cm":   {"alto": 0.10, "tipo": "PVC"},
+            "PVC 15cm":   {"alto": 0.15, "tipo": "PVC"},
+        }
 
-            ZOCALOS = {
-                "MDF 7cm":    {"alto": 0.07, "tipo": "MDF"},
-                "MDF 10cm":   {"alto": 0.10, "tipo": "MDF"},
-                "MDF 15cm":   {"alto": 0.15, "tipo": "MDF"},
-                "Madera 7cm": {"alto": 0.07, "tipo": "Madera"},
-                "Madera 10cm":{"alto": 0.10, "tipo": "Madera"},
-                "Madera 15cm":{"alto": 0.15, "tipo": "Madera"},
-                "PVC 7cm":    {"alto": 0.07, "tipo": "PVC"},
-                "PVC 10cm":   {"alto": 0.10, "tipo": "PVC"},
-                "PVC 15cm":   {"alto": 0.15, "tipo": "PVC"},
-            }
+        # ============================
+        # 1. PINTURA
+        # ============================
+        with st.expander("1. Pintura", expanded=False):
 
-            # ============================
-            # 1. PINTURA
-            # ============================
-            with st.expander("1. Pintura", expanded=False):
+            pintura_tipo = st.selectbox("Tipo de pintura", list(PINTURAS.keys()), key="pintura_tipo")
+            st.caption(PINTURAS[pintura_tipo]["descripcion"])
 
-                pintura_tipo = st.selectbox("Tipo de pintura", list(PINTURAS.keys()), key="pintura_tipo")
-                st.caption(PINTURAS[pintura_tipo]["descripcion"])
+            p1, p2, p3 = st.columns(3)
+            with p1:
+                largo_pin = st.number_input("Largo muro (m)", value=0.0, key="largo_pin")
+            with p2:
+                alto_pin = st.number_input("Alto muro (m)", value=0.0, key="alto_pin")
+            with p3:
+                cant_pin = st.number_input("Cantidad muros", value=0, step=1, key="cant_pin")
 
-                p1, p2, p3 = st.columns(3)
-                with p1:
-                    largo_pin = st.number_input("Largo muro (m)", value=0.0, key="largo_pin")
-                with p2:
-                    alto_pin = st.number_input("Alto muro (m)", value=0.0, key="alto_pin")
-                with p3:
-                    cant_pin = st.number_input("Cantidad muros", value=0, step=1, key="cant_pin")
+            pv1, pv2 = st.columns(2)
+            with pv1:
+                cant_puertas_pin = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_pin")
+                ancho_puerta_pin = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_pin")
+                alto_puerta_pin = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_pin")
+            with pv2:
+                cant_ventanas_pin = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_pin")
+                ancho_ventana_pin = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_pin")
+                alto_ventana_pin = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_pin")
 
-                pv1, pv2 = st.columns(2)
-                with pv1:
-                    cant_puertas_pin = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_pin")
-                    ancho_puerta_pin = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_pin")
-                    alto_puerta_pin = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_pin")
-                with pv2:
-                    cant_ventanas_pin = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_pin")
-                    ancho_ventana_pin = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_pin")
-                    alto_ventana_pin = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_pin")
+            cant_manos = st.selectbox("Cantidad de manos", ["1 mano", "2 manos", "3 manos"], index=1, key="cant_manos")
+            n_manos = int(cant_manos[0])
 
-                cant_manos = st.selectbox("Cantidad de manos", ["1 mano", "2 manos", "3 manos"], index=1, key="cant_manos")
-                n_manos = int(cant_manos[0])
+            area_bruta_pin = largo_pin * alto_pin * cant_pin
+            area_vanos_pin = ((cant_puertas_pin * ancho_puerta_pin * alto_puerta_pin) +
+                                (cant_ventanas_pin * ancho_ventana_pin * alto_ventana_pin))
+            area_neta_pin = area_bruta_pin - area_vanos_pin
 
-                area_bruta_pin = largo_pin * alto_pin * cant_pin
-                area_vanos_pin = ((cant_puertas_pin * ancho_puerta_pin * alto_puerta_pin) +
-                                  (cant_ventanas_pin * ancho_ventana_pin * alto_ventana_pin))
-                area_neta_pin = area_bruta_pin - area_vanos_pin
+            rend_pin = PINTURAS[pintura_tipo]["rendimiento"]
+            litros_pin = (area_neta_pin * n_manos) / rend_pin
 
-                rend_pin = PINTURAS[pintura_tipo]["rendimiento"]
-                litros_pin = (area_neta_pin * n_manos) / rend_pin
+            # Pasta muro
+            st.write("---")
+            st.subheader("🪣 Pasta Muro (Masilla/Compuesto para Juntas)")
+            st.caption("Se aplica antes del sellador para rellenar juntas e imperfecciones")
+            kg_pasta = area_neta_pin * 0.30  # 300g por m²
+            st.info(f"Pasta muro necesaria: {kg_pasta:.1f} kg")
+            st.success(f"Sacos de 25kg: {kg_pasta/25:.0f} sacos")
 
-                # Pasta muro
-                st.write("---")
-                st.subheader("🪣 Pasta Muro (Masilla/Compuesto para Juntas)")
-                st.caption("Se aplica antes del sellador para rellenar juntas e imperfecciones")
-                kg_pasta = area_neta_pin * 0.30  # 300g por m²
-                st.info(f"Pasta muro necesaria: {kg_pasta:.1f} kg")
-                st.success(f"Sacos de 25kg: {kg_pasta/25:.0f} sacos")
+            # Cinta para juntas
+            st.write("---")
+            st.subheader("📏 Cinta para Juntas")
+            st.caption("Se aplica sobre las juntas entre planchas antes de la pasta")
+            ml_cinta = area_neta_pin / 2.88 * 4.84  # metros lineales de juntas por plancha
+            st.info(f"Metros lineales de cinta: {ml_cinta:.1f} ml")
+            st.success(f"Rollos de 75m: {ml_cinta/75:.0f} rollos")
 
-                # Cinta para juntas
-                st.write("---")
-                st.subheader("📏 Cinta para Juntas")
-                st.caption("Se aplica sobre las juntas entre planchas antes de la pasta")
-                ml_cinta = area_neta_pin / 2.88 * 4.84  # metros lineales de juntas por plancha
-                st.info(f"Metros lineales de cinta: {ml_cinta:.1f} ml")
-                st.success(f"Rollos de 75m: {ml_cinta/75:.0f} rollos")
+            # Sellador/Imprimante
+            st.write("---")
+            st.subheader("🖌️ Sellador / Imprimante Base")
+            st.caption("Se aplica antes de la pintura para mejorar adherencia")
+            litros_sellador = area_neta_pin / 10  # 1 litro por 10m²
+            st.info(f"Sellador necesario: {litros_sellador:.1f} litros")
+            st.success(f"Galones de 4 litros: {litros_sellador/4:.0f} galones")
 
-                # Sellador/Imprimante
-                st.write("---")
-                st.subheader("🖌️ Sellador / Imprimante Base")
-                st.caption("Se aplica antes de la pintura para mejorar adherencia")
-                litros_sellador = area_neta_pin / 10  # 1 litro por 10m²
-                st.info(f"Sellador necesario: {litros_sellador:.1f} litros")
-                st.success(f"Galones de 4 litros: {litros_sellador/4:.0f} galones")
+            # Pintura
+            st.write("---")
+            st.subheader(f"🎨 {pintura_tipo}")
+            st.info(f"Área neta: {area_neta_pin:.2f} m²")
+            st.info(f"Manos: {n_manos} | Rendimiento: {rend_pin} m²/litro")
+            st.info(f"Litros necesarios: {litros_pin:.1f} litros")
+            st.success(f"Galones de 4 litros: {litros_pin/4:.0f} galones")
+            st.success(f"Tarros de 1 litro: {litros_pin:.0f} litros")
 
-                # Pintura
-                st.write("---")
-                st.subheader(f"🎨 {pintura_tipo}")
-                st.info(f"Área neta: {area_neta_pin:.2f} m²")
-                st.info(f"Manos: {n_manos} | Rendimiento: {rend_pin} m²/litro")
-                st.info(f"Litros necesarios: {litros_pin:.1f} litros")
-                st.success(f"Galones de 4 litros: {litros_pin/4:.0f} galones")
-                st.success(f"Tarros de 1 litro: {litros_pin:.0f} litros")
+        # ============================
+        # 2. ESTUCO / REVOQUE
+        # ============================
+        with st.expander("2. Estuco / Revoque", expanded=False):
 
-            # ============================
-            # 2. ESTUCO / REVOQUE
-            # ============================
-            with st.expander("2. Estuco / Revoque", expanded=False):
+            estuco_tipo = st.selectbox("Tipo de estuco", list(ESTUCOS.keys()), key="estuco_tipo")
+            est = ESTUCOS[estuco_tipo]
 
-                estuco_tipo = st.selectbox("Tipo de estuco", list(ESTUCOS.keys()), key="estuco_tipo")
-                est = ESTUCOS[estuco_tipo]
+            es1, es2, es3 = st.columns(3)
+            with es1:
+                largo_est = st.number_input("Largo muro (m)", value=0.0, key="largo_est")
+            with es2:
+                alto_est = st.number_input("Alto muro (m)", value=0.0, key="alto_est")
+            with es3:
+                cant_est = st.number_input("Cantidad muros", value=0, step=1, key="cant_est")
 
-                es1, es2, es3 = st.columns(3)
-                with es1:
-                    largo_est = st.number_input("Largo muro (m)", value=0.0, key="largo_est")
-                with es2:
-                    alto_est = st.number_input("Alto muro (m)", value=0.0, key="alto_est")
-                with es3:
-                    cant_est = st.number_input("Cantidad muros", value=0, step=1, key="cant_est")
+            ev1, ev2 = st.columns(2)
+            with ev1:
+                cant_puertas_est = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_est")
+                ancho_puerta_est = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_est")
+                alto_puerta_est = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_est")
+            with ev2:
+                cant_ventanas_est = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_est")
+                ancho_ventana_est = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_est")
+                alto_ventana_est = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_est")
 
-                ev1, ev2 = st.columns(2)
-                with ev1:
-                    cant_puertas_est = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_est")
-                    ancho_puerta_est = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_est")
-                    alto_puerta_est = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_est")
-                with ev2:
-                    cant_ventanas_est = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_est")
-                    ancho_ventana_est = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_est")
-                    alto_ventana_est = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_est")
+            espesor_est = st.selectbox("Espesor de aplicación",
+                                        ["5mm (fino)", "10mm (estándar)", "15mm (máximo por capa)", "20mm (2 capas)", "25mm (2 capas)"],
+                                        key="espesor_est")
+            espesor_val = float(espesor_est.split("mm")[0]) / 1000
 
-                espesor_est = st.selectbox("Espesor de aplicación",
-                                           ["5mm (fino)", "10mm (estándar)", "15mm (máximo por capa)", "20mm (2 capas)", "25mm (2 capas)"],
-                                           key="espesor_est")
-                espesor_val = float(espesor_est.split("mm")[0]) / 1000
+            area_bruta_est = largo_est * alto_est * cant_est
+            area_vanos_est = ((cant_puertas_est * ancho_puerta_est * alto_puerta_est) +
+                                (cant_ventanas_est * ancho_ventana_est * alto_ventana_est))
+            area_neta_est = area_bruta_est - area_vanos_est
 
-                area_bruta_est = largo_est * alto_est * cant_est
-                area_vanos_est = ((cant_puertas_est * ancho_puerta_est * alto_puerta_est) +
-                                  (cant_ventanas_est * ancho_ventana_est * alto_ventana_est))
-                area_neta_est = area_bruta_est - area_vanos_est
+            if espesor_val > 0.015:
+                n_capas = 2
+                st.warning(f"⚠️ Espesor mayor a 15mm: Se requieren {n_capas} capas. Esperar secado entre capas.")
+            else:
+                n_capas = 1
 
-                if espesor_val > 0.015:
-                    n_capas = 2
-                    st.warning(f"⚠️ Espesor mayor a 15mm: Se requieren {n_capas} capas. Esperar secado entre capas.")
-                else:
-                    n_capas = 1
+            if espesor_val >= 0.030:
+                st.error("⚠️ Espesor mayor a 30mm: Requiere malla de refuerzo obligatoriamente")
 
-                if espesor_val >= 0.030:
-                    st.error("⚠️ Espesor mayor a 30mm: Requiere malla de refuerzo obligatoriamente")
+            st.write("---")
+            st.info(f"Área neta: {area_neta_est:.2f} m²")
+            st.info(f"Capas necesarias: {n_capas}")
 
-                st.write("---")
-                st.info(f"Área neta: {area_neta_est:.2f} m²")
-                st.info(f"Capas necesarias: {n_capas}")
+            if est["tipo"] == "premezclado" or est["tipo"] == "fino":
+                sacos_est = (area_neta_est / est["rendimiento_saco"]) * n_capas
+                st.success(f"Sacos de {est['peso_saco']}kg: {sacos_est:.0f} sacos")
+                st.caption(f"Rendimiento: {est['rendimiento_saco']} m² por saco a {espesor_est}")
 
-                if est["tipo"] == "premezclado" or est["tipo"] == "fino":
-                    sacos_est = (area_neta_est / est["rendimiento_saco"]) * n_capas
-                    st.success(f"Sacos de {est['peso_saco']}kg: {sacos_est:.0f} sacos")
-                    st.caption(f"Rendimiento: {est['rendimiento_saco']} m² por saco a {espesor_est}")
+            elif est["tipo"] == "tradicional":
+                vol_est = area_neta_est * espesor_val * n_capas
+                cemento_est = vol_est * 300  # kg cemento por m³
+                arena_est = vol_est * 1.20
+                cal_est = vol_est * 100  # kg cal por m³
+                sacos_cemento_est = cemento_est / 25
+                sacos_cal_est = cal_est / 25
 
-                elif est["tipo"] == "tradicional":
-                    vol_est = area_neta_est * espesor_val * n_capas
-                    cemento_est = vol_est * 300  # kg cemento por m³
-                    arena_est = vol_est * 1.20
-                    cal_est = vol_est * 100  # kg cal por m³
-                    sacos_cemento_est = cemento_est / 25
-                    sacos_cal_est = cal_est / 25
+                st.info(f"Volumen mortero: {vol_est:.3f} m³")
+                st.success(f"Cemento: {sacos_cemento_est:.0f} sacos de 25kg")
+                st.success(f"Arena: {arena_est:.2f} m³")
+                st.success(f"Cal: {sacos_cal_est:.0f} sacos de 25kg")
+                st.caption("Dosificación: 1 cemento : 4 arena : 1 cal")
 
-                    st.info(f"Volumen mortero: {vol_est:.3f} m³")
-                    st.success(f"Cemento: {sacos_cemento_est:.0f} sacos de 25kg")
-                    st.success(f"Arena: {arena_est:.2f} m³")
-                    st.success(f"Cal: {sacos_cal_est:.0f} sacos de 25kg")
-                    st.caption("Dosificación: 1 cemento : 4 arena : 1 cal")
+        # ============================
+        # 3. CIELOS
+        # ============================
+        with st.expander("3. Cielos", expanded=False):
 
-            # ============================
-            # 3. CIELOS
-            # ============================
-            with st.expander("3. Cielos", expanded=False):
+            cielo_tipo = st.selectbox("Tipo de cielo", list(CIELOS_TIPOS.keys()), key="cielo_tipo")
+            ci = CIELOS_TIPOS[cielo_tipo]
 
-                cielo_tipo = st.selectbox("Tipo de cielo", list(CIELOS_TIPOS.keys()), key="cielo_tipo")
-                ci = CIELOS_TIPOS[cielo_tipo]
+            ci1, ci2 = st.columns(2)
+            with ci1:
+                largo_ci = st.number_input("Largo habitación (m)", value=0.0, key="largo_ci")
+            with ci2:
+                ancho_ci = st.number_input("Ancho habitación (m)", value=0.0, key="ancho_ci")
 
-                ci1, ci2 = st.columns(2)
-                with ci1:
-                    largo_ci = st.number_input("Largo habitación (m)", value=0.0, key="largo_ci")
-                with ci2:
-                    ancho_ci = st.number_input("Ancho habitación (m)", value=0.0, key="ancho_ci")
+            cant_ci = st.number_input("Cantidad de habitaciones", value=0, step=1, key="cant_ci")
+            desp_ci = st.slider("% Desperdicio", 0, 20, 10, key="desp_ci")
 
-                cant_ci = st.number_input("Cantidad de habitaciones", value=0, step=1, key="cant_ci")
-                desp_ci = st.slider("% Desperdicio", 0, 20, 10, key="desp_ci")
+            area_ci = largo_ci * ancho_ci * cant_ci
 
-                area_ci = largo_ci * ancho_ci * cant_ci
+            st.write("---")
+            st.info(f"Área total cielo: {area_ci:.2f} m²")
 
-                st.write("---")
-                st.info(f"Área total cielo: {area_ci:.2f} m²")
+            if ci["tipo"] == "plancha":
+                cant_planchas_ci = area_ci / ci["area_plancha"]
+                cant_planchas_desp_ci = cant_planchas_ci * (1 + desp_ci / 100)
+                st.info(f"Planchas exactas: {cant_planchas_ci:.1f} unidades")
+                st.success(f"Con {desp_ci}% desperdicio: {cant_planchas_desp_ci:.0f} planchas")
 
-                if ci["tipo"] == "plancha":
-                    cant_planchas_ci = area_ci / ci["area_plancha"]
-                    cant_planchas_desp_ci = cant_planchas_ci * (1 + desp_ci / 100)
-                    st.info(f"Planchas exactas: {cant_planchas_ci:.1f} unidades")
-                    st.success(f"Con {desp_ci}% desperdicio: {cant_planchas_desp_ci:.0f} planchas")
+            elif ci["tipo"] == "madera":
+                ancho_tabla_ci = st.selectbox("Ancho tabla machihembrada", ["10cm", "15cm", "20cm"], key="ancho_tabla_ci")
+                ancho_val_ci = float(ancho_tabla_ci.replace("cm", "")) / 100
+                largo_tabla_ci = st.selectbox("Largo tabla", ["3,20m", "4,00m"], key="largo_tabla_ci")
+                largo_val_ci = 3.20 if "3,20" in largo_tabla_ci else 4.00
+                ml_ci = area_ci / ancho_val_ci
+                tablas_ci = ml_ci / largo_val_ci
+                tablas_desp_ci = tablas_ci * (1 + desp_ci / 100)
+                st.info(f"Metros lineales: {ml_ci:.1f} ml")
+                st.success(f"Tablas con {desp_ci}% desperdicio: {tablas_desp_ci:.0f} tablas de {largo_tabla_ci}")
 
-                elif ci["tipo"] == "madera":
-                    ancho_tabla_ci = st.selectbox("Ancho tabla machihembrada", ["10cm", "15cm", "20cm"], key="ancho_tabla_ci")
-                    ancho_val_ci = float(ancho_tabla_ci.replace("cm", "")) / 100
-                    largo_tabla_ci = st.selectbox("Largo tabla", ["3,20m", "4,00m"], key="largo_tabla_ci")
-                    largo_val_ci = 3.20 if "3,20" in largo_tabla_ci else 4.00
-                    ml_ci = area_ci / ancho_val_ci
-                    tablas_ci = ml_ci / largo_val_ci
-                    tablas_desp_ci = tablas_ci * (1 + desp_ci / 100)
-                    st.info(f"Metros lineales: {ml_ci:.1f} ml")
-                    st.success(f"Tablas con {desp_ci}% desperdicio: {tablas_desp_ci:.0f} tablas de {largo_tabla_ci}")
+            # Estructura de cielo (Perfiles AT)
+            st.write("---")
+            st.subheader("🔩 Estructura de Cielo (Perfiles AT)")
+            st.caption("Perfil AT en todo el perímetro + largueros cada 40cm")
 
-                # Estructura de cielo (Perfiles AT)
-                st.write("---")
-                st.subheader("🔩 Estructura de Cielo (Perfiles AT)")
-                st.caption("Perfil AT en todo el perímetro + largueros cada 40cm")
+            # Perfil AT perímetro
+            perimetro_ci = (largo_ci + ancho_ci) * 2 * cant_ci
+            largo_perfil_at = st.selectbox("Largo perfil AT", ["2,40m", "3,00m"], key="largo_at")
+            largo_val_at = 2.40 if "2,40" in largo_perfil_at else 3.00
 
-                # Perfil AT perímetro
-                perimetro_ci = (largo_ci + ancho_ci) * 2 * cant_ci
-                largo_perfil_at = st.selectbox("Largo perfil AT", ["2,40m", "3,00m"], key="largo_at")
-                largo_val_at = 2.40 if "2,40" in largo_perfil_at else 3.00
+            cant_perfiles_at = perimetro_ci / largo_val_at
+            cant_perfiles_at_desp = cant_perfiles_at * 1.10
 
-                cant_perfiles_at = perimetro_ci / largo_val_at
-                cant_perfiles_at_desp = cant_perfiles_at * 1.10
+            # Largueros Portante 40R cada 40cm
+            cant_largueros = (ancho_ci / 0.40) * cant_ci
+            largo_larguero = st.selectbox("Largo Portante 40R", ["2,40m", "3,00m"], key="largo_larguero")
+            largo_val_larg = 2.40 if "2,40" in largo_larguero else 3.00
+            cant_largueros_desp = cant_largueros * 1.10
 
-                # Largueros Portante 40R cada 40cm
-                cant_largueros = (ancho_ci / 0.40) * cant_ci
-                largo_larguero = st.selectbox("Largo Portante 40R", ["2,40m", "3,00m"], key="largo_larguero")
-                largo_val_larg = 2.40 if "2,40" in largo_larguero else 3.00
-                cant_largueros_desp = cant_largueros * 1.10
+            # Conectores
+            cant_conectores = cant_largueros * (largo_ci / 1.20)
 
-                # Conectores
-                cant_conectores = cant_largueros * (largo_ci / 1.20)
+            # Tornillos
+            tornillos_ci = (cant_perfiles_at_desp + cant_largueros_desp) * 4
 
-                # Tornillos
-                tornillos_ci = (cant_perfiles_at_desp + cant_largueros_desp) * 4
+            st.info(f"Perfiles AT perímetro: {cant_perfiles_at_desp:.0f} piezas de {largo_val_at}m")
+            st.info(f"Portante 40R: {cant_largueros_desp:.0f} piezas de {largo_val_larg}m")
+            st.info(f"Conectores TF: {cant_conectores:.0f} unidades")
+            st.success(f"Tornillos: {tornillos_ci:.0f} unidades")
+            st.caption("Largueros cada 40cm | Conectores cada 1,20m")
 
-                st.info(f"Perfiles AT perímetro: {cant_perfiles_at_desp:.0f} piezas de {largo_val_at}m")
-                st.info(f"Portante 40R: {cant_largueros_desp:.0f} piezas de {largo_val_larg}m")
-                st.info(f"Conectores TF: {cant_conectores:.0f} unidades")
-                st.success(f"Tornillos: {tornillos_ci:.0f} unidades")
-                st.caption("Largueros cada 40cm | Conectores cada 1,20m")
+        # ============================
+        # 4. ZÓCALOS Y GUARDAPOLVOS
+        # ============================
+        with st.expander("4. Zócalos y Guardapolvos", expanded=False):
 
-            # ============================
-            # 4. ZÓCALOS Y GUARDAPOLVOS
-            # ============================
-            with st.expander("4. Zócalos y Guardapolvos", expanded=False):
+            zocalo_tipo = st.selectbox("Tipo de zócalo", list(ZOCALOS.keys()), key="zocalo_tipo")
+            zoc = ZOCALOS[zocalo_tipo]
 
-                zocalo_tipo = st.selectbox("Tipo de zócalo", list(ZOCALOS.keys()), key="zocalo_tipo")
-                zoc = ZOCALOS[zocalo_tipo]
+            zo1, zo2 = st.columns(2)
+            with zo1:
+                largo_zoc = st.number_input("Metros lineales totales (m)", value=0.0, key="largo_zoc")
+            with zo2:
+                cant_vanos_zoc = st.number_input("Cantidad de vanos/puertas", value=0, step=1, key="cant_vanos_zoc")
 
-                zo1, zo2 = st.columns(2)
-                with zo1:
-                    largo_zoc = st.number_input("Metros lineales totales (m)", value=0.0, key="largo_zoc")
-                with zo2:
-                    cant_vanos_zoc = st.number_input("Cantidad de vanos/puertas", value=0, step=1, key="cant_vanos_zoc")
+            ancho_vano_zoc = st.number_input("Ancho vano promedio (m)", value=0.90, key="ancho_vano_zoc")
+            largo_pieza_zoc = st.selectbox("Largo por pieza", ["2,40m", "3,00m", "3,20m"], key="largo_pieza_zoc")
+            largo_val_zoc = {"2,40m": 2.40, "3,00m": 3.00, "3,20m": 3.20}[largo_pieza_zoc]
+            desp_zoc = st.slider("% Desperdicio", 0, 20, 10, key="desp_zoc")
 
-                ancho_vano_zoc = st.number_input("Ancho vano promedio (m)", value=0.90, key="ancho_vano_zoc")
-                largo_pieza_zoc = st.selectbox("Largo por pieza", ["2,40m", "3,00m", "3,20m"], key="largo_pieza_zoc")
-                largo_val_zoc = {"2,40m": 2.40, "3,00m": 3.00, "3,20m": 3.20}[largo_pieza_zoc]
-                desp_zoc = st.slider("% Desperdicio", 0, 20, 10, key="desp_zoc")
+            # Descuento vanos
+            ml_vanos_zoc = cant_vanos_zoc * ancho_vano_zoc
+            ml_neto_zoc = largo_zoc - ml_vanos_zoc
 
-                # Descuento vanos
-                ml_vanos_zoc = cant_vanos_zoc * ancho_vano_zoc
-                ml_neto_zoc = largo_zoc - ml_vanos_zoc
+            # Piezas
+            cant_piezas_zoc = ml_neto_zoc / largo_val_zoc
+            cant_piezas_desp_zoc = cant_piezas_zoc * (1 + desp_zoc / 100)
 
-                # Piezas
-                cant_piezas_zoc = ml_neto_zoc / largo_val_zoc
-                cant_piezas_desp_zoc = cant_piezas_zoc * (1 + desp_zoc / 100)
+            # Fijaciones según material
+            if zoc["tipo"] == "MDF":
+                fijacion_zoc = "Pegamento para MDF + Clavo sin cabeza"
+                cant_fijaciones_zoc = round(ml_neto_zoc / 0.40)  # cada 40cm
+                medida_fijacion = "Clavo 1 1/2\""
+            elif zoc["tipo"] == "Madera":
+                fijacion_zoc = "Clavo sin cabeza galvanizado"
+                cant_fijaciones_zoc = round(ml_neto_zoc / 0.40)
+                medida_fijacion = "Clavo 1 1/2\" o 2\""
+            else:  # PVC
+                fijacion_zoc = "Pegamento PVC o clip de fijación"
+                cant_fijaciones_zoc = round(ml_neto_zoc / 0.50)
+                medida_fijacion = "Clip cada 50cm"
 
-                # Fijaciones según material
-                if zoc["tipo"] == "MDF":
-                    fijacion_zoc = "Pegamento para MDF + Clavo sin cabeza"
-                    cant_fijaciones_zoc = round(ml_neto_zoc / 0.40)  # cada 40cm
-                    medida_fijacion = "Clavo 1 1/2\""
-                elif zoc["tipo"] == "Madera":
-                    fijacion_zoc = "Clavo sin cabeza galvanizado"
-                    cant_fijaciones_zoc = round(ml_neto_zoc / 0.40)
-                    medida_fijacion = "Clavo 1 1/2\" o 2\""
-                else:  # PVC
-                    fijacion_zoc = "Pegamento PVC o clip de fijación"
-                    cant_fijaciones_zoc = round(ml_neto_zoc / 0.50)
-                    medida_fijacion = "Clip cada 50cm"
+            st.write("---")
+            st.info(f"Metros lineales netos: {ml_neto_zoc:.2f} ml")
+            st.info(f"Piezas exactas: {cant_piezas_zoc:.1f} unidades")
+            st.success(f"Con {desp_zoc}% desperdicio: {cant_piezas_desp_zoc:.0f} piezas de {largo_val_zoc}m")
 
-                st.write("---")
-                st.info(f"Metros lineales netos: {ml_neto_zoc:.2f} ml")
-                st.info(f"Piezas exactas: {cant_piezas_zoc:.1f} unidades")
-                st.success(f"Con {desp_zoc}% desperdicio: {cant_piezas_desp_zoc:.0f} piezas de {largo_val_zoc}m")
-
-                st.write("---")
-                st.subheader("🔩 Fijaciones")
-                st.info(f"Tipo: {fijacion_zoc}")
-                st.info(f"Medida: {medida_fijacion}")
-                st.success(f"Cantidad: {cant_fijaciones_zoc} fijaciones")
-                st.caption("Distancia mínima al borde: 2cm")                
+            st.write("---")
+            st.subheader("🔩 Fijaciones")
+            st.info(f"Tipo: {fijacion_zoc}")
+            st.info(f"Medida: {medida_fijacion}")
+            st.success(f"Cantidad: {cant_fijaciones_zoc} fijaciones")
+            st.caption("Distancia mínima al borde: 2cm")                
 # ============================
 # EXPORTAR A PDF
 # ============================
