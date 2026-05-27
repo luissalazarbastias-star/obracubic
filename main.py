@@ -2573,7 +2573,7 @@ if option == "Cubicacion":
         # ============================
         # TERMINACIONES
         # ============================
-        with st.expander("🎨 Terminaciones", expanded=False):
+        with st.expander("Terminaciones", expanded=False):
 
             # ============================
             # DATOS
