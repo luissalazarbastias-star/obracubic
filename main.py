@@ -379,7 +379,11 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", ["Crear Proyecto", "Cubicacion"])
+option = st.sidebar.radio("Ir a:", 
+    ["Crear Proyecto", "Cubicacion"],
+    index=0 if st.session_state.get("ir_a", "Crear Proyecto") == "Crear Proyecto" else 1
+)
+st.session_state["ir_a"] = option
 
 # ============================
 # CREAR PROYECTO
@@ -591,7 +595,8 @@ if option == "Crear Proyecto":
                 "profesional": profesional,
                 "partidas": partidas_seleccionadas,
             }
-            st.success(f"Proyecto '{nombre_proy}' creado. Ve a Cubicacion.")
+            st.session_state["ir_a"] = "Cubicacion"
+            st.rerun()
 
     st.info("También podés usar la Cubicación General sin crear un proyecto — está siempre disponible.")
 
