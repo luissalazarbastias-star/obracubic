@@ -971,73 +971,73 @@ if option == "Cubicacion":
                         mostrar_materiales(mat_sc)
 
             # --- 5. Radier ---
-            if ver(horm, "radier"):
-                    with st.expander("5. Radier", expanded=False):
+                if ver(horm, "radier"):
+                        with st.expander("5. Radier", expanded=False):
 
-                        if "secciones_rad" not in st.session_state:
-                            st.session_state.secciones_rad = [{"largo": 0.0, "ancho": 0.0, "espesor": 0.0}]
+                            if "secciones_rad" not in st.session_state:
+                                st.session_state.secciones_rad = [{"largo": 0.0, "ancho": 0.0, "espesor": 0.0}]
 
-                        col_add, col_del = st.columns(2)
-                        with col_add:
-                            if st.button("➕ Agregar sección", key="add_rad"):
-                                st.session_state.secciones_rad.append({"largo": 0.0, "ancho": 0.0, "espesor": 0.0})
-                        with col_del:
-                            if st.button("🗑️ Eliminar última sección", key="del_rad"):
-                                if len(st.session_state.secciones_rad) > 1:
-                                    st.session_state.secciones_rad.pop()
+                            col_add, col_del = st.columns(2)
+                            with col_add:
+                                if st.button("➕ Agregar sección", key="add_rad"):
+                                    st.session_state.secciones_rad.append({"largo": 0.0, "ancho": 0.0, "espesor": 0.0})
+                            with col_del:
+                                if st.button("🗑️ Eliminar última sección", key="del_rad"):
+                                    if len(st.session_state.secciones_rad) > 1:
+                                        st.session_state.secciones_rad.pop()
 
-                        area_radier_total = 0.0
-                        vol_radier = 0.0
-                        for i, sec in enumerate(st.session_state.secciones_rad):
-                            st.markdown(f"**Sección {i+1}**")
-                            ra1, ra2, ra3 = st.columns(3)
-                            with ra1:
-                                sec["largo"] = st.number_input("Largo (m)", value=sec["largo"], key=f"rad_largo_{i}")
-                            with ra2:
-                                sec["ancho"] = st.number_input("Ancho (m)", value=sec["ancho"], key=f"rad_ancho_{i}")
-                            with ra3:
-                                sec["espesor"] = st.number_input("Espesor (m)", value=sec["espesor"], key=f"rad_espesor_{i}")
+                            area_radier_total = 0.0
+                            vol_radier = 0.0
+                            for i, sec in enumerate(st.session_state.secciones_rad):
+                                st.markdown(f"**Sección {i+1}**")
+                                ra1, ra2, ra3 = st.columns(3)
+                                with ra1:
+                                    sec["largo"] = st.number_input("Largo (m)", value=sec["largo"], key=f"rad_largo_{i}")
+                                with ra2:
+                                    sec["ancho"] = st.number_input("Ancho (m)", value=sec["ancho"], key=f"rad_ancho_{i}")
+                                with ra3:
+                                    sec["espesor"] = st.number_input("Espesor (m)", value=sec["espesor"], key=f"rad_espesor_{i}")
 
-                            vol_sec_rad = sec["largo"] * sec["ancho"] * sec["espesor"]
-                            area_sec_rad = sec["largo"] * sec["ancho"]
-                            st.caption(f"Volumen sección {i+1}: {vol_sec_rad:.2f} m³ | Área: {area_sec_rad:.2f} m²")
-                            vol_radier += vol_sec_rad
-                            area_radier_total += area_sec_rad
+                                vol_sec_rad = sec["largo"] * sec["ancho"] * sec["espesor"]
+                                area_sec_rad = sec["largo"] * sec["ancho"]
+                                st.caption(f"Volumen sección {i+1}: {vol_sec_rad:.2f} m³ | Área: {area_sec_rad:.2f} m²")
+                                vol_radier += vol_sec_rad
+                                area_radier_total += area_sec_rad
 
-                        rad_perdida = st.slider("% Pérdida Radier", 0, 15, 5, key="radier_perdida")
-                        vol_radier_final = vol_radier * (1 + rad_perdida / 100)
+                            rad_perdida = st.slider("% Pérdida Radier", 0, 15, 5, key="radier_perdida")
+                            vol_radier_final = vol_radier * (1 + rad_perdida / 100)
 
-                        dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                                                index=1, key="dos_rad",
-                                                help=DOSIFICACIONES["G-20"]["descripcion"])
-                        mat_rad = calcular_materiales(vol_radier_final, dos_rad)
+                            dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
+                                                    index=1, key="dos_rad",
+                                                    help=DOSIFICACIONES["G-20"]["descripcion"])
+                            mat_rad = calcular_materiales(vol_radier_final, dos_rad)
 
-                        # --- Malla ACMA ---
-                        usar_malla = st.checkbox("¿Agregar malla ACMA al radier?", key="usar_malla")
-                        if usar_malla:
-                            malla_tipo = st.selectbox("Tipo de malla ACMA", list(MALLA_ACMA.keys()), key="malla_tipo")
-                            desp_malla = st.slider("% Desperdicio malla", 0, 20, 10, key="desp_malla")
+                            # --- Malla ACMA ---
+                            usar_malla = st.checkbox("¿Agregar malla ACMA al radier?", key="usar_malla")
+                            if usar_malla:
+                                malla_tipo = st.selectbox("Tipo de malla ACMA", list(MALLA_ACMA.keys()), key="malla_tipo")
+                                desp_malla = st.slider("% Desperdicio malla", 0, 20, 10, key="desp_malla")
 
-                            kg_malla = area_radier_total * MALLA_ACMA[malla_tipo]["kg_m2"]
-                            kg_malla_desp = kg_malla * (1 + desp_malla / 100)
-                            area_plancha_malla = 14.10  # plancha 2,35x6,00m
-                            planchas_malla = area_radier_total / area_plancha_malla
-                            planchas_malla_desp = planchas_malla * (1 + desp_malla / 100)
+                                kg_malla = area_radier_total * MALLA_ACMA[malla_tipo]["kg_m2"]
+                                kg_malla_desp = kg_malla * (1 + desp_malla / 100)
+                                area_plancha_malla = 14.10  # plancha 2,35x6,00m
+                                planchas_malla = area_radier_total / area_plancha_malla
+                                planchas_malla_desp = planchas_malla * (1 + desp_malla / 100)
 
-                        st.write("---")
-                        st.info(f"Volumen neto radier: {vol_radier:.2f} m³")
-                        st.info(f"Área total radier: {area_radier_total:.2f} m²")
-                        st.success(f"Volumen con {rad_perdida}% pérdida: {vol_radier_final:.2f} m³")
-                        mostrar_materiales(mat_rad)
-
-                        if usar_malla:
                             st.write("---")
-                            st.subheader("🔩 Malla ACMA")
-                            st.info(f"Tipo: {malla_tipo}")
-                            st.info(f"Peso malla: {kg_malla:.1f} kg")
-                            st.success(f"Con {desp_malla}% desperdicio: {kg_malla_desp:.1f} kg")
-                            st.success(f"Planchas 2,35x6,00m: {planchas_malla_desp:.0f} planchas")
-                            st.caption(f"Área total: {area_radier_total:.2f} m² | Plancha cubre: 14,1 m²")     
+                            st.info(f"Volumen neto radier: {vol_radier:.2f} m³")
+                            st.info(f"Área total radier: {area_radier_total:.2f} m²")
+                            st.success(f"Volumen con {rad_perdida}% pérdida: {vol_radier_final:.2f} m³")
+                            mostrar_materiales(mat_rad)
+
+                            if usar_malla:
+                                st.write("---")
+                                st.subheader("🔩 Malla ACMA")
+                                st.info(f"Tipo: {malla_tipo}")
+                                st.info(f"Peso malla: {kg_malla:.1f} kg")
+                                st.success(f"Con {desp_malla}% desperdicio: {kg_malla_desp:.1f} kg")
+                                st.success(f"Planchas 2,35x6,00m: {planchas_malla_desp:.0f} planchas")
+                                st.caption(f"Área total: {area_radier_total:.2f} m² | Plancha cubre: 14,1 m²")     
 
     # --- Acero estructural ---
             if ver_rubro(acero):
@@ -3426,7 +3426,7 @@ if option == "Cubicacion":
                                 st.info(f"Medida: {medida_fijacion}")
                                 st.success(f"Cantidad: {cant_fijaciones_zoc} fijaciones")
                                 st.caption("Distancia mínima al borde: 2cm")         
-                                       
+
 # ============================
 # EXPORTAR A PDF
 # ============================
