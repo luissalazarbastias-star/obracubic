@@ -354,6 +354,8 @@ if "proyecto_creado" not in st.session_state:
     st.session_state["proyecto_creado"] = False
 if "proyecto" not in st.session_state:
     st.session_state["proyecto"] = {}
+if "mostrar_proyecto" not in st.session_state:
+    st.session_state["mostrar_proyecto"] = False
 if "vol_emp" not in st.session_state:
     st.session_state["vol_emp"] = 0.0
 if "vol_pilares" not in st.session_state:
@@ -379,11 +381,7 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", 
-    ["Crear Proyecto", "Cubicacion"],
-    index=0 if st.session_state.get("ir_a", "Crear Proyecto") == "Crear Proyecto" else 1
-)
-st.session_state["ir_a"] = option
+option = st.sidebar.radio("Ir a:", ["Crear Proyecto", "Cubicacion"])
 
 # ============================
 # CREAR PROYECTO
@@ -396,55 +394,48 @@ if option == "Crear Proyecto":
         nombre_proy = st.text_input("Nombre del proyecto *",
             placeholder="Ej: Casa Don Pedro - Angol",
             key="input_nombre_proy")
-        
+
         col1, col2 = st.columns(2)
         with col1:
             tipo_obra = st.text_input("Tipo de obra",
                 placeholder="Ej: Vivienda Unifamiliar",
                 key="input_tipo_obra")
         with col2:
-            profesional = st.text_input("Profesional / Empresa",
+            profesional = st.text_input("Profesional / Empresa (opcional)",
                 placeholder="Ej: Juan Pérez - Constructor",
                 key="input_profesional")
 
         st.write("**Seleccioná los rubros de tu obra:**")
-
-        # --- Nivel 1: Rubros ---
         col1, col2, col3 = st.columns(3)
         with col1:
-            usar_hormigon = st.checkbox("Hormigón y Mov. de tierra", key="usar_hormigon", value=True)
-            usar_moldajes = st.checkbox("Moldajes", key="usar_moldajes")
-            usar_pisos = st.checkbox("Pisos y Pavimentos", key="usar_pisos")
+            usar_hormigon    = st.checkbox("Hormigón y Mov. de tierra", key="usar_hormigon")
+            usar_moldajes    = st.checkbox("Moldajes", key="usar_moldajes")
+            usar_pisos       = st.checkbox("Pisos y Pavimentos", key="usar_pisos")
         with col2:
-            usar_acero_est = st.checkbox("Acero estructural", key="usar_acero_est")
-            usar_muros = st.checkbox("Muros", key="usar_muros")
+            usar_acero_est   = st.checkbox("Acero estructural", key="usar_acero_est")
+            usar_muros       = st.checkbox("Muros", key="usar_muros")
             usar_terminaciones = st.checkbox("Terminaciones", key="usar_terminaciones")
         with col3:
-            usar_metalcon = st.checkbox("Acero No Estructural (Metalcon)", key="usar_metalcon")
+            usar_metalcon    = st.checkbox("Acero No Estructural (Metalcon)", key="usar_metalcon")
             usar_revestimientos = st.checkbox("Revestimientos", key="usar_revestimientos")
-            usar_instalaciones = st.checkbox("Instalaciones (futuro)", key="usar_instalaciones", disabled=True)
 
-        # --- Nivel 2: Partidas por rubro ---
         partidas_seleccionadas = {}
 
         if usar_hormigon:
             st.write("---")
-            st.markdown("**Hormigón y Mov. de tierra — selecciona las partidas:**")
+            st.markdown("**Hormigón — selecciona las partidas:**")
             hc1, hc2, hc3 = st.columns(3)
             with hc1:
                 p_exc = st.checkbox("Excavación", key="p_exc")
                 p_emp = st.checkbox("Emplantillado", key="p_emp")
             with hc2:
                 p_cim = st.checkbox("Cimiento", key="p_cim")
-                p_sc = st.checkbox("Sobrecimiento", key="p_sc")
+                p_sc  = st.checkbox("Sobrecimiento", key="p_sc")
             with hc3:
                 p_rad = st.checkbox("Radier", key="p_rad")
             partidas_seleccionadas["hormigon"] = {
-                "excavacion": p_exc,
-                "emplantillado": p_emp,
-                "cimiento": p_cim,
-                "sobrecimiento": p_sc,
-                "radier": p_rad,
+                "excavacion": p_exc, "emplantillado": p_emp,
+                "cimiento": p_cim, "sobrecimiento": p_sc, "radier": p_rad,
             }
 
         if usar_acero_est:
@@ -452,35 +443,30 @@ if option == "Crear Proyecto":
             st.markdown("**Acero estructural — selecciona las partidas:**")
             ac1, ac2, ac3 = st.columns(3)
             with ac1:
-                p_losa = st.checkbox("Losa", key="p_losa")
-                p_pilar = st.checkbox("Pilar", key="p_pilar")
+                p_losa   = st.checkbox("Losa", key="p_losa")
+                p_pilar  = st.checkbox("Pilar", key="p_pilar")
             with ac2:
-                p_viga = st.checkbox("Viga", key="p_viga")
+                p_viga   = st.checkbox("Viga", key="p_viga")
                 p_rad_ac = st.checkbox("Radier", key="p_rad_ac")
             with ac3:
                 p_cim_ac = st.checkbox("Cimiento", key="p_cim_ac")
             partidas_seleccionadas["acero_estructural"] = {
-                "losa": p_losa,
-                "pilar": p_pilar,
-                "viga": p_viga,
-                "radier": p_rad_ac,
-                "cimiento": p_cim_ac,
+                "losa": p_losa, "pilar": p_pilar, "viga": p_viga,
+                "radier": p_rad_ac, "cimiento": p_cim_ac,
             }
 
         if usar_metalcon:
             st.write("---")
-            st.markdown("**Acero No Estructural (Metalcon) — selecciona las partidas:**")
+            st.markdown("**Metalcon — selecciona las partidas:**")
             mc1, mc2, mc3 = st.columns(3)
             with mc1:
                 p_canal = st.checkbox("Canal / Solera", key="p_canal")
             with mc2:
-                p_mont = st.checkbox("Montante", key="p_mont")
+                p_mont  = st.checkbox("Montante", key="p_mont")
             with mc3:
-                p_esq = st.checkbox("Esquinero", key="p_esq")
+                p_esq   = st.checkbox("Esquinero", key="p_esq")
             partidas_seleccionadas["metalcon"] = {
-                "canal": p_canal,
-                "montante": p_mont,
-                "esquinero": p_esq,
+                "canal": p_canal, "montante": p_mont, "esquinero": p_esq,
             }
 
         if usar_moldajes:
@@ -488,7 +474,7 @@ if option == "Crear Proyecto":
             st.markdown("**Moldajes — selecciona las partidas:**")
             mold1, mold2, mold3 = st.columns(3)
             with mold1:
-                p_mold_cim = st.checkbox("Cimiento", key="p_mold_cim")
+                p_mold_cim  = st.checkbox("Cimiento", key="p_mold_cim")
                 p_mold_muro = st.checkbox("Muro", key="p_mold_muro")
             with mold2:
                 p_mold_losa = st.checkbox("Losa", key="p_mold_losa")
@@ -496,11 +482,8 @@ if option == "Crear Proyecto":
             with mold3:
                 p_mold_pilar = st.checkbox("Pilar", key="p_mold_pilar")
             partidas_seleccionadas["moldajes"] = {
-                "cimiento": p_mold_cim,
-                "muro": p_mold_muro,
-                "losa": p_mold_losa,
-                "viga": p_mold_viga,
-                "pilar": p_mold_pilar,
+                "cimiento": p_mold_cim, "muro": p_mold_muro,
+                "losa": p_mold_losa, "viga": p_mold_viga, "pilar": p_mold_pilar,
             }
 
         if usar_muros:
@@ -515,23 +498,20 @@ if option == "Crear Proyecto":
                 p_tab_met = st.checkbox("Tabique Metalcon", key="p_tab_met")
                 p_tab_mad = st.checkbox("Tabique Madera", key="p_tab_mad")
             partidas_seleccionadas["muros"] = {
-                "hormigon": p_muro_h,
-                "ladrillo": p_muro_l,
-                "tabique_metalcon": p_tab_met,
-                "tabique_madera": p_tab_mad,
+                "hormigon": p_muro_h, "ladrillo": p_muro_l,
+                "tabique_metalcon": p_tab_met, "tabique_madera": p_tab_mad,
             }
 
         if usar_revestimientos:
             st.write("---")
             st.markdown("**Revestimientos — selecciona las partidas:**")
-            re1, re2, re3 = st.columns(3)
+            re1, re2 = st.columns(2)
             with re1:
                 p_rev_int = st.checkbox("Interior", key="p_rev_int")
             with re2:
                 p_rev_ext = st.checkbox("Exterior", key="p_rev_ext")
             partidas_seleccionadas["revestimientos"] = {
-                "interior": p_rev_int,
-                "exterior": p_rev_ext,
+                "interior": p_rev_int, "exterior": p_rev_ext,
             }
 
         if usar_pisos:
@@ -542,14 +522,12 @@ if option == "Crear Proyecto":
                 p_ceramico = st.checkbox("Cerámico / Porcelanato", key="p_ceramico")
                 p_flotante = st.checkbox("Piso Flotante", key="p_flotante")
             with pi2:
-                p_baldosa = st.checkbox("Baldosa", key="p_baldosa")
+                p_baldosa  = st.checkbox("Baldosa", key="p_baldosa")
             with pi3:
-                p_deck = st.checkbox("Deck Madera", key="p_deck")
+                p_deck     = st.checkbox("Deck Madera", key="p_deck")
             partidas_seleccionadas["pisos"] = {
-                "ceramico": p_ceramico,
-                "flotante": p_flotante,
-                "baldosa": p_baldosa,
-                "deck": p_deck,
+                "ceramico": p_ceramico, "flotante": p_flotante,
+                "baldosa": p_baldosa, "deck": p_deck,
             }
 
         if usar_terminaciones:
@@ -558,19 +536,16 @@ if option == "Crear Proyecto":
             te1, te2, te3 = st.columns(3)
             with te1:
                 p_pintura = st.checkbox("Pintura", key="p_pintura")
-                p_estuco = st.checkbox("Estuco / Revoque", key="p_estuco")
+                p_estuco  = st.checkbox("Estuco / Revoque", key="p_estuco")
             with te2:
-                p_cielos = st.checkbox("Cielos", key="p_cielos")
+                p_cielos  = st.checkbox("Cielos", key="p_cielos")
             with te3:
                 p_zocalos = st.checkbox("Zócalos", key="p_zocalos")
             partidas_seleccionadas["terminaciones"] = {
-                "pintura": p_pintura,
-                "estuco": p_estuco,
-                "cielos": p_cielos,
-                "zocalos": p_zocalos,
+                "pintura": p_pintura, "estuco": p_estuco,
+                "cielos": p_cielos, "zocalos": p_zocalos,
             }
 
-        # Contador partidas seleccionadas
         total_partidas = sum(
             v for rubro in partidas_seleccionadas.values()
             for v in rubro.values()
@@ -581,22 +556,85 @@ if option == "Crear Proyecto":
         with col_cancel:
             if st.button("Cancelar", use_container_width=True):
                 st.session_state["proyecto_creado"] = False
+                st.session_state["proyecto"] = {}
         with col_count:
             st.caption(f"{total_partidas} partidas seleccionadas")
         with col_crear:
-            crear = st.button("Crear Proyecto", type="primary", use_container_width=True,
-                disabled=not nombre_proy)
+            crear = st.button("Crear Proyecto", type="primary",
+                use_container_width=True, disabled=not nombre_proy)
 
         if crear and nombre_proy:
             st.session_state["proyecto_creado"] = True
+            st.session_state["mostrar_proyecto"] = True
             st.session_state["proyecto"] = {
                 "nombre": nombre_proy,
                 "tipo_obra": tipo_obra,
                 "profesional": profesional,
                 "partidas": partidas_seleccionadas,
             }
-            st.session_state["ir_a"] = "Cubicacion"
             st.rerun()
+
+    # --- Expander del proyecto creado ---
+    if st.session_state.get("proyecto_creado"):
+        proy = st.session_state["proyecto"]
+        partidas = proy.get("partidas", {})
+
+        with st.expander(f"Tu proyecto: {proy['nombre']}", expanded=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                if proy.get("tipo_obra"):
+                    st.caption(f"Tipo de obra: {proy['tipo_obra']}")
+            with col2:
+                if proy.get("profesional"):
+                    st.caption(f"Profesional: {proy['profesional']}")
+
+            st.write("---")
+            st.markdown("**Partidas seleccionadas:**")
+
+            NOMBRES = {
+                "hormigon": "Hormigón y Mov. de tierra",
+                "acero_estructural": "Acero estructural",
+                "metalcon": "Acero No Estructural (Metalcon)",
+                "moldajes": "Moldajes",
+                "muros": "Muros",
+                "revestimientos": "Revestimientos",
+                "pisos": "Pisos y Pavimentos",
+                "terminaciones": "Terminaciones",
+            }
+            NOMBRES_PARTIDAS = {
+                "excavacion": "Excavación", "emplantillado": "Emplantillado",
+                "cimiento": "Cimiento", "sobrecimiento": "Sobrecimiento",
+                "radier": "Radier", "losa": "Losa", "pilar": "Pilar",
+                "viga": "Viga", "canal": "Canal / Solera",
+                "montante": "Montante", "esquinero": "Esquinero",
+                "muro": "Muro", "hormigon": "Muro Hormigón",
+                "ladrillo": "Muro Ladrillo", "tabique_metalcon": "Tabique Metalcon",
+                "tabique_madera": "Tabique Madera", "interior": "Interior",
+                "exterior": "Exterior", "ceramico": "Cerámico / Porcelanato",
+                "flotante": "Piso Flotante", "baldosa": "Baldosa",
+                "deck": "Deck Madera", "pintura": "Pintura",
+                "estuco": "Estuco / Revoque", "cielos": "Cielos",
+                "zocalos": "Zócalos",
+            }
+
+            for rubro, sub in partidas.items():
+                activas = [NOMBRES_PARTIDAS.get(k, k) for k, v in sub.items() if v]
+                if activas:
+                    st.markdown(f"**{NOMBRES.get(rubro, rubro)}**")
+                    for p in activas:
+                        st.markdown(f"- {p}")
+
+            st.write("---")
+            col_ir, col_cerrar = st.columns(2)
+            with col_ir:
+                if st.button("Ir a cubicación", type="primary", use_container_width=True):
+                    st.session_state["ir_a_cubicacion"] = True
+                    st.rerun()
+            with col_cerrar:
+                if st.button("Cerrar proyecto", use_container_width=True):
+                    st.session_state["proyecto_creado"] = False
+                    st.session_state["proyecto"] = {}
+                    st.rerun()
 
     st.info("También podés usar la Cubicación General sin crear un proyecto — está siempre disponible.")
 
