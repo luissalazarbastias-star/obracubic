@@ -3477,7 +3477,37 @@ st.session_state["vol_radier"] = vol_radier_final
 #st.write("DEBUG vol_rad:", sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [])))
 #st.write("DEBUG dos_rad:", st.session_state.get("dos_rad", "no existe"))
 #st.write("DEBUG radier_perdida:", st.session_state.get("radier_perdida", "no existe"))#
-
+# --- Totales recalculados para el PDF ---
+total_hormigon = (
+    st.session_state.get("vol_emp", 0) +
+    st.session_state.get("vol_pilares", 0) +
+    st.session_state.get("vol_sc_neto", 0) +
+    st.session_state.get("vol_radier", 0)
+)
+total_sacos = (
+    st.session_state.get("mat_emp", {}).get("cemento_sacos", 0) +
+    st.session_state.get("mat_cim", {}).get("cemento_sacos", 0) +
+    st.session_state.get("mat_sc",  {}).get("cemento_sacos", 0) +
+    st.session_state.get("mat_rad", {}).get("cemento_sacos", 0)
+)
+total_gravilla = (
+    st.session_state.get("mat_emp", {}).get("gravilla_kg", 0) +
+    st.session_state.get("mat_cim", {}).get("gravilla_kg", 0) +
+    st.session_state.get("mat_sc",  {}).get("gravilla_kg", 0) +
+    st.session_state.get("mat_rad", {}).get("gravilla_kg", 0)
+)
+total_arena = (
+    st.session_state.get("mat_emp", {}).get("arena_kg", 0) +
+    st.session_state.get("mat_cim", {}).get("arena_kg", 0) +
+    st.session_state.get("mat_sc",  {}).get("arena_kg", 0) +
+    st.session_state.get("mat_rad", {}).get("arena_kg", 0)
+)
+total_agua = (
+    st.session_state.get("mat_emp", {}).get("agua_lt", 0) +
+    st.session_state.get("mat_cim", {}).get("agua_lt", 0) +
+    st.session_state.get("mat_sc",  {}).get("agua_lt", 0) +
+    st.session_state.get("mat_rad", {}).get("agua_lt", 0)
+)
 if st.button("📄 Generar PDF", type="primary"):
     pdf_buffer = generar_pdf_cubicacion(
         nombre_proyecto=nombre_proyecto,
