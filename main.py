@@ -350,6 +350,10 @@ def generar_pdf_cubicacion(
     return buffer
 
 # Inicializar session_state
+if "proyecto_creado" not in st.session_state:
+    st.session_state["proyecto_creado"] = False
+if "proyecto" not in st.session_state:
+    st.session_state["proyecto"] = {}
 if "vol_emp" not in st.session_state:
     st.session_state["vol_emp"] = 0.0
 if "vol_pilares" not in st.session_state:
@@ -375,13 +379,246 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", ["Cubicacion"])
+option = st.sidebar.radio("Ir a:"["Crear Proyecto", "Cubicacion"])
+
+# ============================
+# CREAR PROYECTO
+# ============================
+if option == "Crear Proyecto":
+    st.subheader("Crear Nuevo Proyecto")
+    st.caption("Configurá tu obra y seleccioná solo los rubros que vas a trabajar.")
+
+    with st.container(border=True):
+        nombre_proy = st.text_input("Nombre del proyecto *",
+            placeholder="Ej: Casa Don Pedro - Angol",
+            key="input_nombre_proy")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            tipo_obra = st.text_input("Tipo de obra",
+                placeholder="Ej: Vivienda Unifamiliar",
+                key="input_tipo_obra")
+        with col2:
+            profesional = st.text_input("Profesional / Empresa",
+                placeholder="Ej: Juan Pérez - Constructor",
+                key="input_profesional")
+
+        st.write("**Seleccioná los rubros de tu obra:**")
+
+        # --- Nivel 1: Rubros ---
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            usar_hormigon = st.checkbox("Hormigón y Mov. de tierra", key="usar_hormigon", value=True)
+            usar_moldajes = st.checkbox("Moldajes", key="usar_moldajes")
+            usar_pisos = st.checkbox("Pisos y Pavimentos", key="usar_pisos")
+        with col2:
+            usar_acero_est = st.checkbox("Acero estructural", key="usar_acero_est")
+            usar_muros = st.checkbox("Muros", key="usar_muros")
+            usar_terminaciones = st.checkbox("Terminaciones", key="usar_terminaciones")
+        with col3:
+            usar_metalcon = st.checkbox("Acero No Estructural (Metalcon)", key="usar_metalcon")
+            usar_revestimientos = st.checkbox("Revestimientos", key="usar_revestimientos")
+            usar_instalaciones = st.checkbox("Instalaciones (futuro)", key="usar_instalaciones", disabled=True)
+
+        # --- Nivel 2: Partidas por rubro ---
+        partidas_seleccionadas = {}
+
+        if usar_hormigon:
+            st.write("---")
+            st.markdown("**Hormigón y Mov. de tierra — selecciona las partidas:**")
+            hc1, hc2, hc3 = st.columns(3)
+            with hc1:
+                p_exc = st.checkbox("Excavación", key="p_exc")
+                p_emp = st.checkbox("Emplantillado", key="p_emp")
+            with hc2:
+                p_cim = st.checkbox("Cimiento", key="p_cim")
+                p_sc = st.checkbox("Sobrecimiento", key="p_sc")
+            with hc3:
+                p_rad = st.checkbox("Radier", key="p_rad")
+            partidas_seleccionadas["hormigon"] = {
+                "excavacion": p_exc,
+                "emplantillado": p_emp,
+                "cimiento": p_cim,
+                "sobrecimiento": p_sc,
+                "radier": p_rad,
+            }
+
+        if usar_acero_est:
+            st.write("---")
+            st.markdown("**Acero estructural — selecciona las partidas:**")
+            ac1, ac2, ac3 = st.columns(3)
+            with ac1:
+                p_losa = st.checkbox("Losa", key="p_losa")
+                p_pilar = st.checkbox("Pilar", key="p_pilar")
+            with ac2:
+                p_viga = st.checkbox("Viga", key="p_viga")
+                p_rad_ac = st.checkbox("Radier", key="p_rad_ac")
+            with ac3:
+                p_cim_ac = st.checkbox("Cimiento", key="p_cim_ac")
+            partidas_seleccionadas["acero_estructural"] = {
+                "losa": p_losa,
+                "pilar": p_pilar,
+                "viga": p_viga,
+                "radier": p_rad_ac,
+                "cimiento": p_cim_ac,
+            }
+
+        if usar_metalcon:
+            st.write("---")
+            st.markdown("**Acero No Estructural (Metalcon) — selecciona las partidas:**")
+            mc1, mc2, mc3 = st.columns(3)
+            with mc1:
+                p_canal = st.checkbox("Canal / Solera", key="p_canal")
+            with mc2:
+                p_mont = st.checkbox("Montante", key="p_mont")
+            with mc3:
+                p_esq = st.checkbox("Esquinero", key="p_esq")
+            partidas_seleccionadas["metalcon"] = {
+                "canal": p_canal,
+                "montante": p_mont,
+                "esquinero": p_esq,
+            }
+
+        if usar_moldajes:
+            st.write("---")
+            st.markdown("**Moldajes — selecciona las partidas:**")
+            mold1, mold2, mold3 = st.columns(3)
+            with mold1:
+                p_mold_cim = st.checkbox("Cimiento", key="p_mold_cim")
+                p_mold_muro = st.checkbox("Muro", key="p_mold_muro")
+            with mold2:
+                p_mold_losa = st.checkbox("Losa", key="p_mold_losa")
+                p_mold_viga = st.checkbox("Viga", key="p_mold_viga")
+            with mold3:
+                p_mold_pilar = st.checkbox("Pilar", key="p_mold_pilar")
+            partidas_seleccionadas["moldajes"] = {
+                "cimiento": p_mold_cim,
+                "muro": p_mold_muro,
+                "losa": p_mold_losa,
+                "viga": p_mold_viga,
+                "pilar": p_mold_pilar,
+            }
+
+        if usar_muros:
+            st.write("---")
+            st.markdown("**Muros — selecciona las partidas:**")
+            mu1, mu2, mu3 = st.columns(3)
+            with mu1:
+                p_muro_h = st.checkbox("Muro Hormigón", key="p_muro_h")
+            with mu2:
+                p_muro_l = st.checkbox("Muro Ladrillo", key="p_muro_l")
+            with mu3:
+                p_tab_met = st.checkbox("Tabique Metalcon", key="p_tab_met")
+                p_tab_mad = st.checkbox("Tabique Madera", key="p_tab_mad")
+            partidas_seleccionadas["muros"] = {
+                "hormigon": p_muro_h,
+                "ladrillo": p_muro_l,
+                "tabique_metalcon": p_tab_met,
+                "tabique_madera": p_tab_mad,
+            }
+
+        if usar_revestimientos:
+            st.write("---")
+            st.markdown("**Revestimientos — selecciona las partidas:**")
+            re1, re2, re3 = st.columns(3)
+            with re1:
+                p_rev_int = st.checkbox("Interior", key="p_rev_int")
+            with re2:
+                p_rev_ext = st.checkbox("Exterior", key="p_rev_ext")
+            partidas_seleccionadas["revestimientos"] = {
+                "interior": p_rev_int,
+                "exterior": p_rev_ext,
+            }
+
+        if usar_pisos:
+            st.write("---")
+            st.markdown("**Pisos y Pavimentos — selecciona las partidas:**")
+            pi1, pi2, pi3 = st.columns(3)
+            with pi1:
+                p_ceramico = st.checkbox("Cerámico / Porcelanato", key="p_ceramico")
+                p_flotante = st.checkbox("Piso Flotante", key="p_flotante")
+            with pi2:
+                p_baldosa = st.checkbox("Baldosa", key="p_baldosa")
+            with pi3:
+                p_deck = st.checkbox("Deck Madera", key="p_deck")
+            partidas_seleccionadas["pisos"] = {
+                "ceramico": p_ceramico,
+                "flotante": p_flotante,
+                "baldosa": p_baldosa,
+                "deck": p_deck,
+            }
+
+        if usar_terminaciones:
+            st.write("---")
+            st.markdown("**Terminaciones — selecciona las partidas:**")
+            te1, te2, te3 = st.columns(3)
+            with te1:
+                p_pintura = st.checkbox("Pintura", key="p_pintura")
+                p_estuco = st.checkbox("Estuco / Revoque", key="p_estuco")
+            with te2:
+                p_cielos = st.checkbox("Cielos", key="p_cielos")
+            with te3:
+                p_zocalos = st.checkbox("Zócalos", key="p_zocalos")
+            partidas_seleccionadas["terminaciones"] = {
+                "pintura": p_pintura,
+                "estuco": p_estuco,
+                "cielos": p_cielos,
+                "zocalos": p_zocalos,
+            }
+
+        # Contador partidas seleccionadas
+        total_partidas = sum(
+            v for rubro in partidas_seleccionadas.values()
+            for v in rubro.values()
+        )
+
+        st.write("---")
+        col_cancel, col_count, col_crear = st.columns([2, 3, 2])
+        with col_cancel:
+            if st.button("Cancelar", use_container_width=True):
+                st.session_state["proyecto_creado"] = False
+        with col_count:
+            st.caption(f"{total_partidas} partidas seleccionadas")
+        with col_crear:
+            crear = st.button("Crear Proyecto", type="primary", use_container_width=True,
+                disabled=not nombre_proy)
+
+        if crear and nombre_proy:
+            st.session_state["proyecto_creado"] = True
+            st.session_state["proyecto"] = {
+                "nombre": nombre_proy,
+                "tipo_obra": tipo_obra,
+                "profesional": profesional,
+                "partidas": partidas_seleccionadas,
+            }
+            st.success(f"Proyecto '{nombre_proy}' creado. Ve a Cubicacion.")
+
+    st.info("También podés usar la Cubicación General sin crear un proyecto — está siempre disponible.")
 
 # ============================
 # CUBICACIÓN
 # ============================
 if option == "Cubicacion":
+    # Banner proyecto activo
+    if st.session_state.get("proyecto_creado") and st.session_state.get("proyecto"):
+        proy = st.session_state["proyecto"]
+        with st.container(border=True):
+            b1, b2, b3 = st.columns([3, 2, 1])
+            with b1:
+                st.markdown(f"**Proyecto:** {proy['nombre']}")
+                if proy.get('tipo_obra'):
+                    st.caption(f"Tipo: {proy['tipo_obra']}")
+            with b2:
+                if proy.get('profesional'):
+                    st.caption(f"Profesional: {proy['profesional']}")
+            with b3:
+                if st.button("Cerrar proyecto", key="cerrar_proy"):
+                    st.session_state["proyecto_creado"] = False
+                    st.session_state["proyecto"] = {}
+                    st.rerun()
+    
     st.subheader("CUBICACIONES")
+    
     with st.expander("Hormigón y Movimiento de tierra", expanded=False):
 
         # --- 1. Excavación ---
