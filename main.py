@@ -1047,15 +1047,13 @@ if option == "Cubicacion":
                     st.session_state.get("vol_sc_neto", 0) +
                     st.session_state.get("vol_radier", 0)
 )
-                st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m³")
-
                 st.subheader("Resumen Total de Materiales")
-                st.caption("Suma de todas las partidas con sus respectivas dosificaciones")
+                st.caption("Suma de todas las partidas con sus respectivas dosificaciones y desperdicios")
 
                 total_sacos    = (st.session_state.get("mat_emp", {}).get("cemento_sacos", 0) +
-                    st.session_state.get("mat_cim", {}).get("cemento_sacos", 0) +
-                    st.session_state.get("mat_sc",  {}).get("cemento_sacos", 0) +
-                    st.session_state.get("mat_rad", {}).get("cemento_sacos", 0))
+                                st.session_state.get("mat_cim", {}).get("cemento_sacos", 0) +
+                                st.session_state.get("mat_sc",  {}).get("cemento_sacos", 0) +
+                                st.session_state.get("mat_rad", {}).get("cemento_sacos", 0))
 
                 total_gravilla = (st.session_state.get("mat_emp", {}).get("gravilla_kg", 0) +
                                 st.session_state.get("mat_cim", {}).get("gravilla_kg", 0) +
@@ -1070,13 +1068,20 @@ if option == "Cubicacion":
                 total_agua     = (st.session_state.get("mat_emp", {}).get("agua_lt", 0) +
                                 st.session_state.get("mat_cim", {}).get("agua_lt", 0) +
                                 st.session_state.get("mat_sc",  {}).get("agua_lt", 0) +
-                                st.session_state.get("mat_rad", {}).get("agua_lt", 0))      
+                                st.session_state.get("mat_rad", {}).get("agua_lt", 0))
+
+                total_hormigon = (st.session_state.get("vol_emp", 0) +
+                                st.session_state.get("vol_pilares", 0) +
+                                st.session_state.get("vol_sc_neto", 0) +
+                                st.session_state.get("vol_radier", 0))
+
+                st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m³")
 
                 r1, r2, r3, r4 = st.columns(4)
-                r1.metric("🧱 Cemento Total",  f"{total_sacos} sacos")
-                r2.metric("⚫ Gravilla Total", f"{total_gravilla} kg")
-                r3.metric("🟡 Arena Total",    f"{total_arena} kg")
-                r4.metric("💧 Agua Total",     f"{total_agua} lt")
+                r1.metric("Cemento Total",  f"{total_sacos} sacos")
+                r2.metric("Gravilla Total", f"{total_gravilla} kg")
+                r3.metric("Arena Total",    f"{total_arena} kg")
+                r4.metric("Agua Total",     f"{total_agua} lt")
 
     # --- Acero estructural ---
             if ver_rubro(acero):
