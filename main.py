@@ -375,8 +375,7 @@ if "mat_sc" not in st.session_state:
 if "mat_rad" not in st.session_state:
     st.session_state["mat_rad"] = {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}
 if "total_hormigon" not in st.session_state:
-    st.session_state["total_hormigon"] = total_hormigon
-
+    st.session_state["total_hormigon"] = st.session_state.get("vol_emp", 0) + st.session_state.get("vol_pilares", 0) + st.session_state.get("vol_sc_neto", 0) + st.session_state.get("vol_radier", 0)
 # ============================
 # LOGO Y SIDEBAR
 # ============================
