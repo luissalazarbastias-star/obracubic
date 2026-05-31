@@ -386,60 +386,114 @@ if option == "Cubicacion":
 
         # --- 1. Excavación ---
         with st.expander("1. Excavación", expanded=False):
-            ex1, ex2, ex3 = st.columns(3)
-            with ex1:
-                exc_largo = st.number_input("Largo excavación (m)", value=0.0, key="exc_largo")
-            with ex2:
-                exc_ancho = st.number_input("Ancho excavación (m)", value=0.0, key="exc_ancho")
-            with ex3:
-                exc_profundidad = st.number_input("Profundidad (m)", value=0.0, key="exc_prof")
+
+            if "secciones_exc" not in st.session_state:
+                st.session_state.secciones_exc = [{"largo": 0.0, "ancho": 0.0, "prof": 0.0}]
+
+            col_add, col_del = st.columns(2)
+            with col_add:
+                if st.button("➕ Agregar sección", key="add_exc"):
+                    st.session_state.secciones_exc.append({"largo": 0.0, "ancho": 0.0, "prof": 0.0})
+            with col_del:
+                if st.button("🗑️ Eliminar última sección", key="del_exc"):
+                    if len(st.session_state.secciones_exc) > 1:
+                        st.session_state.secciones_exc.pop()
+
+            vol_exc_total = 0.0
+            for i, sec in enumerate(st.session_state.secciones_exc):
+                st.markdown(f"**Sección {i+1}**")
+                ex1, ex2, ex3 = st.columns(3)
+                with ex1:
+                    sec["largo"] = st.number_input(f"Largo (m)", value=sec["largo"], key=f"exc_largo_{i}")
+                with ex2:
+                    sec["ancho"] = st.number_input(f"Ancho (m)", value=sec["ancho"], key=f"exc_ancho_{i}")
+                with ex3:
+                    sec["prof"] = st.number_input(f"Profundidad (m)", value=sec["prof"], key=f"exc_prof_{i}")
+
+                vol_sec_exc = sec["largo"] * sec["ancho"] * sec["prof"]
+                st.caption(f"Volumen sección {i+1}: {vol_sec_exc:.2f} m³")
+                vol_exc_total += vol_sec_exc
+
             exc_perdida = st.slider("% Esponjamiento", 0, 30, 20, key="exc_perdida")
-            vol_exc = (exc_largo * exc_ancho * exc_profundidad) * (1 + (exc_perdida / 100))
-            st.info(f"Volumen Excavación: {vol_exc:.2f} m³")
+            vol_exc_final = vol_exc_total * (1 + exc_perdida / 100)
+
+            st.write("---")
+            st.info(f"Volumen neto excavación: {vol_exc_total:.2f} m³")
+            st.success(f"Volumen con {exc_perdida}% esponjamiento: {vol_exc_final:.2f} m³")
 
         # --- 2. Emplantillado ---
         with st.expander("2. Emplantillado", expanded=False):
-            emp1, emp2, emp3 = st.columns(3)
-            with emp1:
-                emp_largo = st.number_input("Largo emplantillado (m)", value=0.0, key="emp_largo")
-            with emp2:
-                emp_ancho = st.number_input("Ancho emplantillado (m)", value=0.0, key="emp_ancho")
-            with emp3:
-                emp_espesor = st.number_input("Espesor emplantillado (m)", value=0.0, key="emp_espesor")
-            emp_perdida = st.slider("% Pérdida emplantillado", 0, 15, 5, key="emp_perdida")
-            vol_emp = (emp_largo * emp_ancho * emp_espesor) * (1 + (emp_perdida / 100))
-            st.info(f"Volumen Emplantillado: {vol_emp:.2f} m³")
+
+            if "secciones_emp" not in st.session_state:
+                st.session_state.secciones_emp = [{"largo": 0.0, "ancho": 0.0, "espesor": 0.0}]
+
+            col_add, col_del = st.columns(2)
+            with col_add:
+                if st.button("➕ Agregar sección", key="add_emp"):
+                    st.session_state.secciones_emp.append({"largo": 0.0, "ancho": 0.0, "espesor": 0.0})
+            with col_del:
+                if st.button("🗑️ Eliminar última sección", key="del_emp"):
+                    if len(st.session_state.secciones_emp) > 1:
+                        st.session_state.secciones_emp.pop()
+
+            vol_emp_total = 0.0
+            for i, sec in enumerate(st.session_state.secciones_emp):
+                st.markdown(f"**Sección {i+1}**")
+                em1, em2, em3 = st.columns(3)
+                with em1:
+                    sec["largo"] = st.number_input("Largo (m)", value=sec["largo"], key=f"emp_largo_{i}")
+                with em2:
+                    sec["ancho"] = st.number_input("Ancho (m)", value=sec["ancho"], key=f"emp_ancho_{i}")
+                with em3:
+                    sec["espesor"] = st.number_input("Espesor (m)", value=sec["espesor"], key=f"emp_espesor_{i}")
+
+                vol_sec_emp = sec["largo"] * sec["ancho"] * sec["espesor"]
+                st.caption(f"Volumen sección {i+1}: {vol_sec_emp:.2f} m³")
+                vol_emp_total += vol_sec_emp
+
+            emp_perdida = st.slider("% Pérdida", 0, 15, 5, key="emp_perdida")
+            vol_emp_final = vol_emp_total * (1 + emp_perdida / 100)
+
             dos_emp = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                                   key="dos_emp", help=DOSIFICACIONES["G-15"]["descripcion"])
-            mat_emp = calcular_materiales(vol_emp, dos_emp)
+                                    key="dos_emp",
+                                    help=DOSIFICACIONES["G-15"]["descripcion"])
+            mat_emp = calcular_materiales(vol_emp_final, dos_emp)
+
+            st.write("---")
+            st.info(f"Volumen neto emplantillado: {vol_emp_total:.2f} m³")
+            st.success(f"Volumen con {emp_perdida}% pérdida: {vol_emp_final:.2f} m³")
             mostrar_materiales(mat_emp)
 
         # --- 3. Cimiento ---
         with st.expander("3. Cimiento", expanded=False):
-            tipo_cimiento = st.radio(
-                "Tipo de cimiento",
-                ["Zapata Aislada", "Zapata Corrida", "Zapata Combinada", "Losa de Cimentación"],
-                horizontal=True,
-                key="tipo_cimiento"
-            )
+
+            st.write("**Selecciona los tipos de cimiento que tiene la obra:**")
+
+            usar_zapata_aislada   = st.checkbox("Zapata Aislada", key="usar_zapata_aislada")
+            usar_zapata_corrida   = st.checkbox("Zapata Corrida", key="usar_zapata_corrida")
+            usar_zapata_combinada = st.checkbox("Zapata Combinada", key="usar_zapata_combinada")
+            usar_losa_cim         = st.checkbox("Losa de Cimentación", key="usar_losa_cim")
 
             vol_pilares = 0.0
 
             # --- Zapata Aislada ---
-            if tipo_cimiento == "Zapata Aislada":
+            if usar_zapata_aislada:
+                st.write("---")
+                st.markdown("### 📐 Zapata Aislada")
 
                 if "secciones_zapata" not in st.session_state:
                     st.session_state.secciones_zapata = [{"cant": 0, "seccion": 0.0, "alto": 0.0}]
 
                 col_add, col_del = st.columns(2)
                 with col_add:
-                    if st.button("➕ Agregar grupo de zapatas", key="add_zapata"):
+                    if st.button("➕ Agregar grupo", key="add_zapata"):
                         st.session_state.secciones_zapata.append({"cant": 0, "seccion": 0.0, "alto": 0.0})
                 with col_del:
-                    if st.button("🗑️ Eliminar última sección", key="del_zapata"):
+                    if st.button("🗑️ Eliminar último grupo", key="del_zapata"):
                         if len(st.session_state.secciones_zapata) > 1:
                             st.session_state.secciones_zapata.pop()
 
+                vol_zapata_aislada = 0.0
                 for i, sec in enumerate(st.session_state.secciones_zapata):
                     st.markdown(f"**Grupo {i+1}**")
                     c1, c2, c3 = st.columns(3)
@@ -452,12 +506,15 @@ if option == "Cubicacion":
 
                     vol_sec = (sec["seccion"] * sec["seccion"] * sec["alto"]) * sec["cant"]
                     st.caption(f"Volumen grupo {i+1}: {vol_sec:.2f} m³")
-                    vol_pilares += vol_sec
+                    vol_zapata_aislada += vol_sec
 
-                st.info(f"Volumen total Zapata Aislada: {vol_pilares:.2f} m³")
+                st.info(f"Volumen Zapata Aislada: {vol_zapata_aislada:.2f} m³")
+                vol_pilares += vol_zapata_aislada
 
             # --- Zapata Corrida ---
-            elif tipo_cimiento == "Zapata Corrida":
+            if usar_zapata_corrida:
+                st.write("---")
+                st.markdown("### 📐 Zapata Corrida")
 
                 if "secciones_corrida" not in st.session_state:
                     st.session_state.secciones_corrida = [{"largo": 0.0, "ancho": 0.0, "prof": 0.0}]
@@ -471,6 +528,7 @@ if option == "Cubicacion":
                         if len(st.session_state.secciones_corrida) > 1:
                             st.session_state.secciones_corrida.pop()
 
+                vol_zapata_corrida = 0.0
                 for i, sec in enumerate(st.session_state.secciones_corrida):
                     st.markdown(f"**Sección {i+1}**")
                     c1, c2, c3 = st.columns(3)
@@ -483,12 +541,15 @@ if option == "Cubicacion":
 
                     vol_sec = sec["largo"] * sec["ancho"] * sec["prof"]
                     st.caption(f"Volumen sección {i+1}: {vol_sec:.2f} m³")
-                    vol_pilares += vol_sec
+                    vol_zapata_corrida += vol_sec
 
-                st.info(f"Volumen total Zapata Corrida: {vol_pilares:.2f} m³")
+                st.info(f"Volumen Zapata Corrida: {vol_zapata_corrida:.2f} m³")
+                vol_pilares += vol_zapata_corrida
 
             # --- Zapata Combinada ---
-            elif tipo_cimiento == "Zapata Combinada":
+            if usar_zapata_combinada:
+                st.write("---")
+                st.markdown("### 📐 Zapata Combinada")
                 st.caption("Une dos o más pilares cercanos en una sola zapata.")
 
                 if "secciones_combinada" not in st.session_state:
@@ -503,6 +564,7 @@ if option == "Cubicacion":
                         if len(st.session_state.secciones_combinada) > 1:
                             st.session_state.secciones_combinada.pop()
 
+                vol_zapata_combinada = 0.0
                 for i, sec in enumerate(st.session_state.secciones_combinada):
                     st.markdown(f"**Sección {i+1}**")
                     c1, c2, c3, c4 = st.columns(4)
@@ -517,12 +579,15 @@ if option == "Cubicacion":
 
                     vol_sec = sec["largo"] * sec["ancho"] * sec["prof"] * sec["cant"]
                     st.caption(f"Volumen sección {i+1}: {vol_sec:.2f} m³")
-                    vol_pilares += vol_sec
+                    vol_zapata_combinada += vol_sec
 
-                st.info(f"Volumen total Zapata Combinada: {vol_pilares:.2f} m³")
+                st.info(f"Volumen Zapata Combinada: {vol_zapata_combinada:.2f} m³")
+                vol_pilares += vol_zapata_combinada
 
             # --- Losa de Cimentación ---
-            elif tipo_cimiento == "Losa de Cimentación":
+            if usar_losa_cim:
+                st.write("---")
+                st.markdown("### 📐 Losa de Cimentación")
                 st.caption("Placa continua bajo toda la estructura. Se usa en terrenos de baja capacidad portante.")
 
                 if "secciones_losa_cim" not in st.session_state:
@@ -537,6 +602,7 @@ if option == "Cubicacion":
                         if len(st.session_state.secciones_losa_cim) > 1:
                             st.session_state.secciones_losa_cim.pop()
 
+                vol_losa_cim = 0.0
                 for i, sec in enumerate(st.session_state.secciones_losa_cim):
                     st.markdown(f"**Sección {i+1}**")
                     c1, c2, c3 = st.columns(3)
@@ -549,43 +615,75 @@ if option == "Cubicacion":
 
                     vol_sec = sec["largo"] * sec["ancho"] * sec["esp"]
                     st.caption(f"Volumen sección {i+1}: {vol_sec:.2f} m³")
-                    vol_pilares += vol_sec
+                    vol_losa_cim += vol_sec
 
-                st.info(f"Volumen total Losa de Cimentación: {vol_pilares:.2f} m³")
+                st.info(f"Volumen Losa de Cimentación: {vol_losa_cim:.2f} m³")
+                vol_pilares += vol_losa_cim
 
-            st.caption("Para pilotes o micropilotes consulte con un ingeniero especialista.")
+            # --- Resumen y Dosificación ---
+            if vol_pilares > 0:
+                st.write("---")
+                st.success(f"### Volumen Total Cimiento: {vol_pilares:.2f} m³")
+                st.caption("Para pilotes o micropilotes consulte con un ingeniero especialista.")
 
-            dos_cim = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                                index=1, key="dos_cim",
-                                help=DOSIFICACIONES["G-20"]["descripcion"])
-            mat_cim = calcular_materiales(vol_pilares, dos_cim)
-            mostrar_materiales(mat_cim)
+                dos_cim = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
+                                       index=1, key="dos_cim",
+                                       help=DOSIFICACIONES["G-20"]["descripcion"])
+                mat_cim = calcular_materiales(vol_pilares, dos_cim)
+                mostrar_materiales(mat_cim)
+            else:
+                st.caption("Selecciona al menos un tipo de cimiento para calcular.")
         # --- 4. Sobrecimiento ---
         with st.expander("4. Sobrecimiento (Con Descuento de Vanos)", expanded=False):
-            st.write("**Dimensiones Brutas**")
-            sc1, sc2, sc3 = st.columns(3)
-            with sc1:
-                sc_largo = st.number_input("Largo Total (m)", value=0.0, key="sc_largo")
-            with sc2:
-                sc_ancho = st.number_input("Ancho / Espesor (m)", value=0.0, key="sc_ancho")
-            with sc3:
-                sc_alto = st.number_input("Alto Sobrecimiento (m)", value=0.0, key="sc_alto")
-            vol_sc_bruto = sc_largo * sc_ancho * sc_alto
+
+            if "secciones_sc" not in st.session_state:
+                st.session_state.secciones_sc = [{"largo": 0.0, "ancho": 0.0, "alto": 0.0}]
+
+            col_add, col_del = st.columns(2)
+            with col_add:
+                if st.button("➕ Agregar sección", key="add_sc"):
+                    st.session_state.secciones_sc.append({"largo": 0.0, "ancho": 0.0, "alto": 0.0})
+            with col_del:
+                if st.button("🗑️ Eliminar última sección", key="del_sc"):
+                    if len(st.session_state.secciones_sc) > 1:
+                        st.session_state.secciones_sc.pop()
+
+            vol_sc_total = 0.0
+            for i, sec in enumerate(st.session_state.secciones_sc):
+                st.markdown(f"**Sección {i+1}**")
+                sc1, sc2, sc3 = st.columns(3)
+                with sc1:
+                    sec["largo"] = st.number_input("Largo (m)", value=sec["largo"], key=f"sc_largo_{i}")
+                with sc2:
+                    sec["ancho"] = st.number_input("Ancho/Espesor (m)", value=sec["ancho"], key=f"sc_ancho_{i}")
+                with sc3:
+                    sec["alto"] = st.number_input("Alto (m)", value=sec["alto"], key=f"sc_alto_{i}")
+
+                vol_sec_sc = sec["largo"] * sec["ancho"] * sec["alto"]
+                st.caption(f"Volumen bruto sección {i+1}: {vol_sec_sc:.2f} m³")
+                vol_sc_total += vol_sec_sc
+
             st.write("**Descuento de Vanos**")
             v1, v2 = st.columns(2)
             with v1:
-                n_vanos = st.number_input("Cantidad de Vanos / Puertas", value=2, step=1, key="vanos_cant")
+                n_vanos_sc = st.number_input("Cantidad de vanos/puertas", value=0, step=1, key="vanos_cant_sc")
             with v2:
-                ancho_vano = st.number_input("Ancho del Vano (m)", value=0.0, key="vanos_ancho")
-            vol_descuento_vanos = n_vanos * ancho_vano * sc_ancho * sc_alto
-            vol_sc_neto = vol_sc_bruto - vol_descuento_vanos
-            st.text(f"Volumen Bruto: {vol_sc_bruto:.2f} m³")
-            st.text(f"Descuento Vanos: -{vol_descuento_vanos:.2f} m³")
-            st.info(f"Volumen Neto Sobrecimiento: {vol_sc_neto:.2f} m³")
+                ancho_vano_sc = st.number_input("Ancho del vano (m)", value=0.0, key="vanos_ancho_sc")
+
+            espesor_sc = st.session_state.secciones_sc[0]["ancho"] if st.session_state.secciones_sc else 0.15
+            alto_sc = st.session_state.secciones_sc[0]["alto"] if st.session_state.secciones_sc else 0.30
+            vol_vanos_sc = n_vanos_sc * ancho_vano_sc * espesor_sc * alto_sc
+            vol_sc_neto = vol_sc_total - vol_vanos_sc
+
             dos_sc = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                                  index=1, key="dos_sc",
-                                  help=DOSIFICACIONES["G-20"]["descripcion"])
+                                    index=1, key="dos_sc",
+                                    help=DOSIFICACIONES["G-20"]["descripcion"])
             mat_sc = calcular_materiales(vol_sc_neto, dos_sc)
+
+            st.write("---")
+            st.text(f"Volumen bruto total: {vol_sc_total:.2f} m³")
+            st.text(f"Descuento vanos: -{vol_vanos_sc:.2f} m³")
+            st.info(f"Volumen neto sobrecimiento: {vol_sc_neto:.2f} m³")
             mostrar_materiales(mat_sc)
 
         # --- 5. Radier ---
