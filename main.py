@@ -2327,57 +2327,81 @@ if option == "Cubicacion":
     # REVESTIMIENTOS
     # ============================
             if ver_rubro(revest):
-                with st.expander("Revestimientos", expanded=False):
+                    with st.expander("Revestimientos", expanded=False):
 
-                    # ============================
-                    # DATOS
-                    # ============================
-                    YESO_CARTON = {
-                        "ST Estándar 10mm (Zonas secas)":        {"espesor": 10,   "area": 2.88, "tipo": "ST"},
-                        "ST Estándar 12,5mm (Zonas secas)":      {"espesor": 12.5, "area": 2.88, "tipo": "ST"},
-                        "RH Humedad 12,5mm (Baños/Cocinas)":     {"espesor": 12.5, "area": 2.88, "tipo": "RH"},
-                        "RH Humedad 15mm (Baños/Cocinas)":       {"espesor": 15,   "area": 2.88, "tipo": "RH"},
-                        "RF Fuego 12,5mm (Shaft/Bodegas)":       {"espesor": 12.5, "area": 2.88, "tipo": "RF"},
-                        "RF Fuego 15mm (Shaft/Bodegas)":         {"espesor": 15,   "area": 2.88, "tipo": "RF"},
-                    }
-                    TERCIADO_RANURADO = {
-                        "Terciado Ranurado 5,5-6mm (Colonial liviano)": {"area": 2.98},
-                        "Terciado Ranurado 9mm (Uso general)":          {"area": 2.98},
-                        "Terciado Ranurado 12mm (Alta resistencia)":    {"area": 2.98},
-                    }
-                    OSB_TIPOS = {
-                        "OSB 9,5mm":  {"area": 2.98},
-                        "OSB 11,1mm": {"area": 2.98},
-                        "OSB 15,1mm": {"area": 2.98},
-                    }
-                    FIBROCEMENTO = {
-                        "Lisa 4mm (Sobre tablero madera)":      {"area": 2.88},
-                        "Lisa 5mm (Cielos y aleros húmedos)":   {"area": 2.88},
-                        "Simplísima 6mm (Fachada)":             {"area": 2.88},
-                        "Textura Madera 6mm (Fachada)":         {"area": 2.88},
-                    }
-                    TERCIADO_ESTRUCTURAL = {
-                        "Terciado Estructural 9mm":  {"area": 2.98},
-                        "Terciado Estructural 12mm": {"area": 2.98},
-                        "Terciado Estructural 15mm": {"area": 2.98},
-                        "Terciado Estructural 18mm": {"area": 2.98},
-                    }
+                        YESO_CARTON = {
+                            "ST Estándar 10mm (Zonas secas)":        {"espesor": 10,   "area": 2.88, "tipo": "ST"},
+                            "ST Estándar 12,5mm (Zonas secas)":      {"espesor": 12.5, "area": 2.88, "tipo": "ST"},
+                            "RH Humedad 12,5mm (Baños/Cocinas)":     {"espesor": 12.5, "area": 2.88, "tipo": "RH"},
+                            "RH Humedad 15mm (Baños/Cocinas)":       {"espesor": 15,   "area": 2.88, "tipo": "RH"},
+                            "RF Fuego 12,5mm (Shaft/Bodegas)":       {"espesor": 12.5, "area": 2.88, "tipo": "RF"},
+                            "RF Fuego 15mm (Shaft/Bodegas)":         {"espesor": 15,   "area": 2.88, "tipo": "RF"},
+                        }
+                        TERCIADO_RANURADO = {
+                            "Terciado Ranurado 5,5-6mm (Colonial liviano)": {"area": 2.98},
+                            "Terciado Ranurado 9mm (Uso general)":          {"area": 2.98},
+                            "Terciado Ranurado 12mm (Alta resistencia)":    {"area": 2.98},
+                        }
+                        OSB_TIPOS = {
+                            "OSB 9,5mm":  {"area": 2.98},
+                            "OSB 11,1mm": {"area": 2.98},
+                            "OSB 15,1mm": {"area": 2.98},
+                        }
+                        FIBROCEMENTO = {
+                            "Lisa 4mm (Sobre tablero madera)":      {"area": 2.88},
+                            "Lisa 5mm (Cielos y aleros húmedos)":   {"area": 2.88},
+                            "Simplísima 6mm (Fachada)":             {"area": 2.88},
+                            "Textura Madera 6mm (Fachada)":         {"area": 2.88},
+                        }
+                        TERCIADO_ESTRUCTURAL = {
+                            "Terciado Estructural 9mm":  {"area": 2.98},
+                            "Terciado Estructural 12mm": {"area": 2.98},
+                            "Terciado Estructural 15mm": {"area": 2.98},
+                            "Terciado Estructural 18mm": {"area": 2.98},
+                        }
 
-                    def calcular_planchas(area_neta, area_plancha, desperdicio):
-                        cant_exacta = area_neta / area_plancha if area_plancha > 0 else 0
-                        cant_con_desp = cant_exacta * (1 + desperdicio / 100)
-                        sobra_ultima = (cant_exacta % 1) * area_plancha
-                        desperdicio_m2 = (cant_con_desp - cant_exacta) * area_plancha
-                        return cant_exacta, cant_con_desp, sobra_ultima, desperdicio_m2
+                        def calcular_planchas(area_neta, area_plancha, desperdicio):
+                            cant_exacta = area_neta / area_plancha if area_plancha > 0 else 0
+                            cant_con_desp = cant_exacta * (1 + desperdicio / 100)
+                            sobra_ultima = (cant_exacta % 1) * area_plancha
+                            desperdicio_m2 = (cant_con_desp - cant_exacta) * area_plancha
+                            return cant_exacta, cant_con_desp, sobra_ultima, desperdicio_m2
 
-                    def calcular_tornillos_plancha(cant_planchas, area_plancha, sep_borde, sep_centro):
-                        """Calcula tornillos para planchas rectangulares"""
-                        # Perímetro plancha 1,22x2,44 aprox
-                        perimetro = (1.22 + 2.44) * 2
-                        apoyos_internos = area_plancha / (sep_centro * 1.22)
-                        torn_borde = (perimetro / sep_borde) * cant_planchas
-                        torn_centro = apoyos_internos * cant_planchas
-                        return round(torn_borde + torn_centro)
+                        def calcular_tornillos_plancha(cant_planchas, area_plancha, sep_borde, sep_centro):
+                            perimetro = (1.22 + 2.44) * 2
+                            apoyos_internos = area_plancha / (sep_centro * 1.22)
+                            torn_borde = (perimetro / sep_borde) * cant_planchas
+                            torn_centro = apoyos_internos * cant_planchas
+                            return round(torn_borde + torn_centro)
+
+                        def seccion_muro(key_prefix, label="muro"):
+                            """Helper para agregar secciones de muros con botones agregar/eliminar"""
+                            key_list = f"secciones_{key_prefix}"
+                            if key_list not in st.session_state:
+                                st.session_state[key_list] = [{"largo": 0.0, "alto": 0.0, "cant": 0}]
+                            col_add, col_del = st.columns(2)
+                            with col_add:
+                                if st.button("➕ Agregar sección", key=f"add_{key_prefix}"):
+                                    st.session_state[key_list].append({"largo": 0.0, "alto": 0.0, "cant": 0})
+                            with col_del:
+                                if st.button("🗑️ Eliminar última sección", key=f"del_{key_prefix}"):
+                                    if len(st.session_state[key_list]) > 1:
+                                        st.session_state[key_list].pop()
+                            area_total = 0.0
+                            for i, sec in enumerate(st.session_state[key_list]):
+                                st.markdown(f"**Sección {i+1}**")
+                                c1, c2, c3 = st.columns(3)
+                                with c1:
+                                    sec["largo"] = st.number_input("Largo (m)", value=sec["largo"], key=f"{key_prefix}_largo_{i}")
+                                with c2:
+                                    sec["alto"] = st.number_input("Alto (m)", value=sec["alto"], key=f"{key_prefix}_alto_{i}")
+                                with c3:
+                                    sec["cant"] = st.number_input("Cantidad", value=sec["cant"], step=1, key=f"{key_prefix}_cant_{i}")
+                                area_sec = sec["largo"] * sec["alto"] * sec["cant"]
+                                st.caption(f"Área sección {i+1}: {area_sec:.2f} m²")
+                                area_total += area_sec
+                            st.info(f"Área bruta total: {area_total:.2f} m²")
+                            return area_total
 
         # ============================
         # INTERIOR
@@ -2385,11 +2409,8 @@ if option == "Cubicacion":
                     if ver(revest, "interior"):
                             with st.expander("1. Revestimiento Interior", expanded=False):
 
-                                # --- Yeso Cartón ---
                                 with st.expander("1.1 Yeso Cartón", expanded=False):
-
                                     yeso_tipo = st.selectbox("Tipo de Yeso Cartón", list(YESO_CARTON.keys()), key="yeso_tipo")
-
                                     if YESO_CARTON[yeso_tipo]["tipo"] == "ST":
                                         st.caption("🏠 Uso: dormitorios, living, zonas secas")
                                     elif YESO_CARTON[yeso_tipo]["tipo"] == "RH":
@@ -2397,51 +2418,33 @@ if option == "Cubicacion":
                                     else:
                                         st.caption("🔥 Uso: shaft, bodegas, vías escape - color rojo/rosado")
 
-                                    estructura_yc = st.selectbox("Tipo de estructura",
-                                                                    ["Metalcon", "Madera"],
-                                                                    key="estructura_yc")
-
-                                    if estructura_yc == "Metalcon":
-                                        tornillo_yc = "Autoperforante Punta Fina (Trompeta)"
-                                        medida_yc = "6x1\" o 6x1 1/4\""
-                                    else:
-                                        tornillo_yc = "Tornillo Clavex (hilo grueso)"
-                                        medida_yc = "6x1\" o 6x1 1/4\""
-
-                                    yc1, yc2, yc3 = st.columns(3)
-                                    with yc1:
-                                        largo_yc = st.number_input("Largo muro/tabique (m)", value=0.0, key="largo_yc")
-                                    with yc2:
-                                        alto_yc = st.number_input("Alto muro/tabique (m)", value=0.0, key="alto_yc")
-                                    with yc3:
-                                        cant_yc = st.number_input("Cantidad muros/tabiques", value=0, step=1, key="cant_yc")
+                                    estructura_yc = st.selectbox("Tipo de estructura", ["Metalcon", "Madera"], key="estructura_yc")
+                                    tornillo_yc = "Autoperforante Punta Fina (Trompeta)" if estructura_yc == "Metalcon" else "Tornillo Clavex (hilo grueso)"
+                                    medida_yc = "6x1\" o 6x1 1/4\""
 
                                     caras_yc = st.selectbox("Cantidad de caras", ["1 cara", "2 caras"], key="caras_yc")
                                     n_caras_yc = 1 if "1" in caras_yc else 2
 
+                                    area_bruta_yc = seccion_muro("yc") * n_caras_yc
+
+                                    st.write("**Vanos**")
                                     yv1, yv2 = st.columns(2)
                                     with yv1:
                                         cant_puertas_yc = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_yc")
                                         ancho_puerta_yc = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_yc")
-                                        alto_puerta_yc = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_yc")
+                                        alto_puerta_yc  = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_yc")
                                     with yv2:
                                         cant_ventanas_yc = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_yc")
                                         ancho_ventana_yc = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_yc")
-                                        alto_ventana_yc = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_yc")
+                                        alto_ventana_yc  = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_yc")
 
                                     desp_yc = st.slider("% Desperdicio", 0, 20, 10, key="desp_yc")
-
-                                    area_bruta_yc = largo_yc * alto_yc * cant_yc * n_caras_yc
                                     area_vanos_yc = ((cant_puertas_yc * ancho_puerta_yc * alto_puerta_yc) +
                                                     (cant_ventanas_yc * ancho_ventana_yc * alto_ventana_yc)) * n_caras_yc
                                     area_neta_yc = area_bruta_yc - area_vanos_yc
-
                                     area_plancha_yc = YESO_CARTON[yeso_tipo]["area"]
-                                    cant_exacta_yc, cant_desp_yc, sobra_yc, desp_m2_yc = calcular_planchas(
-                                        area_neta_yc, area_plancha_yc, desp_yc)
-
+                                    cant_exacta_yc, cant_desp_yc, sobra_yc, desp_m2_yc = calcular_planchas(area_neta_yc, area_plancha_yc, desp_yc)
                                     tornillos_yc = calcular_tornillos_plancha(cant_desp_yc, area_plancha_yc, 0.30, 0.40)
-
                                     st.write("---")
                                     st.info(f"Área neta: {area_neta_yc:.2f} m²")
                                     st.info(f"Planchas exactas: {cant_exacta_yc:.1f} unidades")
@@ -2450,54 +2453,35 @@ if option == "Cubicacion":
                                     st.text(f"Desperdicio estimado: {desp_m2_yc:.2f} m²")
                                     st.write("---")
                                     st.info(f"🔩 Tornillo: {tornillo_yc} {medida_yc}")
-                                    st.info(f"Separación: bordes cada 30cm / centro cada 40cm")
+                                    st.info("Separación: bordes cada 30cm / centro cada 40cm")
                                     st.success(f"Total tornillos: {tornillos_yc} unidades")
 
-                                # --- Terciado Ranurado ---
                                 with st.expander("1.2 Terciado Ranurado", expanded=False):
                                     st.caption("Revestimiento muros y cielos interiores")
-
                                     tr_tipo = st.selectbox("Tipo", list(TERCIADO_RANURADO.keys()), key="tr_tipo")
                                     estructura_tr = st.selectbox("Tipo de estructura", ["Metalcon", "Madera"], key="estructura_tr")
+                                    tornillo_tr = "Clavo sin cabeza (punta) o Tornillo madera" if estructura_tr == "Madera" else "Tornillo Kover o Lenteja Punta Fina"
+                                    medida_tr = "2\"" if estructura_tr == "Madera" else "8x1 1/4\""
 
-                                    if estructura_tr == "Madera":
-                                        tornillo_tr = "Clavo sin cabeza (punta) o Tornillo madera"
-                                        medida_tr = "2\""
-                                    else:
-                                        tornillo_tr = "Tornillo Kover o Lenteja Punta Fina"
-                                        medida_tr = "8x1 1/4\""
-
-                                    tr1, tr2, tr3 = st.columns(3)
-                                    with tr1:
-                                        largo_tr = st.number_input("Largo muro (m)", value=0.0, key="largo_tr")
-                                    with tr2:
-                                        alto_tr = st.number_input("Alto muro (m)", value=0.0, key="alto_tr")
-                                    with tr3:
-                                        cant_tr = st.number_input("Cantidad muros", value=0, step=1, key="cant_tr")
+                                    area_bruta_tr = seccion_muro("tr")
 
                                     tv1, tv2 = st.columns(2)
                                     with tv1:
                                         cant_puertas_tr = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_tr")
                                         ancho_puerta_tr = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_tr")
-                                        alto_puerta_tr = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_tr")
+                                        alto_puerta_tr  = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_tr")
                                     with tv2:
                                         cant_ventanas_tr = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_tr")
                                         ancho_ventana_tr = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_tr")
-                                        alto_ventana_tr = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_tr")
+                                        alto_ventana_tr  = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_tr")
 
                                     desp_tr = st.slider("% Desperdicio", 0, 20, 10, key="desp_tr")
-
-                                    area_bruta_tr = largo_tr * alto_tr * cant_tr
                                     area_vanos_tr = ((cant_puertas_tr * ancho_puerta_tr * alto_puerta_tr) +
                                                     (cant_ventanas_tr * ancho_ventana_tr * alto_ventana_tr))
                                     area_neta_tr = area_bruta_tr - area_vanos_tr
-
                                     area_plancha_tr = TERCIADO_RANURADO[tr_tipo]["area"]
-                                    cant_exacta_tr, cant_desp_tr, sobra_tr, desp_m2_tr = calcular_planchas(
-                                        area_neta_tr, area_plancha_tr, desp_tr)
-
+                                    cant_exacta_tr, cant_desp_tr, sobra_tr, desp_m2_tr = calcular_planchas(area_neta_tr, area_plancha_tr, desp_tr)
                                     tornillos_tr = calcular_tornillos_plancha(cant_desp_tr, area_plancha_tr, 0.15, 0.30)
-
                                     st.write("---")
                                     st.info(f"Área neta: {area_neta_tr:.2f} m²")
                                     st.info(f"Planchas exactas: {cant_exacta_tr:.1f} unidades")
@@ -2506,7 +2490,7 @@ if option == "Cubicacion":
                                     st.text(f"Desperdicio estimado: {desp_m2_tr:.2f} m²")
                                     st.write("---")
                                     st.info(f"🔩 Fijación: {tornillo_tr} {medida_tr}")
-                                    st.info(f"Separación: perímetro cada 15cm / apoyos internos cada 30cm")
+                                    st.info("Separación: perímetro cada 15cm / apoyos internos cada 30cm")
                                     st.success(f"Total fijaciones: {tornillos_tr} unidades")
                                     st.caption("⚠️ Distancia mínima al borde: 1cm")
 
@@ -2516,234 +2500,159 @@ if option == "Cubicacion":
                     if ver(revest, "exterior"):
                             with st.expander("2. Revestimiento Exterior", expanded=False):
 
-                                # --- OSB ---
                                 with st.expander("2.1 OSB", expanded=False):
                                     st.caption("Tablero estructural - 1,22x2,44m")
-
                                     osb_tipo = st.selectbox("Espesor OSB", list(OSB_TIPOS.keys()), key="osb_tipo")
                                     estructura_osb = st.selectbox("Tipo de estructura", ["Metalcon", "Madera"], key="estructura_osb")
+                                    tornillo_osb = "Clavo Anillado Galvanizado" if estructura_osb == "Madera" else "Tornillo Punta Broca con aletas (Wafer)"
+                                    medida_osb = "2 1/2\" o 3\"" if estructura_osb == "Madera" else "8x1 1/4\""
 
-                                    if estructura_osb == "Madera":
-                                        tornillo_osb = "Clavo Anillado Galvanizado"
-                                        medida_osb = "2 1/2\" o 3\""
-                                    else:
-                                        tornillo_osb = "Tornillo Punta Broca con aletas (Wafer)"
-                                        medida_osb = "8x1 1/4\""
-
-                                    ob1, ob2, ob3 = st.columns(3)
-                                    with ob1:
-                                        largo_osb = st.number_input("Largo muro (m)", value=0.0, key="largo_osb")
-                                    with ob2:
-                                        alto_osb = st.number_input("Alto muro (m)", value=0.0, key="alto_osb")
-                                    with ob3:
-                                        cant_osb = st.number_input("Cantidad muros", value=0, step=1, key="cant_osb")
+                                    area_bruta_osb = seccion_muro("osb")
 
                                     ov1, ov2 = st.columns(2)
                                     with ov1:
                                         cant_puertas_osb = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_osb")
                                         ancho_puerta_osb = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_osb")
-                                        alto_puerta_osb = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_osb")
+                                        alto_puerta_osb  = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_osb")
                                     with ov2:
                                         cant_ventanas_osb = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_osb")
                                         ancho_ventana_osb = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_osb")
-                                        alto_ventana_osb = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_osb")
+                                        alto_ventana_osb  = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_osb")
 
                                     desp_osb = st.slider("% Desperdicio", 0, 20, 10, key="desp_osb")
                                     fibro_encima = st.checkbox("¿Agregar fibrocemento encima del OSB?", key="fibro_encima")
                                     if fibro_encima:
                                         fibro_osb_tipo = st.selectbox("Tipo fibrocemento", list(FIBROCEMENTO.keys()), key="fibro_osb_tipo")
 
-                                    area_bruta_osb = largo_osb * alto_osb * cant_osb
                                     area_vanos_osb = ((cant_puertas_osb * ancho_puerta_osb * alto_puerta_osb) +
-                                                        (cant_ventanas_osb * ancho_ventana_osb * alto_ventana_osb))
+                                                    (cant_ventanas_osb * ancho_ventana_osb * alto_ventana_osb))
                                     area_neta_osb = area_bruta_osb - area_vanos_osb
-
                                     area_plancha_osb = OSB_TIPOS[osb_tipo]["area"]
-                                    cant_exacta_osb, cant_desp_osb, sobra_osb, desp_m2_osb = calcular_planchas(
-                                        area_neta_osb, area_plancha_osb, desp_osb)
-
+                                    cant_exacta_osb, cant_desp_osb, sobra_osb, desp_m2_osb = calcular_planchas(area_neta_osb, area_plancha_osb, desp_osb)
                                     tornillos_osb = calcular_tornillos_plancha(cant_desp_osb, area_plancha_osb, 0.15, 0.30)
-
                                     st.write("---")
                                     st.info(f"Área neta: {area_neta_osb:.2f} m²")
                                     st.info(f"Planchas exactas: {cant_exacta_osb:.1f} unidades")
                                     st.success(f"Planchas con {desp_osb}% desperdicio: {cant_desp_osb:.0f} unidades")
                                     st.text(f"Sobra última plancha: {sobra_osb:.2f} m²")
-                                    st.text(f"Desperdicio estimado: {desp_m2_osb:.2f} m²")
                                     st.write("---")
                                     st.info(f"🔩 Fijación: {tornillo_osb} {medida_osb}")
-                                    st.info(f"Separación: perímetro cada 15cm / apoyos internos cada 30cm")
+                                    st.info("Separación: perímetro cada 15cm / apoyos internos cada 30cm")
                                     st.success(f"Total fijaciones: {tornillos_osb} unidades")
                                     st.caption("⚠️ Dejar holgura de 3mm entre planchas para dilatación")
-
                                     if fibro_encima:
                                         area_plancha_fo = FIBROCEMENTO[fibro_osb_tipo]["area"]
-                                        cant_exacta_fo, cant_desp_fo, sobra_fo, desp_m2_fo = calcular_planchas(
-                                            area_neta_osb, area_plancha_fo, desp_osb)
+                                        cant_exacta_fo, cant_desp_fo, sobra_fo, desp_m2_fo = calcular_planchas(area_neta_osb, area_plancha_fo, desp_osb)
                                         tornillos_fo = calcular_tornillos_plancha(cant_desp_fo, area_plancha_fo, 0.175, 0.275)
                                         st.write("---")
                                         st.subheader("Fibrocemento sobre OSB")
                                         st.info(f"Planchas: {cant_desp_fo:.0f} unidades")
-                                        st.info(f"🔩 Tornillo Autoperforante Punta Broca 8x1\"")
+                                        st.info("🔩 Tornillo Autoperforante Punta Broca 8x1\"")
                                         st.success(f"Total tornillos fibrocemento: {tornillos_fo} unidades")
-                                        st.caption("⚠️ Distancia mínima al borde horizontal: 1,5cm / vertical: 1cm")
 
-                                # --- Fibrocemento ---
                                 with st.expander("2.2 Fibrocemento", expanded=False):
                                     st.caption("Placa fibrocemento exterior - 1,20x2,40m")
-
                                     fc_tipo = st.selectbox("Tipo de Fibrocemento", list(FIBROCEMENTO.keys()), key="fc_tipo")
 
-                                    fc1, fc2, fc3 = st.columns(3)
-                                    with fc1:
-                                        largo_fc = st.number_input("Largo muro (m)", value=0.0, key="largo_fc")
-                                    with fc2:
-                                        alto_fc = st.number_input("Alto muro (m)", value=0.0, key="alto_fc")
-                                    with fc3:
-                                        cant_fc = st.number_input("Cantidad muros", value=0, step=1, key="cant_fc")
+                                    area_bruta_fc = seccion_muro("fc")
 
                                     fv1, fv2 = st.columns(2)
                                     with fv1:
                                         cant_puertas_fc = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_fc")
                                         ancho_puerta_fc = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_fc")
-                                        alto_puerta_fc = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_fc")
+                                        alto_puerta_fc  = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_fc")
                                     with fv2:
                                         cant_ventanas_fc = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_fc")
                                         ancho_ventana_fc = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_fc")
-                                        alto_ventana_fc = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_fc")
+                                        alto_ventana_fc  = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_fc")
 
                                     desp_fc = st.slider("% Desperdicio", 0, 20, 10, key="desp_fc")
-
-                                    area_bruta_fc = largo_fc * alto_fc * cant_fc
                                     area_vanos_fc = ((cant_puertas_fc * ancho_puerta_fc * alto_puerta_fc) +
                                                     (cant_ventanas_fc * ancho_ventana_fc * alto_ventana_fc))
                                     area_neta_fc = area_bruta_fc - area_vanos_fc
-
                                     area_plancha_fc = FIBROCEMENTO[fc_tipo]["area"]
-                                    cant_exacta_fc, cant_desp_fc, sobra_fc, desp_m2_fc = calcular_planchas(
-                                        area_neta_fc, area_plancha_fc, desp_fc)
-
+                                    cant_exacta_fc, cant_desp_fc, sobra_fc, desp_m2_fc = calcular_planchas(area_neta_fc, area_plancha_fc, desp_fc)
                                     tornillos_fc = calcular_tornillos_plancha(cant_desp_fc, area_plancha_fc, 0.175, 0.275)
-
                                     st.write("---")
                                     st.info(f"Área neta: {area_neta_fc:.2f} m²")
                                     st.info(f"Planchas exactas: {cant_exacta_fc:.1f} unidades")
                                     st.success(f"Planchas con {desp_fc}% desperdicio: {cant_desp_fc:.0f} unidades")
                                     st.text(f"Sobra última plancha: {sobra_fc:.2f} m²")
-                                    st.text(f"Desperdicio estimado: {desp_m2_fc:.2f} m²")
                                     st.write("---")
                                     st.info("🔩 Tornillo Autoperforante Punta Broca con aletas 8x1\"")
                                     st.info("Separación: perímetro cada 15-20cm / apoyos internos cada 25-30cm")
                                     st.success(f"Total tornillos: {tornillos_fc} unidades")
                                     st.caption("⚠️ Distancia mínima borde horizontal: 1,5cm / vertical: 1cm")
 
-                                # --- Terciado Estructural ---
                                 with st.expander("2.3 Terciado Estructural", expanded=False):
                                     st.caption("Placa estructural exterior - 1,22x2,44m")
-
                                     te_tipo = st.selectbox("Espesor", list(TERCIADO_ESTRUCTURAL.keys()), key="te_tipo")
                                     estructura_te = st.selectbox("Tipo de estructura", ["Metalcon", "Madera"], key="estructura_te")
+                                    tornillo_te = "Clavo Anillado Galvanizado" if estructura_te == "Madera" else "Tornillo Wafer Punta Broca"
+                                    medida_te = "2 1/2\"" if estructura_te == "Madera" else "8x1 1/4\" o 8x1 1/2\""
 
-                                    if estructura_te == "Madera":
-                                        tornillo_te = "Clavo Anillado Galvanizado"
-                                        medida_te = "2 1/2\""
-                                    else:
-                                        tornillo_te = "Tornillo Wafer Punta Broca"
-                                        medida_te = "8x1 1/4\" o 8x1 1/2\""
-
-                                    te1, te2, te3 = st.columns(3)
-                                    with te1:
-                                        largo_te = st.number_input("Largo muro (m)", value=0.0, key="largo_te")
-                                    with te2:
-                                        alto_te = st.number_input("Alto muro (m)", value=0.0, key="alto_te")
-                                    with te3:
-                                        cant_te = st.number_input("Cantidad muros", value=0, step=1, key="cant_te")
+                                    area_bruta_te = seccion_muro("te")
 
                                     tev1, tev2 = st.columns(2)
                                     with tev1:
                                         cant_puertas_te = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_te")
                                         ancho_puerta_te = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_te")
-                                        alto_puerta_te = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_te")
+                                        alto_puerta_te  = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_te")
                                     with tev2:
                                         cant_ventanas_te = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_te")
                                         ancho_ventana_te = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_te")
-                                        alto_ventana_te = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_te")
+                                        alto_ventana_te  = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_te")
 
                                     desp_te = st.slider("% Desperdicio", 0, 20, 10, key="desp_te")
-
-                                    area_bruta_te = largo_te * alto_te * cant_te
                                     area_vanos_te = ((cant_puertas_te * ancho_puerta_te * alto_puerta_te) +
                                                     (cant_ventanas_te * ancho_ventana_te * alto_ventana_te))
                                     area_neta_te = area_bruta_te - area_vanos_te
-
                                     area_plancha_te = TERCIADO_ESTRUCTURAL[te_tipo]["area"]
-                                    cant_exacta_te, cant_desp_te, sobra_te, desp_m2_te = calcular_planchas(
-                                        area_neta_te, area_plancha_te, desp_te)
-
+                                    cant_exacta_te, cant_desp_te, sobra_te, desp_m2_te = calcular_planchas(area_neta_te, area_plancha_te, desp_te)
                                     tornillos_te = calcular_tornillos_plancha(cant_desp_te, area_plancha_te, 0.15, 0.30)
-
                                     st.write("---")
                                     st.info(f"Área neta: {area_neta_te:.2f} m²")
                                     st.info(f"Planchas exactas: {cant_exacta_te:.1f} unidades")
                                     st.success(f"Planchas con {desp_te}% desperdicio: {cant_desp_te:.0f} unidades")
                                     st.text(f"Sobra última plancha: {sobra_te:.2f} m²")
-                                    st.text(f"Desperdicio estimado: {desp_m2_te:.2f} m²")
                                     st.write("---")
                                     st.info(f"🔩 Fijación: {tornillo_te} {medida_te}")
                                     st.info("Separación: perímetro cada 15cm / apoyos internos cada 30cm")
                                     st.success(f"Total fijaciones: {tornillos_te} unidades")
                                     st.caption("⚠️ Instalar fibra perpendicular a los apoyos para mayor resistencia")
 
-                                # --- Siding Fibrocemento ---
                                 with st.expander("2.4 Siding Fibrocemento", expanded=False):
                                     st.caption("Volcan, Pizarreño Cedral, Nativa - 19cm x 3,66m")
-
                                     estructura_sid = st.selectbox("Tipo de estructura", ["Metalcon", "Madera"], key="estructura_sid")
+                                    tornillo_sid = "Tornillo Cabeza Lenteja (Wafer) Punta Fina" if estructura_sid == "Metalcon" else "Clavo Galvanizado Cabeza Plana"
+                                    medida_sid = "8x1 1/4\"" if estructura_sid == "Metalcon" else "1 1/2\" o 2\""
 
-                                    if estructura_sid == "Metalcon":
-                                        tornillo_sid = "Tornillo Cabeza Lenteja (Wafer) Punta Fina"
-                                        medida_sid = "8x1 1/4\""
-                                    else:
-                                        tornillo_sid = "Clavo Galvanizado Cabeza Plana"
-                                        medida_sid = "1 1/2\" o 2\""
-
-                                    sd1, sd2, sd3 = st.columns(3)
-                                    with sd1:
-                                        largo_sid = st.number_input("Largo muro (m)", value=0.0, key="largo_sid")
-                                    with sd2:
-                                        alto_sid = st.number_input("Alto muro (m)", value=0.0, key="alto_sid")
-                                    with sd3:
-                                        cant_sid = st.number_input("Cantidad muros", value=0, step=1, key="cant_sid")
+                                    area_bruta_sid = seccion_muro("sid")
 
                                     sv1, sv2 = st.columns(2)
                                     with sv1:
                                         cant_puertas_sid = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_sid")
                                         ancho_puerta_sid = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_sid")
-                                        alto_puerta_sid = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_sid")
+                                        alto_puerta_sid  = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_sid")
                                     with sv2:
                                         cant_ventanas_sid = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_sid")
                                         ancho_ventana_sid = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_sid")
-                                        alto_ventana_sid = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_sid")
+                                        alto_ventana_sid  = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_sid")
 
-                                    traslape_sid = st.selectbox("Traslape", ["25mm", "30mm"], key="traslape_sid")
-                                    sep_mont_sid = st.selectbox("Separación montantes", ["0,40m", "0,60m"], key="sep_mont_sid")
+                                    traslape_sid  = st.selectbox("Traslape", ["25mm", "30mm"], key="traslape_sid")
+                                    sep_mont_sid  = st.selectbox("Separación montantes", ["0,40m", "0,60m"], key="sep_mont_sid")
                                     sep_valor_sid = 0.40 if "0,40" in sep_mont_sid else 0.60
                                     desp_sid = st.slider("% Desperdicio", 0, 20, 10, key="desp_sid")
-
                                     rend_tabla = 0.70 if "25" in traslape_sid else 0.44
 
-                                    area_bruta_sid = largo_sid * alto_sid * cant_sid
                                     area_vanos_sid = ((cant_puertas_sid * ancho_puerta_sid * alto_puerta_sid) +
-                                                        (cant_ventanas_sid * ancho_ventana_sid * alto_ventana_sid))
+                                                    (cant_ventanas_sid * ancho_ventana_sid * alto_ventana_sid))
                                     area_neta_sid = area_bruta_sid - area_vanos_sid
-
-                                    cant_tablas_sid = area_neta_sid / rend_tabla if rend_tabla > 0 else 0
+                                    cant_tablas_sid  = area_neta_sid / rend_tabla if rend_tabla > 0 else 0
                                     cant_tablas_desp = cant_tablas_sid * (1 + desp_sid / 100)
-                                    ml_tablas_sid = cant_tablas_desp * 3.66
-
-                                    # Tornillos siding: 1 por montante por tabla
-                                    tornillos_sid = (largo_sid / sep_valor_sid) * cant_tablas_desp * cant_sid
-                                    tornillos_sid = round(tornillos_sid * (1 + desp_sid / 100))
+                                    ml_tablas_sid    = cant_tablas_desp * 3.66
+                                    largo_sid_total  = sum(sec["largo"] * sec["cant"] for sec in st.session_state.get("secciones_sid", [{"largo": 0, "cant": 0}]))
+                                    tornillos_sid    = round((largo_sid_total / sep_valor_sid) * cant_tablas_desp * (1 + desp_sid / 100))
 
                                     st.write("---")
                                     st.info(f"Área neta: {area_neta_sid:.2f} m²")
@@ -2756,7 +2665,6 @@ if option == "Cubicacion":
                                     st.info(f"1 fijación por montante cada {sep_mont_sid}")
                                     st.success(f"Total fijaciones: {tornillos_sid} unidades")
                                     st.caption("⚠️ Fijación a 2cm del borde superior, quedará tapada por la tabla siguiente")
-
     # ============================
     # PISOS Y PAVIMENTOS
     # ============================
