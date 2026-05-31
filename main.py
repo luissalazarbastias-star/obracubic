@@ -1052,10 +1052,25 @@ if option == "Cubicacion":
                 st.subheader("Resumen Total de Materiales")
                 st.caption("Suma de todas las partidas con sus respectivas dosificaciones")
 
-                total_sacos    = mat_emp["cemento_sacos"] + mat_cim["cemento_sacos"] + mat_sc["cemento_sacos"] + mat_rad["cemento_sacos"]
-                total_gravilla = mat_emp["gravilla_kg"]   + mat_cim["gravilla_kg"]   + mat_sc["gravilla_kg"]   + mat_rad["gravilla_kg"]
-                total_arena    = mat_emp["arena_kg"]      + mat_cim["arena_kg"]      + mat_sc["arena_kg"]      + mat_rad["arena_kg"]
-                total_agua     = mat_emp["agua_lt"]       + mat_cim["agua_lt"]       + mat_sc["agua_lt"]       + mat_rad["agua_lt"]
+                total_sacos    = (st.session_state.get("mat_emp", {}).get("cemento_sacos", 0) +
+                    st.session_state.get("mat_cim", {}).get("cemento_sacos", 0) +
+                    st.session_state.get("mat_sc",  {}).get("cemento_sacos", 0) +
+                    st.session_state.get("mat_rad", {}).get("cemento_sacos", 0))
+
+                total_gravilla = (st.session_state.get("mat_emp", {}).get("gravilla_kg", 0) +
+                                st.session_state.get("mat_cim", {}).get("gravilla_kg", 0) +
+                                st.session_state.get("mat_sc",  {}).get("gravilla_kg", 0) +
+                                st.session_state.get("mat_rad", {}).get("gravilla_kg", 0))
+
+                total_arena    = (st.session_state.get("mat_emp", {}).get("arena_kg", 0) +
+                                st.session_state.get("mat_cim", {}).get("arena_kg", 0) +
+                                st.session_state.get("mat_sc",  {}).get("arena_kg", 0) +
+                                st.session_state.get("mat_rad", {}).get("arena_kg", 0))
+
+                total_agua     = (st.session_state.get("mat_emp", {}).get("agua_lt", 0) +
+                                st.session_state.get("mat_cim", {}).get("agua_lt", 0) +
+                                st.session_state.get("mat_sc",  {}).get("agua_lt", 0) +
+                                st.session_state.get("mat_rad", {}).get("agua_lt", 0))      
 
                 r1, r2, r3, r4 = st.columns(4)
                 r1.metric("🧱 Cemento Total",  f"{total_sacos} sacos")
