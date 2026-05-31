@@ -742,6 +742,8 @@ if option == "Cubicacion":
                                                 key="dos_emp",
                                                 help=DOSIFICACIONES["G-15"]["descripcion"])
                         mat_emp = calcular_materiales(vol_emp_final, dos_emp)
+                        st.session_state["mat_emp"] = mat_emp
+                        st.session_state["vol_emp"] = vol_emp_final
 
                         st.write("---")
                         st.info(f"Volumen neto emplantillado: {vol_emp_total:.2f} m³")
@@ -915,6 +917,8 @@ if option == "Cubicacion":
                                                 index=1, key="dos_cim",
                                                 help=DOSIFICACIONES["G-20"]["descripcion"])
                             mat_cim = calcular_materiales(vol_pilares, dos_cim)
+                            st.session_state["mat_cim"] = mat_cim
+                            st.session_state["vol_pilares"] = vol_pilares
                             mostrar_materiales(mat_cim)
                         else:
                             st.caption("Selecciona al menos un tipo de cimiento para calcular.")
@@ -964,6 +968,8 @@ if option == "Cubicacion":
                                                 index=1, key="dos_sc",
                                                 help=DOSIFICACIONES["G-20"]["descripcion"])
                         mat_sc = calcular_materiales(vol_sc_neto, dos_sc)
+                        st.session_state["mat_sc"] = mat_sc
+                        st.session_state["vol_sc_neto"] = vol_sc_neto
 
                         st.write("---")
                         st.text(f"Volumen bruto total: {vol_sc_total:.2f} m³")
@@ -1012,6 +1018,8 @@ if option == "Cubicacion":
                                                     index=1, key="dos_rad",
                                                     help=DOSIFICACIONES["G-20"]["descripcion"])
                             mat_rad = calcular_materiales(vol_radier_final, dos_rad)
+                            st.session_state["mat_rad"] = mat_rad
+                            st.session_state["vol_radier"] = vol_radier_final
 
                             # --- Malla ACMA ---
                             usar_malla = st.checkbox("¿Agregar malla ACMA al radier?", key="usar_malla")
