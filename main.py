@@ -756,7 +756,7 @@ if option == "Cubicacion":
 
         # --- Total general ---
             st.write("---")
-            total_hormigon = vol_emp_final + vol_pilares + vol_sc_neto + vol_radier
+            total_hormigon = vol_emp_final + vol_pilares + vol_sc_neto + vol_radier_final
             st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m³")
 
             st.subheader("Resumen Total de Materiales")
