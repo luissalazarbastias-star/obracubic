@@ -350,6 +350,8 @@ def generar_pdf_cubicacion(
     return buffer
 
 # Inicializar session_state
+if "ir_a_cubicacion" not in st.session_state:
+    st.session_state["ir_a_cubicacion"] = False
 if "proyecto_creado" not in st.session_state:
     st.session_state["proyecto_creado"] = False
 if "proyecto" not in st.session_state:
