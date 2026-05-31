@@ -3434,6 +3434,29 @@ nombre_proyecto = st.text_input(
     placeholder="Ej: Casa Don Pedro - Angol",
     key="nombre_proyecto"
 )
+_vol_emp = sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_emp", [{"largo":0,"ancho":0,"espesor":0}]))
+_perd_emp = st.session_state.get("emp_perdida", 5)
+_dos_emp = st.session_state.get("dos_emp", "G-15")
+vol_emp_final = _vol_emp * (1 + _perd_emp / 100)
+st.session_state["mat_emp"] = calcular_materiales(vol_emp_final, _dos_emp)
+st.session_state["vol_emp"] = vol_emp_final
+
+_vol_cim = st.session_state.get("_cim_vol", 0)
+_dos_cim = st.session_state.get("dos_cim", "G-20")
+st.session_state["mat_cim"] = calcular_materiales(_vol_cim, _dos_cim)
+st.session_state["vol_pilares"] = _vol_cim
+
+_vol_sc = st.session_state.get("_sc_vol", 0)
+_dos_sc = st.session_state.get("dos_sc", "G-20")
+st.session_state["mat_sc"] = calcular_materiales(_vol_sc, _dos_sc)
+st.session_state["vol_sc_neto"] = _vol_sc
+
+_vol_rad = sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [{"largo":0,"ancho":0,"espesor":0}]))
+_perd_rad = st.session_state.get("radier_perdida", 5)
+_dos_rad = st.session_state.get("dos_rad", "G-20")
+vol_radier_final = _vol_rad * (1 + _perd_rad / 100)
+st.session_state["mat_rad"] = calcular_materiales(vol_radier_final, _dos_rad)
+st.session_state["vol_radier"] = vol_radier_final
 
 if st.button("📄 Generar PDF", type="primary"):
     pdf_buffer = generar_pdf_cubicacion(
