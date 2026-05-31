@@ -379,7 +379,7 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("---")
 st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:"["Crear Proyecto", "Cubicacion"])
+option = st.sidebar.radio("Ir a:", ["Crear Proyecto", "Cubicacion"])
 
 # ============================
 # CREAR PROYECTO
