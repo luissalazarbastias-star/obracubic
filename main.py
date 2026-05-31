@@ -1041,7 +1041,12 @@ if option == "Cubicacion":
                                 st.caption(f"Área total: {area_radier_total:.2f} m² | Plancha cubre: 14,1 m²")
                 
                 st.write("---")
-                total_hormigon = vol_emp_final + vol_cim_final + vol_sc_neto + vol_radier
+                total_hormigon = (
+                    st.session_state.get("vol_emp", 0) +
+                    st.session_state.get("vol_pilares", 0) +
+                    st.session_state.get("vol_sc_neto", 0) +
+                    st.session_state.get("vol_radier", 0)
+)
                 st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m³")
 
                 st.subheader("Resumen Total de Materiales")
