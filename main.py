@@ -380,10 +380,11 @@ if "mat_rad" not in st.session_state:
 # ============================
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%201.png"
 
-st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
-st.sidebar.write("---")
-st.sidebar.header("Módulos de Trabajo")
-option = st.sidebar.radio("Ir a:", ["Crear Proyecto", "Cubicacion"])
+option = st.sidebar.radio("Ir a:", ["Crear Proyecto", "Cubicacion"],
+    index=1 if st.session_state.get("ir_a_cubicacion") else 0
+)
+if option == "Cubicacion":
+    st.session_state["ir_a_cubicacion"] = False
 
 # ============================
 # CREAR PROYECTO
