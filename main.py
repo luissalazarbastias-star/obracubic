@@ -950,7 +950,7 @@ if option == "Cubicacion":
                         st.session_state["_cim_vol"] = vol_pilares
                         st.session_state["_cim_dos"] = st.session_state.get("dos_cim", "G-20")
 
-                        mat_cim = calcular_materiales(vol_pilares, dos_cim)
+                        mat_cim = calcular_materiales(vol_pilares, st.session_state.get("dos_cim", "G-20"))
                         st.session_state["mat_cim"] = mat_cim
                         st.session_state["vol_pilares"] = vol_pilares
                         mostrar_materiales(mat_cim)
