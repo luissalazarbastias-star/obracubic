@@ -1039,7 +1039,25 @@ if option == "Cubicacion":
                                 st.info(f"Peso malla: {kg_malla:.1f} kg")
                                 st.success(f"Con {desp_malla}% desperdicio: {kg_malla_desp:.1f} kg")
                                 st.success(f"Planchas 2,35x6,00m: {planchas_malla_desp:.0f} planchas")
-                                st.caption(f"Área total: {area_radier_total:.2f} m² | Plancha cubre: 14,1 m²")     
+                                st.caption(f"Área total: {area_radier_total:.2f} m² | Plancha cubre: 14,1 m²")
+                
+                st.write("---")
+                total_hormigon = vol_emp_final + vol_cim_final + vol_sc_neto + vol_radier
+                st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m³")
+
+                st.subheader("Resumen Total de Materiales")
+                st.caption("Suma de todas las partidas con sus respectivas dosificaciones")
+
+                total_sacos    = mat_emp["cemento_sacos"] + mat_cim["cemento_sacos"] + mat_sc["cemento_sacos"] + mat_rad["cemento_sacos"]
+                total_gravilla = mat_emp["gravilla_kg"]   + mat_cim["gravilla_kg"]   + mat_sc["gravilla_kg"]   + mat_rad["gravilla_kg"]
+                total_arena    = mat_emp["arena_kg"]      + mat_cim["arena_kg"]      + mat_sc["arena_kg"]      + mat_rad["arena_kg"]
+                total_agua     = mat_emp["agua_lt"]       + mat_cim["agua_lt"]       + mat_sc["agua_lt"]       + mat_rad["agua_lt"]
+
+                r1, r2, r3, r4 = st.columns(4)
+                r1.metric("🧱 Cemento Total",  f"{total_sacos} sacos")
+                r2.metric("⚫ Gravilla Total", f"{total_gravilla} kg")
+                r3.metric("🟡 Arena Total",    f"{total_arena} kg")
+                r4.metric("💧 Agua Total",     f"{total_agua} lt")
 
     # --- Acero estructural ---
             if ver_rubro(acero):
