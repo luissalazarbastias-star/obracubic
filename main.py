@@ -3474,9 +3474,9 @@ vol_radier_final = _vol_rad * (1 + _perd_rad / 100)
 st.session_state["mat_rad"] = calcular_materiales(vol_radier_final, _dos_rad)
 st.session_state["vol_radier"] = vol_radier_final
 
-st.write("DEBUG vol_rad:", sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [])))
-st.write("DEBUG dos_rad:", st.session_state.get("dos_rad", "no existe"))
-st.write("DEBUG radier_perdida:", st.session_state.get("radier_perdida", "no existe"))
+#st.write("DEBUG vol_rad:", sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [])))
+#st.write("DEBUG dos_rad:", st.session_state.get("dos_rad", "no existe"))
+#st.write("DEBUG radier_perdida:", st.session_state.get("radier_perdida", "no existe"))#
 
 if st.button("📄 Generar PDF", type="primary"):
     pdf_buffer = generar_pdf_cubicacion(
