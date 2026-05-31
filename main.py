@@ -99,6 +99,16 @@ RATIO_ACERO = {
     "Radier":  {"ratio": 5,   "unidad": "kg/m2"},
     "Cimiento":{"ratio": 80,  "unidad": "kg/m3"},
 }
+# ============================
+# MALLA ACMA
+# ============================
+MALLA_ACMA = {
+    "C84  (Ø5,0mm c/15cm)": {"kg_m2": 1.39},
+    "C92  (Ø5,5mm c/15cm)": {"kg_m2": 1.54},
+    "C128 (Ø6,0mm c/15cm)": {"kg_m2": 2.13},
+    "C188 (Ø6,0mm c/10cm)": {"kg_m2": 3.16},
+    "C257 (Ø7,0mm c/10cm)": {"kg_m2": 4.27},
+}
 
 # ============================
 # FUNCIÓN EXPORTAR PDF
@@ -580,47 +590,71 @@ if option == "Cubicacion":
 
         # --- 5. Radier ---
         with st.expander("5. Radier", expanded=False):
-            ra1, ra2 = st.columns(2)
-            with ra1:
-                rad_largo = st.number_input("Largo Radier (m)", value=0.0, key="radier_largo")
-                rad_ancho = st.number_input("Ancho Radier (m)", value=0.0, key="radier_ancho")
-            with ra2:
-                rad_espesor = st.number_input("Espesor Radier (m)", value=0.0, key="radier_espesor")
-                rad_perdida = st.slider("% Pérdida Radier", 0, 15, 5, key="radier_perdida")
-            vol_radier = (rad_largo * rad_ancho * rad_espesor) * (1 + (rad_perdida / 100))
-            st.info(f"Volumen Radier: {vol_radier:.2f} m³")
+
+            if "secciones_rad" not in st.session_state:
+                st.session_state.secciones_rad = [{"largo": 0.0, "ancho": 0.0, "espesor": 0.0}]
+
+            col_add, col_del = st.columns(2)
+            with col_add:
+                if st.button("➕ Agregar sección", key="add_rad"):
+                    st.session_state.secciones_rad.append({"largo": 0.0, "ancho": 0.0, "espesor": 0.0})
+            with col_del:
+                if st.button("🗑️ Eliminar última sección", key="del_rad"):
+                    if len(st.session_state.secciones_rad) > 1:
+                        st.session_state.secciones_rad.pop()
+
+            area_radier_total = 0.0
+            vol_radier = 0.0
+            for i, sec in enumerate(st.session_state.secciones_rad):
+                st.markdown(f"**Sección {i+1}**")
+                ra1, ra2, ra3 = st.columns(3)
+                with ra1:
+                    sec["largo"] = st.number_input("Largo (m)", value=sec["largo"], key=f"rad_largo_{i}")
+                with ra2:
+                    sec["ancho"] = st.number_input("Ancho (m)", value=sec["ancho"], key=f"rad_ancho_{i}")
+                with ra3:
+                    sec["espesor"] = st.number_input("Espesor (m)", value=sec["espesor"], key=f"rad_espesor_{i}")
+
+                vol_sec_rad = sec["largo"] * sec["ancho"] * sec["espesor"]
+                area_sec_rad = sec["largo"] * sec["ancho"]
+                st.caption(f"Volumen sección {i+1}: {vol_sec_rad:.2f} m³ | Área: {area_sec_rad:.2f} m²")
+                vol_radier += vol_sec_rad
+                area_radier_total += area_sec_rad
+
+            rad_perdida = st.slider("% Pérdida Radier", 0, 15, 5, key="radier_perdida")
+            vol_radier_final = vol_radier * (1 + rad_perdida / 100)
+
             dos_rad = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                                   index=1, key="dos_rad",
-                                   help=DOSIFICACIONES["G-20"]["descripcion"])
-            mat_rad = calcular_materiales(vol_radier, dos_rad)
+                                    index=1, key="dos_rad",
+                                    help=DOSIFICACIONES["G-20"]["descripcion"])
+            mat_rad = calcular_materiales(vol_radier_final, dos_rad)
+
+            # --- Malla ACMA ---
+            usar_malla = st.checkbox("¿Agregar malla ACMA al radier?", key="usar_malla")
+            if usar_malla:
+                malla_tipo = st.selectbox("Tipo de malla ACMA", list(MALLA_ACMA.keys()), key="malla_tipo")
+                desp_malla = st.slider("% Desperdicio malla", 0, 20, 10, key="desp_malla")
+
+                kg_malla = area_radier_total * MALLA_ACMA[malla_tipo]["kg_m2"]
+                kg_malla_desp = kg_malla * (1 + desp_malla / 100)
+                area_plancha_malla = 14.10  # plancha 2,35x6,00m
+                planchas_malla = area_radier_total / area_plancha_malla
+                planchas_malla_desp = planchas_malla * (1 + desp_malla / 100)
+
+            st.write("---")
+            st.info(f"Volumen neto radier: {vol_radier:.2f} m³")
+            st.info(f"Área total radier: {area_radier_total:.2f} m²")
+            st.success(f"Volumen con {rad_perdida}% pérdida: {vol_radier_final:.2f} m³")
             mostrar_materiales(mat_rad)
 
-        # --- Resumen total hormigón ---
-        st.write("---")
-        total_hormigon = vol_emp + vol_pilares + vol_sc_neto + vol_radier
-        st.success(f"### Volumen Total Neto de la Obra: {total_hormigon:.2f} m³")
-
-        st.subheader("Resumen Total de Materiales")
-        st.caption("Suma de todas las partidas con sus respectivas dosificaciones y desperdicios")
-
-        total_sacos    = mat_emp["cemento_sacos"] + mat_cim["cemento_sacos"] + mat_sc["cemento_sacos"] + mat_rad["cemento_sacos"]
-        total_gravilla = mat_emp["gravilla_kg"]   + mat_cim["gravilla_kg"]   + mat_sc["gravilla_kg"]   + mat_rad["gravilla_kg"]
-        total_arena    = mat_emp["arena_kg"]      + mat_cim["arena_kg"]      + mat_sc["arena_kg"]      + mat_rad["arena_kg"]
-        total_agua     = mat_emp["agua_lt"]       + mat_cim["agua_lt"]       + mat_sc["agua_lt"]       + mat_rad["agua_lt"]
-
-        st.session_state["vol_emp"] = vol_emp
-        st.session_state["vol_pilares"] = vol_pilares
-        st.session_state["vol_sc_neto"] = vol_sc_neto
-        st.session_state["vol_radier"] = vol_radier
-        st.session_state["total_sacos"] = total_sacos
-        st.session_state["total_gravilla"] = total_gravilla
-        st.session_state["total_arena"] = total_arena
-        st.session_state["total_agua"] = total_agua
-
-        st.session_state["mat_emp"] = mat_emp
-        st.session_state["mat_cim"] = mat_cim
-        st.session_state["mat_sc"] = mat_sc
-        st.session_state["mat_rad"] = mat_rad
+            if usar_malla:
+                st.write("---")
+                st.subheader("🔩 Malla ACMA")
+                st.info(f"Tipo: {malla_tipo}")
+                st.info(f"Peso malla: {kg_malla:.1f} kg")
+                st.success(f"Con {desp_malla}% desperdicio: {kg_malla_desp:.1f} kg")
+                st.success(f"Planchas 2,35x6,00m: {planchas_malla_desp:.0f} planchas")
+                st.caption(f"Área total: {area_radier_total:.2f} m² | Plancha cubre: 14,1 m²")
 
     # --- Acero estructural ---
     with st.expander("Acero estructural", expanded=False):
