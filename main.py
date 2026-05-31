@@ -645,23 +645,22 @@ if option == "Crear Proyecto":
 # CUBICACIÓN
 # ============================
 if option == "Cubicacion":
-    # Banner proyecto activo
-    if st.session_state.get("proyecto_creado") and st.session_state.get("proyecto"):
-        proy = st.session_state["proyecto"]
-        with st.container(border=True):
-            b1, b2, b3 = st.columns([3, 2, 1])
-            with b1:
-                st.markdown(f"**Proyecto:** {proy['nombre']}")
-                if proy.get('tipo_obra'):
-                    st.caption(f"Tipo: {proy['tipo_obra']}")
-            with b2:
-                if proy.get('profesional'):
-                    st.caption(f"Profesional: {proy['profesional']}")
-            with b3:
-                if st.button("Cerrar proyecto", key="cerrar_proy"):
-                    st.session_state["proyecto_creado"] = False
-                    st.session_state["proyecto"] = {}
-                    st.rerun()
+    proy_creado = st.session_state.get("proyecto_creado", False)
+    partidas_proy = st.session_state.get("proyecto", {}).get("partidas", {})
+    horm  = partidas_proy.get("hormigon", {})
+    acero = partidas_proy.get("acero_estructural", {})
+    metal = partidas_proy.get("metalcon", {})
+    mold  = partidas_proy.get("moldajes", {})
+    muros = partidas_proy.get("muros", {})
+    revest = partidas_proy.get("revestimientos", {})
+    pisos  = partidas_proy.get("pisos", {})
+    term   = partidas_proy.get("terminaciones", {})
+
+    def ver(rubro_dict, partida):
+        return not proy_creado or rubro_dict.get(partida, False)
+
+    def ver_rubro(rubro_dict):
+        return not proy_creado or (rubro_dict and any(rubro_dict.values()))
     
     st.subheader("CUBICACIONES")
     
