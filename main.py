@@ -2406,7 +2406,7 @@ if option == "Cubicacion":
         # ============================
         # INTERIOR
         # ============================
-                    if ver(revest, "interior"):
+                        if ver(revest, "interior"):
                             with st.expander("1. Revestimiento Interior", expanded=False):
 
                                 with st.expander("1.1 Yeso Cartón", expanded=False):
@@ -2497,7 +2497,7 @@ if option == "Cubicacion":
         # ============================
         # EXTERIOR
         # ============================
-                    if ver(revest, "exterior"):
+                        if ver(revest, "exterior"):
                             with st.expander("2. Revestimiento Exterior", expanded=False):
 
                                 with st.expander("2.1 OSB", expanded=False):
