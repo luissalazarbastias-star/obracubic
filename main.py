@@ -705,12 +705,9 @@ if option == "Cubicacion":
                         st.success(f"Volumen con {exc_perdida}% esponjamiento: {vol_exc_final:.2f} m³")
 
         # --- 2. Emplantillado ---
+                
                 if ver(horm, "emplantillado"):
                     with st.expander("2. Emplantillado", expanded=False):
-
-                        if "secciones_emp" not in st.session_state:
-                            st.session_state.secciones_emp = [{"largo": 0.0, "ancho": 0.0, "espesor": 0.0}]
-
                         col_add, col_del = st.columns(2)
                         with col_add:
                             if st.button("➕ Agregar sección", key="add_emp"):
@@ -730,17 +727,19 @@ if option == "Cubicacion":
                                 sec["ancho"] = st.number_input("Ancho (m)", value=sec["ancho"], key=f"emp_ancho_{i}")
                             with em3:
                                 sec["espesor"] = st.number_input("Espesor (m)", value=sec["espesor"], key=f"emp_espesor_{i}")
-
                             vol_sec_emp = sec["largo"] * sec["ancho"] * sec["espesor"]
                             st.caption(f"Volumen sección {i+1}: {vol_sec_emp:.2f} m³")
                             vol_emp_total += vol_sec_emp
 
                         emp_perdida = st.slider("% Pérdida", 0, 15, 5, key="emp_perdida")
-                        vol_emp_final = vol_emp_total * (1 + emp_perdida / 100)
-
                         dos_emp = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
-                                                key="dos_emp",
-                                                help=DOSIFICACIONES["G-15"]["descripcion"])
+                                                key="dos_emp", help=DOSIFICACIONES["G-15"]["descripcion"])
+
+                        st.session_state["_emp_vol"] = vol_emp_total
+                        st.session_state["_emp_perdida"] = emp_perdida
+                        st.session_state["_emp_dos"] = dos_emp
+
+                        vol_emp_final = vol_emp_total * (1 + emp_perdida / 100)
                         mat_emp = calcular_materiales(vol_emp_final, dos_emp)
                         st.session_state["mat_emp"] = mat_emp
                         st.session_state["vol_emp"] = vol_emp_final
@@ -749,6 +748,15 @@ if option == "Cubicacion":
                         st.info(f"Volumen neto emplantillado: {vol_emp_total:.2f} m³")
                         st.success(f"Volumen con {emp_perdida}% pérdida: {vol_emp_final:.2f} m³")
                         mostrar_materiales(mat_emp)
+
+                # Recalculo FUERA del expander
+                _vol_emp = st.session_state.get("_emp_vol", 0)
+                _perd_emp = st.session_state.get("_emp_perdida", 5)
+                _dos_emp = st.session_state.get("_emp_dos", "G-15")
+                vol_emp_final = _vol_emp * (1 + _perd_emp / 100)
+                mat_emp = calcular_materiales(vol_emp_final, _dos_emp)
+                st.session_state["mat_emp"] = mat_emp
+                st.session_state["vol_emp"] = vol_emp_final
 
             # --- 3. Cimiento ---
                 if ver(horm, "cimiento"):
@@ -922,6 +930,21 @@ if option == "Cubicacion":
                             mostrar_materiales(mat_cim)
                         else:
                             st.caption("Selecciona al menos un tipo de cimiento para calcular.")
+
+                        st.session_state["_cim_vol"] = vol_pilares
+                        st.session_state["_cim_dos"] = dos_cim
+
+                        mat_cim = calcular_materiales(vol_pilares, dos_cim)
+                        st.session_state["mat_cim"] = mat_cim
+                        st.session_state["vol_pilares"] = vol_pilares
+                        mostrar_materiales(mat_cim)
+
+                _vol_cim = st.session_state.get("_cim_vol", 0)
+                _dos_cim = st.session_state.get("_cim_dos", "G-20")
+                mat_cim = calcular_materiales(_vol_cim, _dos_cim)
+                st.session_state["mat_cim"] = mat_cim
+                st.session_state["vol_pilares"] = _vol_cim
+
             # --- 4. Sobrecimiento ---
                 if ver(horm, "sobrecimiento"):
                     with st.expander("4. Sobrecimiento", expanded=False):
@@ -976,6 +999,20 @@ if option == "Cubicacion":
                         st.text(f"Descuento vanos: -{vol_vanos_sc:.2f} m³")
                         st.info(f"Volumen neto sobrecimiento: {vol_sc_neto:.2f} m³")
                         mostrar_materiales(mat_sc)
+
+                        st.session_state["_sc_vol"] = vol_sc_neto
+                        st.session_state["_sc_dos"] = dos_sc
+
+                        mat_sc = calcular_materiales(vol_sc_neto, dos_sc)
+                        st.session_state["mat_sc"] = mat_sc
+                        st.session_state["vol_sc_neto"] = vol_sc_neto
+                        mostrar_materiales(mat_sc)
+
+                _vol_sc = st.session_state.get("_sc_vol", 0)
+                _dos_sc = st.session_state.get("_sc_dos", "G-20")
+                mat_sc = calcular_materiales(_vol_sc, _dos_sc)
+                st.session_state["mat_sc"] = mat_sc
+                st.session_state["vol_sc_neto"] = _vol_sc
 
             # --- 5. Radier ---
                 if ver(horm, "radier"):
@@ -1047,7 +1084,25 @@ if option == "Cubicacion":
                                 st.success(f"Con {desp_malla}% desperdicio: {kg_malla_desp:.1f} kg")
                                 st.success(f"Planchas 2,35x6,00m: {planchas_malla_desp:.0f} planchas")
                                 st.caption(f"Área total: {area_radier_total:.2f} m² | Plancha cubre: 14,1 m²")
-                
+
+                            st.session_state["_rad_vol"] = vol_radier
+                            st.session_state["_rad_perdida"] = rad_perdida
+                            st.session_state["_rad_dos"] = dos_rad
+
+                            vol_radier_final = vol_radier * (1 + rad_perdida / 100)
+                            mat_rad = calcular_materiales(vol_radier_final, dos_rad)
+                            st.session_state["mat_rad"] = mat_rad
+                            st.session_state["vol_radier"] = vol_radier_final
+                            mostrar_materiales(mat_rad)
+
+                _vol_rad = st.session_state.get("_rad_vol", 0)
+                _perd_rad = st.session_state.get("_rad_perdida", 5)
+                _dos_rad = st.session_state.get("_rad_dos", "G-20")
+                vol_radier_final = _vol_rad * (1 + _perd_rad / 100)
+                mat_rad = calcular_materiales(vol_radier_final, _dos_rad)
+                st.session_state["mat_rad"] = mat_rad
+                st.session_state["vol_radier"] = vol_radier_final
+
                 st.write("---")
                 total_hormigon = (
                     st.session_state.get("vol_emp", 0) +
@@ -2274,7 +2329,7 @@ if option == "Cubicacion":
                                 st.info(f"Pletinas esquinas: {total_pletinas} unidades")
                                 st.info(f"Tornillos autoperf.: {tornillos:.0f} unidades")
                                 st.info(f"Lana de vidrio: {m2_aislacion_neta:.2f} m²")
-                                
+
                             st.session_state["pdf_canal_tipo"] = canal_tipo_mu
                             st.session_state["pdf_cant_piezas_canal"] = total_canales_final
                             st.session_state["pdf_ml_canal"] = ml_canal_mu
