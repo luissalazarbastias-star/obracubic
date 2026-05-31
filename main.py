@@ -2274,6 +2274,17 @@ if option == "Cubicacion":
                                 st.info(f"Pletinas esquinas: {total_pletinas} unidades")
                                 st.info(f"Tornillos autoperf.: {tornillos:.0f} unidades")
                                 st.info(f"Lana de vidrio: {m2_aislacion_neta:.2f} m²")
+                                
+                            st.session_state["pdf_canal_tipo"] = canal_tipo_mu
+                            st.session_state["pdf_cant_piezas_canal"] = total_canales_final
+                            st.session_state["pdf_ml_canal"] = ml_canal_mu
+                            st.session_state["pdf_largo_canal"] = largo_canal_mu
+                            st.session_state["pdf_montante_tipo"] = montante_medio
+                            st.session_state["pdf_total_montantes"] = total_mont_medio + total_mont_normal
+                            st.session_state["pdf_largo_montante"] = largo_mont_medio
+                            st.session_state["pdf_esq_tipo"] = ""
+                            st.session_state["pdf_cant_esquinas"] = cant_esquinas_mu
+                            st.session_state["pdf_largo_esq"] = 0
         # ============================
         # TABIQUE DE MADERA
         # ============================
