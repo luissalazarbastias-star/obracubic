@@ -376,6 +376,22 @@ if "mat_rad" not in st.session_state:
     st.session_state["mat_rad"] = {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}
 if "total_hormigon" not in st.session_state:
     st.session_state["total_hormigon"] = st.session_state.get("vol_emp", 0) + st.session_state.get("vol_pilares", 0) + st.session_state.get("vol_sc_neto", 0) + st.session_state.get("vol_radier", 0)
+if "emp_perdida" not in st.session_state:
+    st.session_state["emp_perdida"] = 5
+if "radier_perdida" not in st.session_state:
+    st.session_state["radier_perdida"] = 5
+if "dos_emp" not in st.session_state:
+    st.session_state["dos_emp"] = "G-15"
+if "dos_rad" not in st.session_state:
+    st.session_state["dos_rad"] = "G-20"
+if "dos_cim" not in st.session_state:
+    st.session_state["dos_cim"] = "G-20"
+if "dos_sc" not in st.session_state:
+    st.session_state["dos_sc"] = "G-20"
+if "secciones_rad" not in st.session_state:
+    st.session_state["secciones_rad"] = [{"largo": 0.0, "ancho": 0.0, "espesor": 0.0}]
+if "secciones_emp" not in st.session_state:
+    st.session_state["secciones_emp"] = [{"largo": 0.0, "ancho": 0.0, "espesor": 0.0}]
 # ============================
 # LOGO Y SIDEBAR
 # ============================
@@ -3457,6 +3473,10 @@ _dos_rad = st.session_state.get("dos_rad", "G-20")
 vol_radier_final = _vol_rad * (1 + _perd_rad / 100)
 st.session_state["mat_rad"] = calcular_materiales(vol_radier_final, _dos_rad)
 st.session_state["vol_radier"] = vol_radier_final
+
+st.write("DEBUG vol_rad:", sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [])))
+st.write("DEBUG dos_rad:", st.session_state.get("dos_rad", "no existe"))
+st.write("DEBUG radier_perdida:", st.session_state.get("radier_perdida", "no existe"))
 
 if st.button("📄 Generar PDF", type="primary"):
     pdf_buffer = generar_pdf_cubicacion(
