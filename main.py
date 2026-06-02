@@ -607,11 +607,34 @@ if st.session_state.get("vista_cuenta"):
 
         # Mensaje de carga exitosa
         if st.session_state.pop("_proyecto_cargado", False):
-            st.success("Proyecto cargado. Ve a 'Cubicacion' para verlo y seguir editando.")
+            st.success("Proyecto cargado. Tus rubros y medidas se restauraron — revísalo en 'Crear Proyecto' o 'Cubicacion'.")
 
         # --- Guardar la cubicación actual ---
         with st.container(border=True):
-            st.markdown("**Guardar cubicación actual**")
+            st.markdown("**Guardar proyecto actual**")
+
+            proy_actual = st.session_state.get("proyecto", {})
+            rubros_proy = proy_actual.get("partidas", {})
+            rubros_activos = [r for r, sub in rubros_proy.items() if sub and any(sub.values())]
+
+            if proy_actual.get("nombre"):
+                st.caption(f"Proyecto en curso: **{proy_actual['nombre']}**")
+                if rubros_activos:
+                    NOMBRES_RUBRO = {
+                        "hormigon": "Hormigón", "acero_estructural": "Acero estructural",
+                        "metalcon": "Metalcon", "moldajes": "Moldajes", "muros": "Muros",
+                        "revestimientos": "Revestimientos", "pisos": "Pisos",
+                        "terminaciones": "Terminaciones", "cubierta": "Cubierta",
+                    }
+                    lista = ", ".join(NOMBRES_RUBRO.get(r, r) for r in rubros_activos)
+                    st.caption(f"Rubros: {lista}")
+            else:
+                st.caption("Sin proyecto creado — se guardará la cubicación general.")
+
+            # Pre-llenar el nombre con el del proyecto creado (solo la primera vez)
+            if "nombre_nuevo_proyecto_guardar" not in st.session_state:
+                st.session_state["nombre_nuevo_proyecto_guardar"] = proy_actual.get("nombre", "")
+
             nombre_guardar = st.text_input(
                 "Nombre del proyecto",
                 placeholder="Ej: Casa Don Pedro - Angol",
