@@ -444,6 +444,12 @@ if "secciones_emp" not in st.session_state:
 # ============================
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%201.png"
 
+# Logo centrado arriba del menú "Ir a:"
+_lcol1, _lcol2, _lcol3 = st.sidebar.columns([1, 2, 1])
+with _lcol2:
+    st.image(URL_DEL_LOGO, use_container_width=True)
+st.sidebar.write("")
+
 option = st.sidebar.radio("Ir a:", ["Crear Proyecto", "Cubicacion"],
     index=1 if st.session_state.get("ir_a_cubicacion") else 0
 )
