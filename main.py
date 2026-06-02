@@ -452,11 +452,11 @@ with _lc2:
 
 # Selector de navegación SIEMPRE visible (no en el sidebar)
 if "nav_option" not in st.session_state:
-    st.session_state["nav_option"] = "Cubicacion" if st.session_state.get("ir_a_cubicacion") else "Crear Proyecto"
+    st.session_state["nav_option"] = "Cubicacion" if st.session_state.get("ir_a_cubicacion") else "Inicio"
 
 option = st.radio(
     "Ir a:",
-    ["Crear Proyecto", "Cubicacion"],
+    ["Inicio", "Crear Proyecto", "Cubicacion"],
     horizontal=True,
     key="nav_option",
 )
@@ -464,6 +464,58 @@ if option == "Cubicacion":
     st.session_state["ir_a_cubicacion"] = False
 
 st.write("---")
+
+# ============================
+# INICIO (pantalla de bienvenida)
+# ============================
+if option == "Inicio":
+    st.title("Bienvenido a ObraCubic")
+    st.markdown("#### Grandes Estructuras se Levantan con Decisiones Precisas")
+    st.write("")
+    st.markdown(
+        "**ObraCubic** es tu calculadora de cubicación para obras de construcción. "
+        "Estima de forma rápida y ordenada los materiales que necesitas para cada "
+        "etapa de tu proyecto y genera un informe en PDF listo para presupuestar."
+    )
+
+    st.write("---")
+    st.subheader("¿Qué puedes cubicar?")
+    ini1, ini2 = st.columns(2)
+    with ini1:
+        st.markdown(
+            "- **Hormigón y Mov. de tierra** — excavación, emplantillado, cimientos, radier\n"
+            "- **Acero estructural** — losas, pilares, vigas, cimientos\n"
+            "- **Acero No Estructural (Metalcon)** — tabiques y perfiles\n"
+            "- **Moldajes** — cimiento, muro, losa, viga, pilar\n"
+            "- **Muros** — hormigón, ladrillo y tabiques"
+        )
+    with ini2:
+        st.markdown(
+            "- **Revestimientos** — interiores y exteriores\n"
+            "- **Pisos y Pavimentos** — cerámico, flotante, baldosa, deck\n"
+            "- **Terminaciones** — pintura, estuco, cielos, zócalos\n"
+            "- **Cubierta / Techumbre** — estructura, cerchas y planchas\n"
+            "- **Informe PDF** — resumen de todos los materiales"
+        )
+
+    st.write("---")
+    st.subheader("¿Cómo empezar?")
+    st.markdown(
+        "1. Ve a **Crear Proyecto** y selecciona los rubros que vas a trabajar.\n"
+        "2. Pasa a **Cubicacion** e ingresa las medidas de cada partida.\n"
+        "3. Genera tu **PDF** con el resumen de materiales."
+    )
+    st.info("También puedes usar la **Cubicacion** directamente, sin crear un proyecto — está siempre disponible.")
+
+    cini1, cini2 = st.columns(2)
+    with cini1:
+        if st.button("🛠️ Crear Proyecto", type="primary", use_container_width=True):
+            st.session_state["nav_option"] = "Crear Proyecto"
+            st.rerun()
+    with cini2:
+        if st.button("📐 Ir a Cubicación", use_container_width=True):
+            st.session_state["nav_option"] = "Cubicacion"
+            st.rerun()
 
 # ============================
 # CREAR PROYECTO
@@ -4053,107 +4105,109 @@ if option == "Cubicacion":
 # ============================
 # EXPORTAR A PDF
 # ============================
-st.write("---")
-st.subheader("📄 Exportar Cubicación")
-nombre_proyecto = st.text_input(
-    "Nombre del proyecto (opcional)",
-    placeholder="Ej: Casa Don Pedro - Angol",
-    key="nombre_proyecto"
-)
-_vol_emp = sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_emp", [{"largo":0,"ancho":0,"espesor":0}]))
-_perd_emp = st.session_state.get("emp_perdida", 5)
-_dos_emp = st.session_state.get("dos_emp", "G-15")
-vol_emp_final = _vol_emp * (1 + _perd_emp / 100)
-st.session_state["mat_emp"] = calcular_materiales(vol_emp_final, _dos_emp)
-st.session_state["vol_emp"] = vol_emp_final
-
-_vol_cim = st.session_state.get("_cim_vol", 0)
-_dos_cim = st.session_state.get("dos_cim", "G-20")
-st.session_state["mat_cim"] = calcular_materiales(_vol_cim, _dos_cim)
-st.session_state["vol_pilares"] = _vol_cim
-
-_vol_sc = st.session_state.get("_sc_vol", 0)
-_dos_sc = st.session_state.get("dos_sc", "G-20")
-st.session_state["mat_sc"] = calcular_materiales(_vol_sc, _dos_sc)
-st.session_state["vol_sc_neto"] = _vol_sc
-
-_vol_rad = sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [{"largo":0,"ancho":0,"espesor":0}]))
-_perd_rad = st.session_state.get("radier_perdida", 5)
-_dos_rad = st.session_state.get("dos_rad", "G-20")
-vol_radier_final = _vol_rad * (1 + _perd_rad / 100)
-st.session_state["mat_rad"] = calcular_materiales(vol_radier_final, _dos_rad)
-st.session_state["vol_radier"] = vol_radier_final
-
-#st.write("DEBUG vol_rad:", sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [])))
-#st.write("DEBUG dos_rad:", st.session_state.get("dos_rad", "no existe"))
-#st.write("DEBUG radier_perdida:", st.session_state.get("radier_perdida", "no existe"))#
-# --- Totales recalculados para el PDF ---
-total_hormigon = (
-    st.session_state.get("vol_emp", 0) +
-    st.session_state.get("vol_pilares", 0) +
-    st.session_state.get("vol_sc_neto", 0) +
-    st.session_state.get("vol_radier", 0)
-)
-total_sacos = (
-    st.session_state.get("mat_emp", {}).get("cemento_sacos", 0) +
-    st.session_state.get("mat_cim", {}).get("cemento_sacos", 0) +
-    st.session_state.get("mat_sc",  {}).get("cemento_sacos", 0) +
-    st.session_state.get("mat_rad", {}).get("cemento_sacos", 0)
-)
-total_gravilla = (
-    st.session_state.get("mat_emp", {}).get("gravilla_kg", 0) +
-    st.session_state.get("mat_cim", {}).get("gravilla_kg", 0) +
-    st.session_state.get("mat_sc",  {}).get("gravilla_kg", 0) +
-    st.session_state.get("mat_rad", {}).get("gravilla_kg", 0)
-)
-total_arena = (
-    st.session_state.get("mat_emp", {}).get("arena_kg", 0) +
-    st.session_state.get("mat_cim", {}).get("arena_kg", 0) +
-    st.session_state.get("mat_sc",  {}).get("arena_kg", 0) +
-    st.session_state.get("mat_rad", {}).get("arena_kg", 0)
-)
-total_agua = (
-    st.session_state.get("mat_emp", {}).get("agua_lt", 0) +
-    st.session_state.get("mat_cim", {}).get("agua_lt", 0) +
-    st.session_state.get("mat_sc",  {}).get("agua_lt", 0) +
-    st.session_state.get("mat_rad", {}).get("agua_lt", 0)
-)
-if st.button("📄 Generar PDF", type="primary"):
-    pdf_buffer = generar_pdf_cubicacion(
-        nombre_proyecto=nombre_proyecto,
-        vol_emp=st.session_state.get("vol_emp", 0),
-        dos_emp=st.session_state.get("dos_emp", "G-15"),
-        mat_emp=st.session_state.get("mat_emp", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
-        vol_pilares=st.session_state.get("vol_pilares", 0),
-        dos_cim=st.session_state.get("dos_cim", "G-20"),
-        mat_cim=st.session_state.get("mat_cim", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
-        vol_sc_neto=st.session_state.get("vol_sc_neto", 0),
-        dos_sc=st.session_state.get("dos_sc", "G-20"),
-        mat_sc=st.session_state.get("mat_sc", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
-        vol_radier=st.session_state.get("vol_radier", 0),
-        dos_rad=st.session_state.get("dos_rad", "G-20"),
-        mat_rad=st.session_state.get("mat_rad", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
-        total_hormigon=total_hormigon,
-        total_sacos=total_sacos,
-        total_gravilla=total_gravilla,
-        total_arena=total_arena,
-        total_agua=total_agua,
-        canal_tipo=st.session_state.get("pdf_canal_tipo", ""),
-        cant_piezas_canal=st.session_state.get("pdf_cant_piezas_canal", 0),
-        ml_canal=st.session_state.get("pdf_ml_canal", 0),
-        largo_canal=st.session_state.get("pdf_largo_canal", 0),
-        montante_tipo=st.session_state.get("pdf_montante_tipo", ""),
-        total_montantes=st.session_state.get("pdf_total_montantes", 0),
-        largo_montante=st.session_state.get("pdf_largo_montante", 0),
-        esq_tipo=st.session_state.get("pdf_esq_tipo", ""),
-        cant_esquinas=st.session_state.get("pdf_cant_esquinas", 0),
-        largo_esq=st.session_state.get("pdf_largo_esq", 0),
-        pdf_extra=st.session_state.get("pdf_extra", []),
+# Solo mostrar la exportación de PDF en la sección Cubicación
+if option == "Cubicacion":
+    st.write("---")
+    st.subheader("📄 Exportar Cubicación")
+    nombre_proyecto = st.text_input(
+        "Nombre del proyecto (opcional)",
+        placeholder="Ej: Casa Don Pedro - Angol",
+        key="nombre_proyecto"
     )
-    nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
-    st.download_button(
-        label="⬇️ Descargar PDF",
-        data=pdf_buffer,
-        file_name=nombre_archivo,
-        mime="application/pdf",
+    _vol_emp = sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_emp", [{"largo":0,"ancho":0,"espesor":0}]))
+    _perd_emp = st.session_state.get("emp_perdida", 5)
+    _dos_emp = st.session_state.get("dos_emp", "G-15")
+    vol_emp_final = _vol_emp * (1 + _perd_emp / 100)
+    st.session_state["mat_emp"] = calcular_materiales(vol_emp_final, _dos_emp)
+    st.session_state["vol_emp"] = vol_emp_final
+
+    _vol_cim = st.session_state.get("_cim_vol", 0)
+    _dos_cim = st.session_state.get("dos_cim", "G-20")
+    st.session_state["mat_cim"] = calcular_materiales(_vol_cim, _dos_cim)
+    st.session_state["vol_pilares"] = _vol_cim
+
+    _vol_sc = st.session_state.get("_sc_vol", 0)
+    _dos_sc = st.session_state.get("dos_sc", "G-20")
+    st.session_state["mat_sc"] = calcular_materiales(_vol_sc, _dos_sc)
+    st.session_state["vol_sc_neto"] = _vol_sc
+
+    _vol_rad = sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [{"largo":0,"ancho":0,"espesor":0}]))
+    _perd_rad = st.session_state.get("radier_perdida", 5)
+    _dos_rad = st.session_state.get("dos_rad", "G-20")
+    vol_radier_final = _vol_rad * (1 + _perd_rad / 100)
+    st.session_state["mat_rad"] = calcular_materiales(vol_radier_final, _dos_rad)
+    st.session_state["vol_radier"] = vol_radier_final
+
+    #st.write("DEBUG vol_rad:", sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [])))
+    #st.write("DEBUG dos_rad:", st.session_state.get("dos_rad", "no existe"))
+    #st.write("DEBUG radier_perdida:", st.session_state.get("radier_perdida", "no existe"))#
+    # --- Totales recalculados para el PDF ---
+    total_hormigon = (
+        st.session_state.get("vol_emp", 0) +
+        st.session_state.get("vol_pilares", 0) +
+        st.session_state.get("vol_sc_neto", 0) +
+        st.session_state.get("vol_radier", 0)
     )
+    total_sacos = (
+        st.session_state.get("mat_emp", {}).get("cemento_sacos", 0) +
+        st.session_state.get("mat_cim", {}).get("cemento_sacos", 0) +
+        st.session_state.get("mat_sc",  {}).get("cemento_sacos", 0) +
+        st.session_state.get("mat_rad", {}).get("cemento_sacos", 0)
+    )
+    total_gravilla = (
+        st.session_state.get("mat_emp", {}).get("gravilla_kg", 0) +
+        st.session_state.get("mat_cim", {}).get("gravilla_kg", 0) +
+        st.session_state.get("mat_sc",  {}).get("gravilla_kg", 0) +
+        st.session_state.get("mat_rad", {}).get("gravilla_kg", 0)
+    )
+    total_arena = (
+        st.session_state.get("mat_emp", {}).get("arena_kg", 0) +
+        st.session_state.get("mat_cim", {}).get("arena_kg", 0) +
+        st.session_state.get("mat_sc",  {}).get("arena_kg", 0) +
+        st.session_state.get("mat_rad", {}).get("arena_kg", 0)
+    )
+    total_agua = (
+        st.session_state.get("mat_emp", {}).get("agua_lt", 0) +
+        st.session_state.get("mat_cim", {}).get("agua_lt", 0) +
+        st.session_state.get("mat_sc",  {}).get("agua_lt", 0) +
+        st.session_state.get("mat_rad", {}).get("agua_lt", 0)
+    )
+    if st.button("📄 Generar PDF", type="primary"):
+        pdf_buffer = generar_pdf_cubicacion(
+            nombre_proyecto=nombre_proyecto,
+            vol_emp=st.session_state.get("vol_emp", 0),
+            dos_emp=st.session_state.get("dos_emp", "G-15"),
+            mat_emp=st.session_state.get("mat_emp", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
+            vol_pilares=st.session_state.get("vol_pilares", 0),
+            dos_cim=st.session_state.get("dos_cim", "G-20"),
+            mat_cim=st.session_state.get("mat_cim", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
+            vol_sc_neto=st.session_state.get("vol_sc_neto", 0),
+            dos_sc=st.session_state.get("dos_sc", "G-20"),
+            mat_sc=st.session_state.get("mat_sc", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
+            vol_radier=st.session_state.get("vol_radier", 0),
+            dos_rad=st.session_state.get("dos_rad", "G-20"),
+            mat_rad=st.session_state.get("mat_rad", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
+            total_hormigon=total_hormigon,
+            total_sacos=total_sacos,
+            total_gravilla=total_gravilla,
+            total_arena=total_arena,
+            total_agua=total_agua,
+            canal_tipo=st.session_state.get("pdf_canal_tipo", ""),
+            cant_piezas_canal=st.session_state.get("pdf_cant_piezas_canal", 0),
+            ml_canal=st.session_state.get("pdf_ml_canal", 0),
+            largo_canal=st.session_state.get("pdf_largo_canal", 0),
+            montante_tipo=st.session_state.get("pdf_montante_tipo", ""),
+            total_montantes=st.session_state.get("pdf_total_montantes", 0),
+            largo_montante=st.session_state.get("pdf_largo_montante", 0),
+            esq_tipo=st.session_state.get("pdf_esq_tipo", ""),
+            cant_esquinas=st.session_state.get("pdf_cant_esquinas", 0),
+            largo_esq=st.session_state.get("pdf_largo_esq", 0),
+            pdf_extra=st.session_state.get("pdf_extra", []),
+        )
+        nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
+        st.download_button(
+            label="⬇️ Descargar PDF",
+            data=pdf_buffer,
+            file_name=nombre_archivo,
+            mime="application/pdf",
+        )
