@@ -442,7 +442,7 @@ if "secciones_emp" not in st.session_state:
 # ============================
 # LOGO Y SIDEBAR
 # ============================
-URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%201.png"
+URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Dise%C3%B1o%20sin%20t%C3%ADtulo%20(2).png"
 
 # Logo centrado arriba del menú "Ir a:"
 _lcol1, _lcol2, _lcol3 = st.sidebar.columns([1, 2, 1])
