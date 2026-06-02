@@ -12,7 +12,7 @@ from datetime import datetime, timezone, timedelta
 st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
     page_icon="🏗️",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 st.markdown("""
@@ -441,19 +441,29 @@ if "secciones_rad" not in st.session_state:
 if "secciones_emp" not in st.session_state:
     st.session_state["secciones_emp"] = [{"largo": 0.0, "ancho": 0.0, "espesor": 0.0}]
 # ============================
-# LOGO Y SIDEBAR
+# LOGO Y NAVEGACIÓN
 # ============================
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%201.png"
 
-# Logo centrado arriba del menú "Ir a:"
-st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
-st.sidebar.write("")
+# Logo centrado en el área principal (se ve en teléfono y computador)
+_lc1, _lc2, _lc3 = st.columns([2, 1, 2])
+with _lc2:
+    st.image(URL_DEL_LOGO, use_container_width=True)
 
-option = st.sidebar.radio("Ir a:", ["Crear Proyecto", "Cubicacion"],
-    index=1 if st.session_state.get("ir_a_cubicacion") else 0
+# Selector de navegación SIEMPRE visible (no en el sidebar)
+if "nav_option" not in st.session_state:
+    st.session_state["nav_option"] = "Cubicacion" if st.session_state.get("ir_a_cubicacion") else "Crear Proyecto"
+
+option = st.radio(
+    "Ir a:",
+    ["Crear Proyecto", "Cubicacion"],
+    horizontal=True,
+    key="nav_option",
 )
 if option == "Cubicacion":
     st.session_state["ir_a_cubicacion"] = False
+
+st.write("---")
 
 # ============================
 # CREAR PROYECTO
@@ -701,6 +711,7 @@ if option == "Crear Proyecto":
             with col_ir:
                 if st.button("Ir a cubicación", type="primary", use_container_width=True):
                     st.session_state["ir_a_cubicacion"] = True
+                    st.session_state["nav_option"] = "Cubicacion"
                     st.rerun()
             with col_cerrar:
                 if st.button("Cerrar proyecto", use_container_width=True):
