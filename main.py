@@ -500,6 +500,7 @@ if option == "Crear Proyecto":
         with col3:
             usar_metalcon    = st.checkbox("Acero No Estructural (Metalcon)", key="usar_metalcon")
             usar_revestimientos = st.checkbox("Revestimientos", key="usar_revestimientos")
+            usar_cubierta    = st.checkbox("Cubierta / Techumbre", key="usar_cubierta")
 
         partidas_seleccionadas = {}
 
@@ -628,6 +629,21 @@ if option == "Crear Proyecto":
                 "cielos": p_cielos, "zocalos": p_zocalos,
             }
 
+        if usar_cubierta:
+            st.write("---")
+            st.markdown("**Cubierta / Techumbre — selecciona las partidas:**")
+            cu1, cu2 = st.columns(2)
+            with cu1:
+                p_est_mad = st.checkbox("Estructura de Madera", key="p_est_mad")
+                p_est_met = st.checkbox("Estructura Metálica", key="p_est_met")
+            with cu2:
+                p_planchas = st.checkbox("Cubierta (planchas)", key="p_planchas")
+                p_aislacion = st.checkbox("Aislación y Fieltro", key="p_aislacion")
+            partidas_seleccionadas["cubierta"] = {
+                "estructura_madera": p_est_mad, "estructura_metalica": p_est_met,
+                "planchas": p_planchas, "aislacion": p_aislacion,
+            }
+
         total_partidas = sum(
             v for rubro in partidas_seleccionadas.values()
             for v in rubro.values()
@@ -682,6 +698,7 @@ if option == "Crear Proyecto":
                 "revestimientos": "Revestimientos",
                 "pisos": "Pisos y Pavimentos",
                 "terminaciones": "Terminaciones",
+                "cubierta": "Cubierta / Techumbre",
             }
             NOMBRES_PARTIDAS = {
                 "excavacion": "Excavación", "emplantillado": "Emplantillado",
@@ -697,6 +714,9 @@ if option == "Crear Proyecto":
                 "deck": "Deck Madera", "pintura": "Pintura",
                 "estuco": "Estuco / Revoque", "cielos": "Cielos",
                 "zocalos": "Zócalos",
+                "estructura_madera": "Estructura de Madera",
+                "estructura_metalica": "Estructura Metálica",
+                "planchas": "Cubierta (planchas)", "aislacion": "Aislación y Fieltro",
             }
 
             for rubro, sub in partidas.items():
@@ -735,6 +755,7 @@ if option == "Cubicacion":
     revest = partidas_proy.get("revestimientos", {})
     pisos  = partidas_proy.get("pisos", {})
     term   = partidas_proy.get("terminaciones", {})
+    cubierta = partidas_proy.get("cubierta", {})
 
     def ver(rubro_dict, partida):
         return not proy_creado or rubro_dict.get(partida, False)
@@ -3782,6 +3803,252 @@ if option == "Cubicacion":
                                 ("Piezas (c/desp.)", f"{cant_piezas_desp_zoc:.0f} de {largo_val_zoc}m"),
                                 ("Fijaciones", f"{cant_fijaciones_zoc} unidades"),
                             ])
+
+# ============================
+# CUBIERTA / TECHUMBRE
+# ============================
+    if ver_rubro(cubierta):
+        with st.expander("Cubierta / Techumbre", expanded=False):
+
+            def area_cubierta(key_prefix):
+                """Secciones de faldones (largo x ancho real de la pendiente)."""
+                key_list = f"secciones_{key_prefix}"
+                if key_list not in st.session_state:
+                    st.session_state[key_list] = [{"largo": 0.0, "ancho": 0.0}]
+                col_add, col_del = st.columns(2)
+                with col_add:
+                    if st.button("➕ Agregar faldón", key=f"add_{key_prefix}"):
+                        st.session_state[key_list].append({"largo": 0.0, "ancho": 0.0})
+                with col_del:
+                    if st.button("🗑️ Eliminar último faldón", key=f"del_{key_prefix}"):
+                        if len(st.session_state[key_list]) > 1:
+                            st.session_state[key_list].pop()
+                area_total = 0.0
+                for i, sec in enumerate(st.session_state[key_list]):
+                    st.markdown(f"**Faldón {i+1}** (medida real de la pendiente)")
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        sec["largo"] = st.number_input("Largo (m)", value=sec["largo"], key=f"{key_prefix}_largo_{i}")
+                    with c2:
+                        sec["ancho"] = st.number_input("Ancho (m)", value=sec["ancho"], key=f"{key_prefix}_ancho_{i}")
+                    area_sec = sec["largo"] * sec["ancho"]
+                    st.caption(f"Área faldón {i+1}: {area_sec:.2f} m²")
+                    area_total += area_sec
+                st.info(f"Área total de cubierta: {area_total:.2f} m²")
+                return area_total
+
+            MADERA_COSTANERA = {
+                "2x2 Pino 3,20m":  {"largo": 3.20},
+                "2x3 Pino 3,20m":  {"largo": 3.20},
+                "2x4 Pino 3,20m":  {"largo": 3.20},
+            }
+            COSTANERA_METALICA = {
+                "Costanera 80x40x15x2,0mm - 6,00m": {"largo": 6.00},
+                "Costanera 100x50x15x2,0mm - 6,00m": {"largo": 6.00},
+                "Perfil C 100x50x2,0mm - 6,00m": {"largo": 6.00},
+            }
+            PLANCHAS_CUBIERTA = {
+                "Zinc acanalado 5V (ancho útil 0,80m)": {"tipo": "plancha", "ancho_util": 0.80,
+                    "largos": ["2,00m", "2,50m", "3,00m", "3,66m"]},
+                "Teja asfáltica (paquete 3,1 m²)": {"tipo": "paquete", "rend_paquete": 3.1},
+                "Teja arcilla/cerámica (24 u/m²)": {"tipo": "unidad", "u_m2": 24},
+                "Panel Sándwich PV (ancho útil 1,00m)": {"tipo": "plancha", "ancho_util": 1.00,
+                    "largos": ["3,00m", "4,00m", "5,00m", "6,00m"]},
+            }
+
+    # --- 1. Estructura de Madera ---
+            if ver(cubierta, "estructura_madera"):
+                with st.expander("1. Estructura de Madera (costaneras + cerchas)", expanded=False):
+                    st.caption("Costaneras de madera y cálculo de cerchas")
+
+                    # --- Costaneras ---
+                    st.markdown("### 🪵 Costaneras")
+                    area_cm = area_cubierta("cub_est_mad")
+                    mad_tipo = st.selectbox("Tipo de costanera", list(MADERA_COSTANERA.keys()), key="cub_mad_tipo")
+                    sep_cm = st.selectbox("Separación entre costaneras (m)", ["0,40", "0,50", "0,60"], key="cub_mad_sep")
+                    sep_cm_val = float(sep_cm.replace(",", "."))
+                    desp_cm = st.slider("% Desperdicio costaneras", 0, 20, 10, key="cub_mad_desp")
+
+                    largo_pieza_cm = MADERA_COSTANERA[mad_tipo]["largo"]
+                    ml_costaneras = (area_cm / sep_cm_val) if sep_cm_val > 0 else 0
+                    ml_costaneras_desp = ml_costaneras * (1 + desp_cm / 100)
+                    piezas_cm = math.ceil(ml_costaneras_desp / largo_pieza_cm) if largo_pieza_cm > 0 else 0
+                    clavos_cm = math.ceil(piezas_cm * 6)
+
+                    st.info(f"Metros lineales de costanera: {ml_costaneras:.2f} ml")
+                    st.success(f"Costaneras (c/desp.): {piezas_cm} piezas de {largo_pieza_cm}m")
+
+                    # --- Cerchas ---
+                    st.write("---")
+                    st.markdown("### 📐 Cerchas")
+                    calc_cerchas = st.checkbox("Calcular cerchas", key="cub_calc_cerchas")
+
+                    cerchas_n = 0
+                    ml_total_cerchas = 0.0
+                    piezas_cercha = 0
+                    h_cumbrera = 0.0
+                    grados_pend = 0.0
+                    par_largo = pend_largo = diag_largo = luz_cercha = 0.0
+
+                    if calc_cerchas:
+                        ce1, ce2, ce3 = st.columns(3)
+                        with ce1:
+                            luz_cercha = st.number_input("Luz / ancho a cubrir (m)", value=0.0, key="cub_luz")
+                        with ce2:
+                            pend_pct = st.number_input("Pendiente (%)", value=30.0, key="cub_pend_pct")
+                        with ce3:
+                            cerchas_n = st.number_input("Cantidad de cerchas", value=0, step=1, key="cub_cerchas_n")
+
+                        esc_cercha = st.selectbox("Escuadría de la madera", ["2x4 Pino 3,20m", "2x5 Pino 3,20m", "2x6 Pino 3,20m"], key="cub_esc_cercha")
+                        largo_esc_cercha = 3.20
+                        desp_cercha = st.slider("% Desperdicio cerchas", 0, 20, 10, key="cub_desp_cercha")
+
+                        # Geometría (cercha tipo pendolón con tornapuntas)
+                        h_cumbrera = (luz_cercha / 2) * (pend_pct / 100)        # altura de cumbrera
+                        grados_pend = math.degrees(math.atan(pend_pct / 100))   # pendiente en grados
+                        cordon_inf = luz_cercha                                 # 1 pieza horizontal
+                        par_largo = math.sqrt((luz_cercha / 2) ** 2 + h_cumbrera ** 2)  # cada par inclinado (×2)
+                        pend_largo = h_cumbrera                                 # pendolón / pie derecho central
+                        diag_largo = math.sqrt((luz_cercha / 4) ** 2 + (h_cumbrera / 2) ** 2)  # cada diagonal (×2)
+
+                        ml_una_cercha = cordon_inf + (2 * par_largo) + pend_largo + (2 * diag_largo)
+                        ml_total_cerchas = ml_una_cercha * cerchas_n
+                        ml_total_cerchas_desp = ml_total_cerchas * (1 + desp_cercha / 100)
+                        piezas_cercha = math.ceil(ml_total_cerchas_desp / largo_esc_cercha) if largo_esc_cercha > 0 else 0
+
+                        if luz_cercha > 0 and cerchas_n > 0:
+                            st.info(f"Altura de cumbrera: {h_cumbrera:.2f} m  |  Pendiente: {grados_pend:.1f}°")
+                            st.markdown("**Longitudes por cercha:**")
+                            st.text(f"Cordón inferior: {cordon_inf:.2f} m (×1)")
+                            st.text(f"Pares inclinados: {par_largo:.2f} m (×2)")
+                            st.text(f"Pendolón / pie derecho: {pend_largo:.2f} m (×1)")
+                            st.text(f"Diagonales / tornapuntas: {diag_largo:.2f} m (×2)")
+                            st.text(f"Metros lineales por cercha: {ml_una_cercha:.2f} ml")
+                            st.success(f"Madera total cerchas: {ml_total_cerchas:.2f} ml → {piezas_cercha} piezas de {largo_esc_cercha}m ({esc_cercha.split()[0]})")
+                            st.caption("Modelo: cercha tipo pendolón con tornapuntas. Verifique con cálculo estructural.")
+
+                    st.write("---")
+                    st.info(f"Clavos aprox.: {clavos_cm} unidades")
+
+                    if area_cm > 0 or (calc_cerchas and ml_total_cerchas > 0):
+                        items_cm = [
+                            ("Costanera", mad_tipo),
+                            ("Área cubierta", f"{area_cm:.2f} m²"),
+                            ("Costaneras (c/desp.)", f"{piezas_cm} de {largo_pieza_cm}m"),
+                        ]
+                        if calc_cerchas and ml_total_cerchas > 0:
+                            items_cm.append(("Cerchas", f"{cerchas_n} unidades"))
+                            items_cm.append(("Altura cumbrera", f"{h_cumbrera:.2f} m ({grados_pend:.1f}°)"))
+                            items_cm.append(("Par inclinado", f"{par_largo:.2f} m (×2 por cercha)"))
+                            items_cm.append(("Pendolón", f"{pend_largo:.2f} m (×1 por cercha)"))
+                            items_cm.append(("Diagonales", f"{diag_largo:.2f} m (×2 por cercha)"))
+                            items_cm.append(("Madera cerchas (c/desp.)", f"{piezas_cercha} de {largo_esc_cercha}m"))
+                        items_cm.append(("Clavos", f"{clavos_cm} unidades"))
+                        registrar_pdf("Cubierta / Techumbre", "Estructura de Madera", items_cm)
+
+    # --- 2. Estructura Metálica ---
+            if ver(cubierta, "estructura_metalica"):
+                with st.expander("2. Estructura Metálica (costaneras)", expanded=False):
+                    st.caption("Costaneras metálicas o perfiles C sobre estructura")
+                    area_met = area_cubierta("cub_est_met")
+                    met_tipo = st.selectbox("Tipo de costanera/perfil", list(COSTANERA_METALICA.keys()), key="cub_met_tipo")
+                    sep_met = st.selectbox("Separación entre costaneras (m)", ["0,60", "0,80", "1,00", "1,20"], key="cub_met_sep")
+                    sep_met_val = float(sep_met.replace(",", "."))
+                    desp_met = st.slider("% Desperdicio", 0, 20, 10, key="cub_met_desp")
+
+                    largo_pieza_met = COSTANERA_METALICA[met_tipo]["largo"]
+                    ml_met = (area_met / sep_met_val) if sep_met_val > 0 else 0
+                    ml_met_desp = ml_met * (1 + desp_met / 100)
+                    piezas_met = math.ceil(ml_met_desp / largo_pieza_met) if largo_pieza_met > 0 else 0
+                    tornillos_met = math.ceil(piezas_met * 8)
+
+                    st.write("---")
+                    st.info(f"Metros lineales: {ml_met:.2f} ml")
+                    st.success(f"Costaneras (c/desp.): {piezas_met} piezas de {largo_pieza_met}m")
+                    st.info(f"Tornillos autoperforantes: {tornillos_met} unidades")
+
+                    if area_met > 0:
+                        registrar_pdf("Cubierta / Techumbre", "Estructura Metálica", [
+                            ("Perfil", met_tipo),
+                            ("Área cubierta", f"{area_met:.2f} m²"),
+                            ("Costaneras (c/desp.)", f"{piezas_met} de {largo_pieza_met}m"),
+                            ("Tornillos", f"{tornillos_met} unidades"),
+                        ])
+
+    # --- 3. Cubierta (planchas) ---
+            if ver(cubierta, "planchas"):
+                with st.expander("3. Cubierta (planchas / tejas)", expanded=False):
+                    area_pl = area_cubierta("cub_planchas")
+                    plancha_tipo = st.selectbox("Tipo de cubierta", list(PLANCHAS_CUBIERTA.keys()), key="cub_plancha_tipo")
+                    pl = PLANCHAS_CUBIERTA[plancha_tipo]
+                    desp_pl = st.slider("% Desperdicio (traslapes y cortes)", 0, 25, 15, key="cub_plancha_desp")
+                    area_pl_desp = area_pl * (1 + desp_pl / 100)
+
+                    st.write("---")
+                    st.info(f"Área cubierta: {area_pl:.2f} m²")
+                    st.success(f"Área con {desp_pl}% (traslapes/cortes): {area_pl_desp:.2f} m²")
+
+                    items_pl = [("Tipo", plancha_tipo), ("Área cubierta", f"{area_pl:.2f} m²")]
+
+                    if pl["tipo"] == "plancha":
+                        largo_pl = st.selectbox("Largo de plancha", pl["largos"], key="cub_plancha_largo")
+                        largo_pl_val = float(largo_pl.replace("m", "").replace(",", "."))
+                        area_util_plancha = pl["ancho_util"] * largo_pl_val
+                        cant_planchas = math.ceil(area_pl_desp / area_util_plancha) if area_util_plancha > 0 else 0
+                        st.success(f"Planchas {largo_pl}: {cant_planchas} unidades")
+                        st.caption(f"Ancho útil {pl['ancho_util']}m × {largo_pl} = {area_util_plancha:.2f} m²/plancha")
+                        items_pl.append(("Planchas", f"{cant_planchas} de {largo_pl}"))
+                        # Tornillos techo (caballete): aprox 6 por m²
+                        tornillos_techo = math.ceil(area_pl * 6)
+                        st.info(f"Tornillos techo (autoperf. con golilla): {tornillos_techo} unidades")
+                        items_pl.append(("Tornillos techo", f"{tornillos_techo} unidades"))
+
+                    elif pl["tipo"] == "paquete":
+                        paquetes = math.ceil(area_pl_desp / pl["rend_paquete"]) if pl["rend_paquete"] > 0 else 0
+                        st.success(f"Paquetes de teja asfáltica: {paquetes} paquetes")
+                        st.caption(f"Rendimiento: {pl['rend_paquete']} m² por paquete")
+                        clavos_teja = math.ceil(area_pl * 8)
+                        st.info(f"Clavos para teja: {clavos_teja} unidades")
+                        items_pl.append(("Paquetes (c/desp.)", f"{paquetes} paquetes"))
+                        items_pl.append(("Clavos", f"{clavos_teja} unidades"))
+
+                    elif pl["tipo"] == "unidad":
+                        tejas = math.ceil(area_pl_desp * pl["u_m2"])
+                        st.success(f"Tejas: {tejas} unidades")
+                        st.caption(f"Rendimiento: {pl['u_m2']} tejas por m²")
+                        items_pl.append(("Tejas (c/desp.)", f"{tejas} unidades"))
+
+                    if area_pl > 0:
+                        registrar_pdf("Cubierta / Techumbre", "Cubierta (planchas)", items_pl)
+
+    # --- 4. Aislación y Fieltro ---
+            if ver(cubierta, "aislacion"):
+                with st.expander("4. Aislación y Fieltro", expanded=False):
+                    area_ais = area_cubierta("cub_aislacion")
+                    st.write("**Fieltro asfáltico (barrera)**")
+                    usar_fieltro = st.checkbox("Incluir fieltro asfáltico", value=True, key="cub_fieltro")
+                    st.write("**Aislación térmica**")
+                    usar_aislante = st.checkbox("Incluir aislación térmica (lana/poliestireno)", value=True, key="cub_aislante")
+                    desp_ais = st.slider("% Desperdicio", 0, 20, 10, key="cub_ais_desp")
+
+                    st.write("---")
+                    items_ais = [("Área cubierta", f"{area_ais:.2f} m²")]
+
+                    if usar_fieltro:
+                        # Rollo de fieltro 15 lb cubre ~40 m² (1m x 40m, con traslape ~36 m² útiles)
+                        m2_fieltro = area_ais * (1 + desp_ais / 100)
+                        rollos_fieltro = math.ceil(m2_fieltro / 36)
+                        st.info(f"Fieltro asfáltico: {m2_fieltro:.2f} m²")
+                        st.success(f"Rollos de fieltro (≈36 m² útiles): {rollos_fieltro} rollos")
+                        items_ais.append(("Fieltro asfáltico", f"{rollos_fieltro} rollos (≈40 m²/rollo)"))
+
+                    if usar_aislante:
+                        m2_aislante = area_ais * (1 + desp_ais / 100)
+                        st.info(f"Aislación térmica: {m2_aislante:.2f} m²")
+                        items_ais.append(("Aislación térmica", f"{m2_aislante:.2f} m²"))
+
+                    if area_ais > 0 and (usar_fieltro or usar_aislante):
+                        registrar_pdf("Cubierta / Techumbre", "Aislación y Fieltro", items_ais)
 
 # ============================
 # EXPORTAR A PDF
