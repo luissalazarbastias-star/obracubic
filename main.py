@@ -7,6 +7,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 import io
 import math
 from datetime import datetime, timezone, timedelta
+from supabase import create_client
 
 # --- CONFIGURACIÓN VISUAL DE LA APP ---
 st.set_page_config(
@@ -20,6 +21,22 @@ st.markdown("""
     [data-testid="stToolbar"] {visibility: hidden !important;}
     </style>
 """, unsafe_allow_html=True)
+
+# ============================
+# CONEXIÓN A SUPABASE
+# ============================
+@st.cache_resource
+def conectar_supabase():
+    """Crea el cliente de Supabase usando los secrets. Devuelve None si falla."""
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+        return create_client(url, key)
+    except Exception as e:
+        st.session_state["_supabase_error"] = str(e)
+        return None
+
+supabase = conectar_supabase()
 
 # ============================
 # DATOS DE DOSIFICACIÓN (CBB)
@@ -473,7 +490,7 @@ with nav_col:
     )
 with cuenta_col:
     st.write("")
-    label_cuenta = "Mi cuenta" if st.session_state.get("demo_logueado") else "Iniciar sesión"
+    label_cuenta = "👤 Mi cuenta" if st.session_state.get("demo_logueado") else "👤 Iniciar sesión"
     if st.button(label_cuenta, type="primary", use_container_width=True, key="btn_cuenta"):
         st.session_state["vista_cuenta"] = True
         st.rerun()
@@ -543,6 +560,16 @@ if st.session_state.get("vista_cuenta"):
 # INICIO (pantalla de bienvenida)
 # ============================
 if option == "Inicio":
+    # --- PRUEBA TEMPORAL DE CONEXIÓN A SUPABASE (se quita después) ---
+    if supabase is not None:
+        try:
+            supabase.table("proyectos").select("id").limit(1).execute()
+            st.success("✅ Conexión a Supabase OK — base de datos accesible.")
+        except Exception as e:
+            st.warning(f"⚠️ Conectado al cliente, pero error al consultar la base: {e}")
+    else:
+        st.error(f"❌ No se pudo conectar a Supabase. Detalle: {st.session_state.get('_supabase_error', 'revisa los secrets')}")
+
     st.title("Bienvenido a ObraCubic")
     st.markdown("#### Grandes Estructuras se Levantan con Decisiones Precisas")
     st.write("")
