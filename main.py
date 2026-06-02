@@ -11,7 +11,8 @@ from datetime import datetime, timezone, timedelta
 # --- CONFIGURACIÓN VISUAL DE LA APP ---
 st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
-    page_icon="🏗️"
+    page_icon="🏗️",
+    initial_sidebar_state="expanded"
 )
 
 st.markdown("""
@@ -445,9 +446,7 @@ if "secciones_emp" not in st.session_state:
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%201.png"
 
 # Logo centrado arriba del menú "Ir a:"
-_lcol1, _lcol2, _lcol3 = st.sidebar.columns([1, 2, 1])
-with _lcol2:
-    st.image(URL_DEL_LOGO, use_container_width=True)
+st.sidebar.image(URL_DEL_LOGO, use_container_width=True)
 st.sidebar.write("")
 
 option = st.sidebar.radio("Ir a:", ["Crear Proyecto", "Cubicacion"],
