@@ -6,6 +6,7 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 import io
 import math
+import json
 from datetime import datetime, timezone, timedelta
 from supabase import create_client
 
@@ -37,6 +38,59 @@ def conectar_supabase():
         return None
 
 supabase = conectar_supabase()
+
+# ============================
+# GUARDADO DE PROYECTOS (Supabase)
+# ============================
+LIMITE_GRATIS = 5
+
+# Claves de sistema que NO se guardan como parte de la cubicación
+CLAVES_SISTEMA = {
+    "nav_option", "vista_cuenta", "usuario", "usuario_nombre", "usuario_plan",
+    "_goto", "_supabase_error", "ir_a_cubicacion",
+    "login_email", "login_pass", "reg_nombre", "reg_email", "reg_pass",
+    "reg_pass2", "reg_terminos", "nombre_nuevo_proyecto_guardar",
+}
+
+def _es_serializable(valor):
+    try:
+        json.dumps(valor)
+        return True
+    except Exception:
+        return False
+
+def capturar_cubicacion():
+    """Toma una foto de los datos de cubicación en session_state."""
+    datos = {}
+    for k, v in st.session_state.items():
+        if k in CLAVES_SISTEMA:
+            continue
+        if k.startswith("btn_") or k.startswith("FormSubmitter"):
+            continue
+        if _es_serializable(v):
+            datos[k] = v
+    return datos
+
+def listar_proyectos(usuario_id):
+    try:
+        res = supabase.table("proyectos").select("id, nombre, actualizado_en") \
+            .eq("usuario_id", usuario_id).order("actualizado_en", desc=True).execute()
+        return res.data or []
+    except Exception:
+        return []
+
+def guardar_proyecto(usuario_id, nombre, datos):
+    supabase.table("proyectos").insert({
+        "usuario_id": usuario_id, "nombre": nombre, "datos": datos,
+    }).execute()
+
+def cargar_proyecto(proyecto_id):
+    res = supabase.table("proyectos").select("datos").eq("id", proyecto_id).single().execute()
+    return res.data["datos"] if res.data else {}
+
+def eliminar_proyecto(proyecto_id):
+    supabase.table("proyectos").delete().eq("id", proyecto_id).execute()
+
 
 # ============================
 # DATOS DE DOSIFICACIÓN (CBB)
@@ -534,6 +588,85 @@ if st.session_state.get("vista_cuenta"):
             if st.button("← Volver a la app", type="primary", use_container_width=True):
                 st.session_state["vista_cuenta"] = False
                 st.rerun()
+
+        # ---------------------------------------
+        # MIS PROYECTOS
+        # ---------------------------------------
+        st.write("---")
+        st.subheader("📁 Mis proyectos")
+
+        proyectos = listar_proyectos(usuario["id"])
+        es_premium = (plan_u == "premium")
+        limite = None if es_premium else LIMITE_GRATIS
+        n_proy = len(proyectos)
+
+        if limite is None:
+            st.caption(f"{n_proy} proyectos guardados · Plan PREMIUM (sin límite)")
+        else:
+            st.caption(f"{n_proy} / {limite} proyectos guardados")
+
+        # Mensaje de carga exitosa
+        if st.session_state.pop("_proyecto_cargado", False):
+            st.success("Proyecto cargado. Ve a 'Cubicacion' para verlo y seguir editando.")
+
+        # --- Guardar la cubicación actual ---
+        with st.container(border=True):
+            st.markdown("**Guardar cubicación actual**")
+            nombre_guardar = st.text_input(
+                "Nombre del proyecto",
+                placeholder="Ej: Casa Don Pedro - Angol",
+                key="nombre_nuevo_proyecto_guardar",
+            )
+            puede_guardar = (limite is None) or (n_proy < limite)
+            if puede_guardar:
+                if st.button("💾 Guardar proyecto", type="primary", use_container_width=True):
+                    if not nombre_guardar.strip():
+                        st.warning("Ponle un nombre al proyecto.")
+                    else:
+                        try:
+                            datos = capturar_cubicacion()
+                            guardar_proyecto(usuario["id"], nombre_guardar.strip(), datos)
+                            st.success("¡Proyecto guardado!")
+                            st.rerun()
+                        except Exception:
+                            st.error("No se pudo guardar el proyecto. Intenta de nuevo.")
+            else:
+                st.warning(
+                    f"Llegaste al límite de {limite} proyectos del plan gratis. "
+                    "Elimina uno o pásate a Premium para guardar más."
+                )
+
+        # --- Lista de proyectos guardados ---
+        if proyectos:
+            st.write("")
+            for p in proyectos:
+                fecha = (p.get("actualizado_en") or "")[:10]
+                col_n, col_c, col_e = st.columns([3, 1, 1])
+                with col_n:
+                    st.markdown(f"**{p['nombre']}**")
+                    if fecha:
+                        st.caption(f"Actualizado: {fecha}")
+                with col_c:
+                    if st.button("Cargar", key=f"cargar_{p['id']}", use_container_width=True):
+                        try:
+                            datos = cargar_proyecto(p["id"])
+                            for k, v in datos.items():
+                                st.session_state[k] = v
+                            st.session_state["_proyecto_cargado"] = True
+                            st.session_state["_goto"] = "Cubicacion"
+                            st.session_state["vista_cuenta"] = False
+                            st.rerun()
+                        except Exception:
+                            st.error("No se pudo cargar el proyecto.")
+                with col_e:
+                    if st.button("Eliminar", key=f"elim_{p['id']}", use_container_width=True):
+                        try:
+                            eliminar_proyecto(p["id"])
+                            st.rerun()
+                        except Exception:
+                            st.error("No se pudo eliminar.")
+        else:
+            st.info("Todavía no tienes proyectos guardados.")
     else:
         # --- Sin sesión: login / registro ---
         st.subheader("Acceso a ObraCubic")
