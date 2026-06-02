@@ -473,7 +473,7 @@ with nav_col:
     )
 with cuenta_col:
     st.write("")
-    label_cuenta = "👤 Mi cuenta" if st.session_state.get("demo_logueado") else "👤 Iniciar sesión"
+    label_cuenta = "Mi cuenta" if st.session_state.get("demo_logueado") else "Iniciar sesión"
     if st.button(label_cuenta, type="primary", use_container_width=True, key="btn_cuenta"):
         st.session_state["vista_cuenta"] = True
         st.rerun()
