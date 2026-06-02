@@ -490,7 +490,7 @@ with nav_col:
     )
 with cuenta_col:
     st.write("")
-    label_cuenta = "👤 Mi cuenta" if st.session_state.get("demo_logueado") else "👤 Iniciar sesión"
+    label_cuenta = "👤 Mi cuenta" if st.session_state.get("usuario") else "👤 Iniciar sesión"
     if st.button(label_cuenta, type="primary", use_container_width=True, key="btn_cuenta"):
         st.session_state["vista_cuenta"] = True
         st.rerun()
@@ -501,53 +501,97 @@ if option == "Cubicacion":
 st.write("---")
 
 # ============================
-# VISTA CUENTA: INICIAR SESIÓN / REGISTRO  (MAQUETA - sin seguridad real)
+# VISTA CUENTA: INICIAR SESIÓN / REGISTRO  (REAL con Supabase)
 # ============================
 if st.session_state.get("vista_cuenta"):
-    if st.session_state.get("demo_logueado"):
+    if supabase is None:
+        st.error("No hay conexión con la base de datos. Intenta más tarde.")
+        if st.button("← Volver a la app", use_container_width=True):
+            st.session_state["vista_cuenta"] = False
+            st.rerun()
+        st.stop()
+
+    usuario = st.session_state.get("usuario")
+
+    if usuario:
+        # --- Usuario con sesión iniciada ---
         st.subheader("Mi cuenta")
-        st.success(f"Sesión iniciada como: {st.session_state.get('demo_usuario', 'usuario')} (demo)")
-        st.caption("Esto es una maqueta visual, sin sistema de cuentas real.")
+        nombre_u = st.session_state.get("usuario_nombre") or usuario.get("email", "usuario")
+        st.success(f"Sesión iniciada como: {nombre_u}")
+        plan_u = st.session_state.get("usuario_plan", "gratis")
+        st.caption(f"Plan actual: **{plan_u.upper()}**")
         cc1, cc2 = st.columns(2)
         with cc1:
             if st.button("Cerrar sesión", use_container_width=True):
-                st.session_state["demo_logueado"] = False
-                st.session_state["demo_usuario"] = ""
+                try:
+                    supabase.auth.sign_out()
+                except Exception:
+                    pass
+                for k in ["usuario", "usuario_nombre", "usuario_plan"]:
+                    st.session_state.pop(k, None)
                 st.rerun()
         with cc2:
             if st.button("← Volver a la app", type="primary", use_container_width=True):
                 st.session_state["vista_cuenta"] = False
                 st.rerun()
     else:
+        # --- Sin sesión: login / registro ---
         st.subheader("Acceso a ObraCubic")
-        st.caption("⚠️ Vista previa de diseño — todavía no es un sistema de cuentas real.")
 
         tab_login, tab_registro = st.tabs(["Iniciar sesión", "Crear cuenta"])
 
         with tab_login:
-            st.text_input("Correo electrónico", placeholder="tucorreo@ejemplo.com", key="login_email")
-            st.text_input("Contraseña", type="password", placeholder="••••••••", key="login_pass")
-            st.checkbox("Recordarme", key="login_recordar")
+            email_l = st.text_input("Correo electrónico", placeholder="tucorreo@ejemplo.com", key="login_email")
+            pass_l = st.text_input("Contraseña", type="password", placeholder="••••••••", key="login_pass")
             if st.button("Iniciar sesión", type="primary", use_container_width=True, key="btn_login"):
-                st.session_state["demo_logueado"] = True
-                st.session_state["demo_usuario"] = st.session_state.get("login_email") or "usuario demo"
-                st.session_state["vista_cuenta"] = False
-                st.session_state["_goto"] = "Inicio"
-                st.rerun()
-            st.caption("¿Olvidaste tu contraseña?")
+                if not email_l or not pass_l:
+                    st.warning("Ingresa tu correo y contraseña.")
+                else:
+                    try:
+                        res = supabase.auth.sign_in_with_password({"email": email_l, "password": pass_l})
+                        st.session_state["usuario"] = {"id": res.user.id, "email": res.user.email}
+                        # Cargar perfil (nombre y plan)
+                        try:
+                            perfil = supabase.table("perfiles").select("nombre, plan").eq("id", res.user.id).single().execute()
+                            st.session_state["usuario_nombre"] = perfil.data.get("nombre")
+                            st.session_state["usuario_plan"] = perfil.data.get("plan", "gratis")
+                        except Exception:
+                            st.session_state["usuario_plan"] = "gratis"
+                        st.session_state["vista_cuenta"] = False
+                        st.session_state["_goto"] = "Inicio"
+                        st.rerun()
+                    except Exception:
+                        st.error("Correo o contraseña incorrectos.")
 
         with tab_registro:
-            st.text_input("Nombre completo", placeholder="Juan Pérez", key="reg_nombre")
-            st.text_input("Correo electrónico", placeholder="tucorreo@ejemplo.com", key="reg_email")
-            st.text_input("Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="reg_pass")
-            st.text_input("Repetir contraseña", type="password", placeholder="Repite la contraseña", key="reg_pass2")
-            st.checkbox("Acepto los términos y condiciones", key="reg_terminos")
+            nombre_r = st.text_input("Nombre completo", placeholder="Juan Pérez", key="reg_nombre")
+            email_r = st.text_input("Correo electrónico", placeholder="tucorreo@ejemplo.com", key="reg_email")
+            pass_r = st.text_input("Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="reg_pass")
+            pass_r2 = st.text_input("Repetir contraseña", type="password", placeholder="Repite la contraseña", key="reg_pass2")
+            acepta = st.checkbox("Acepto los términos y condiciones", key="reg_terminos")
             if st.button("Crear cuenta", type="primary", use_container_width=True, key="btn_registro"):
-                st.session_state["demo_logueado"] = True
-                st.session_state["demo_usuario"] = st.session_state.get("reg_nombre") or "usuario demo"
-                st.session_state["vista_cuenta"] = False
-                st.session_state["_goto"] = "Inicio"
-                st.rerun()
+                if not nombre_r or not email_r or not pass_r:
+                    st.warning("Completa nombre, correo y contraseña.")
+                elif len(pass_r) < 6:
+                    st.warning("La contraseña debe tener al menos 6 caracteres.")
+                elif pass_r != pass_r2:
+                    st.warning("Las contraseñas no coinciden.")
+                elif not acepta:
+                    st.warning("Debes aceptar los términos y condiciones.")
+                else:
+                    try:
+                        supabase.auth.sign_up({
+                            "email": email_r,
+                            "password": pass_r,
+                            "options": {"data": {"nombre": nombre_r}},
+                        })
+                        st.success("¡Cuenta creada! Revisa tu correo para confirmar la cuenta y luego inicia sesión.")
+                    except Exception as e:
+                        msg = str(e)
+                        if "already" in msg.lower() or "registered" in msg.lower():
+                            st.error("Ya existe una cuenta con ese correo.")
+                        else:
+                            st.error("No se pudo crear la cuenta. Verifica los datos e intenta de nuevo.")
 
         st.write("")
         if st.button("← Volver a la app", use_container_width=True, key="btn_volver_login"):
@@ -560,16 +604,6 @@ if st.session_state.get("vista_cuenta"):
 # INICIO (pantalla de bienvenida)
 # ============================
 if option == "Inicio":
-    # --- PRUEBA TEMPORAL DE CONEXIÓN A SUPABASE (se quita después) ---
-    if supabase is not None:
-        try:
-            supabase.table("proyectos").select("id").limit(1).execute()
-            st.success("✅ Conexión a Supabase OK — base de datos accesible.")
-        except Exception as e:
-            st.warning(f"⚠️ Conectado al cliente, pero error al consultar la base: {e}")
-    else:
-        st.error(f"❌ No se pudo conectar a Supabase. Detalle: {st.session_state.get('_supabase_error', 'revisa los secrets')}")
-
     st.title("Bienvenido a ObraCubic")
     st.markdown("#### Grandes Estructuras se Levantan con Decisiones Precisas")
     st.write("")
