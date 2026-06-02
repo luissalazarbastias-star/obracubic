@@ -3899,9 +3899,17 @@ if option == "Cubicacion":
                 "2x4 Pino 3,20m":  {"largo": 3.20},
             }
             COSTANERA_METALICA = {
+                "Perfil Omega 92x50x2,0mm - 6,00m": {"largo": 6.00},
+                "Perfil Omega 70x40x1,5mm - 6,00m": {"largo": 6.00},
                 "Costanera 80x40x15x2,0mm - 6,00m": {"largo": 6.00},
                 "Costanera 100x50x15x2,0mm - 6,00m": {"largo": 6.00},
                 "Perfil C 100x50x2,0mm - 6,00m": {"largo": 6.00},
+            }
+            PERFIL_CERCHA_MET = {
+                "Perfil Omega 92x50x2,0mm - 6,00m": {"largo": 6.00},
+                "Perfil Omega 70x40x1,5mm - 6,00m": {"largo": 6.00},
+                "Perfil C 100x50x2,0mm - 6,00m": {"largo": 6.00},
+                "Perfil C 150x50x2,0mm - 6,00m": {"largo": 6.00},
             }
             PLANCHAS_CUBIERTA = {
                 "Zinc acanalado 5V (ancho útil 0,80m)": {"tipo": "plancha", "ancho_util": 0.80,
@@ -3939,25 +3947,41 @@ if option == "Cubicacion":
                     st.markdown("### 📐 Cerchas")
                     calc_cerchas = st.checkbox("Calcular cerchas", key="cub_calc_cerchas")
 
+                    # Escuadrías con sección real (m) para volumen
+                    ESCUADRIA_CERCHA = {
+                        "2x4 Pino 3,20m": {"largo": 3.20, "esp": 0.0508, "ancho": 0.1016},
+                        "2x5 Pino 3,20m": {"largo": 3.20, "esp": 0.0508, "ancho": 0.1270},
+                        "2x6 Pino 3,20m": {"largo": 3.20, "esp": 0.0508, "ancho": 0.1524},
+                    }
+
                     cerchas_n = 0
                     ml_total_cerchas = 0.0
                     piezas_cercha = 0
+                    vol_cerchas = 0.0
                     h_cumbrera = 0.0
                     grados_pend = 0.0
                     par_largo = pend_largo = diag_largo = luz_cercha = 0.0
 
                     if calc_cerchas:
-                        ce1, ce2, ce3 = st.columns(3)
+                        ce1, ce2 = st.columns(2)
                         with ce1:
                             luz_cercha = st.number_input("Luz / ancho a cubrir (m)", value=0.0, key="cub_luz")
                         with ce2:
                             pend_pct = st.number_input("Pendiente (%)", value=30.0, key="cub_pend_pct")
-                        with ce3:
-                            cerchas_n = st.number_input("Cantidad de cerchas", value=0, step=1, key="cub_cerchas_n")
 
-                        esc_cercha = st.selectbox("Escuadría de la madera", ["2x4 Pino 3,20m", "2x5 Pino 3,20m", "2x6 Pino 3,20m"], key="cub_esc_cercha")
-                        largo_esc_cercha = 3.20
-                        desp_cercha = st.slider("% Desperdicio cerchas", 0, 20, 10, key="cub_desp_cercha")
+                        ce3, ce4 = st.columns(2)
+                        with ce3:
+                            largo_techo_cer = st.number_input("Largo del techo (m)", value=0.0, key="cub_largo_techo")
+                        with ce4:
+                            sep_cerchas = st.number_input("Separación entre cerchas (m)", value=1.00, key="cub_sep_cerchas")
+
+                        # Cantidad de cerchas = (largo / separación) + 1
+                        cerchas_n = (math.floor(largo_techo_cer / sep_cerchas) + 1) if sep_cerchas > 0 and largo_techo_cer > 0 else 0
+
+                        esc_cercha = st.selectbox("Escuadría de la madera", list(ESCUADRIA_CERCHA.keys()), key="cub_esc_cercha")
+                        esc_d = ESCUADRIA_CERCHA[esc_cercha]
+                        largo_esc_cercha = esc_d["largo"]
+                        desp_cercha = st.slider("% Desperdicio cerchas", 0, 15, 10, key="cub_desp_cercha")
 
                         # Geometría (cercha tipo pendolón con tornapuntas)
                         h_cumbrera = (luz_cercha / 2) * (pend_pct / 100)        # altura de cumbrera
@@ -3971,8 +3995,11 @@ if option == "Cubicacion":
                         ml_total_cerchas = ml_una_cercha * cerchas_n
                         ml_total_cerchas_desp = ml_total_cerchas * (1 + desp_cercha / 100)
                         piezas_cercha = math.ceil(ml_total_cerchas_desp / largo_esc_cercha) if largo_esc_cercha > 0 else 0
+                        # Volumen en m³ (sección × ml total con desperdicio)
+                        vol_cerchas = ml_total_cerchas_desp * esc_d["esp"] * esc_d["ancho"]
 
                         if luz_cercha > 0 and cerchas_n > 0:
+                            st.info(f"Cantidad de cerchas: {cerchas_n}  (largo {largo_techo_cer}m ÷ {sep_cerchas}m + 1)")
                             st.info(f"Altura de cumbrera: {h_cumbrera:.2f} m  |  Pendiente: {grados_pend:.1f}°")
                             st.markdown("**Longitudes por cercha:**")
                             st.text(f"Cordón inferior: {cordon_inf:.2f} m (×1)")
@@ -3981,6 +4008,7 @@ if option == "Cubicacion":
                             st.text(f"Diagonales / tornapuntas: {diag_largo:.2f} m (×2)")
                             st.text(f"Metros lineales por cercha: {ml_una_cercha:.2f} ml")
                             st.success(f"Madera total cerchas: {ml_total_cerchas:.2f} ml → {piezas_cercha} piezas de {largo_esc_cercha}m ({esc_cercha.split()[0]})")
+                            st.success(f"Volumen de madera: {vol_cerchas:.3f} m³")
                             st.caption("Modelo: cercha tipo pendolón con tornapuntas. Verifique con cálculo estructural.")
 
                     st.write("---")
@@ -3999,18 +4027,23 @@ if option == "Cubicacion":
                             items_cm.append(("Pendolón", f"{pend_largo:.2f} m (×1 por cercha)"))
                             items_cm.append(("Diagonales", f"{diag_largo:.2f} m (×2 por cercha)"))
                             items_cm.append(("Madera cerchas (c/desp.)", f"{piezas_cercha} de {largo_esc_cercha}m"))
+                            items_cm.append(("Volumen madera", f"{vol_cerchas:.3f} m³"))
                         items_cm.append(("Clavos", f"{clavos_cm} unidades"))
                         registrar_pdf("Cubierta / Techumbre", "Estructura de Madera", items_cm)
 
+
     # --- 2. Estructura Metálica ---
             if ver(cubierta, "estructura_metalica"):
-                with st.expander("2. Estructura Metálica (costaneras)", expanded=False):
-                    st.caption("Costaneras metálicas o perfiles C sobre estructura")
+                with st.expander("2. Estructura Metálica (costaneras + cerchas)", expanded=False):
+                    st.caption("Costaneras (Omega / C) y cálculo de cerchas metálicas")
+
+                    # --- Costaneras ---
+                    st.markdown("### 🔩 Costaneras")
                     area_met = area_cubierta("cub_est_met")
                     met_tipo = st.selectbox("Tipo de costanera/perfil", list(COSTANERA_METALICA.keys()), key="cub_met_tipo")
                     sep_met = st.selectbox("Separación entre costaneras (m)", ["0,60", "0,80", "1,00", "1,20"], key="cub_met_sep")
                     sep_met_val = float(sep_met.replace(",", "."))
-                    desp_met = st.slider("% Desperdicio", 0, 20, 10, key="cub_met_desp")
+                    desp_met = st.slider("% Desperdicio costaneras", 0, 20, 10, key="cub_met_desp")
 
                     largo_pieza_met = COSTANERA_METALICA[met_tipo]["largo"]
                     ml_met = (area_met / sep_met_val) if sep_met_val > 0 else 0
@@ -4018,18 +4051,82 @@ if option == "Cubicacion":
                     piezas_met = math.ceil(ml_met_desp / largo_pieza_met) if largo_pieza_met > 0 else 0
                     tornillos_met = math.ceil(piezas_met * 8)
 
-                    st.write("---")
                     st.info(f"Metros lineales: {ml_met:.2f} ml")
                     st.success(f"Costaneras (c/desp.): {piezas_met} piezas de {largo_pieza_met}m")
                     st.info(f"Tornillos autoperforantes: {tornillos_met} unidades")
 
-                    if area_met > 0:
-                        registrar_pdf("Cubierta / Techumbre", "Estructura Metálica", [
-                            ("Perfil", met_tipo),
+                    # --- Cerchas metálicas ---
+                    st.write("---")
+                    st.markdown("### 📐 Cerchas metálicas")
+                    calc_cer_met = st.checkbox("Calcular cerchas metálicas", key="cub_calc_cer_met")
+
+                    cer_met_n = 0
+                    ml_total_cer_met = 0.0
+                    piezas_cer_met = 0
+                    h_cum_met = 0.0
+                    grados_met = 0.0
+                    par_met = pend_met = diag_met = luz_met = 0.0
+
+                    if calc_cer_met:
+                        cm1, cm2 = st.columns(2)
+                        with cm1:
+                            luz_met = st.number_input("Luz / ancho a cubrir (m)", value=0.0, key="cub_luz_met")
+                        with cm2:
+                            pend_pct_met = st.number_input("Pendiente (%)", value=30.0, key="cub_pend_met")
+
+                        cm3, cm4 = st.columns(2)
+                        with cm3:
+                            largo_techo_met = st.number_input("Largo del techo (m)", value=0.0, key="cub_largo_techo_met")
+                        with cm4:
+                            sep_cer_met = st.number_input("Separación entre cerchas (m)", value=1.20, key="cub_sep_cer_met")
+
+                        cer_met_n = (math.floor(largo_techo_met / sep_cer_met) + 1) if sep_cer_met > 0 and largo_techo_met > 0 else 0
+
+                        perfil_cer = st.selectbox("Perfil de la cercha", list(PERFIL_CERCHA_MET.keys()), key="cub_perfil_cer")
+                        largo_perfil_cer = PERFIL_CERCHA_MET[perfil_cer]["largo"]
+                        desp_cer_met = st.slider("% Desperdicio cerchas", 0, 15, 10, key="cub_desp_cer_met")
+
+                        # Geometría (igual que madera: pendolón con tornapuntas)
+                        h_cum_met = (luz_met / 2) * (pend_pct_met / 100)
+                        grados_met = math.degrees(math.atan(pend_pct_met / 100))
+                        cordon_inf_met = luz_met
+                        par_met = math.sqrt((luz_met / 2) ** 2 + h_cum_met ** 2)
+                        pend_met = h_cum_met
+                        diag_met = math.sqrt((luz_met / 4) ** 2 + (h_cum_met / 2) ** 2)
+
+                        ml_una_cer_met = cordon_inf_met + (2 * par_met) + pend_met + (2 * diag_met)
+                        ml_total_cer_met = ml_una_cer_met * cer_met_n
+                        ml_total_cer_met_desp = ml_total_cer_met * (1 + desp_cer_met / 100)
+                        piezas_cer_met = math.ceil(ml_total_cer_met_desp / largo_perfil_cer) if largo_perfil_cer > 0 else 0
+
+                        if luz_met > 0 and cer_met_n > 0:
+                            st.info(f"Cantidad de cerchas: {cer_met_n}  (largo {largo_techo_met}m ÷ {sep_cer_met}m + 1)")
+                            st.info(f"Altura de cumbrera: {h_cum_met:.2f} m  |  Pendiente: {grados_met:.1f}°")
+                            st.markdown("**Longitudes por cercha:**")
+                            st.text(f"Cordón inferior: {cordon_inf_met:.2f} m (×1)")
+                            st.text(f"Pares inclinados: {par_met:.2f} m (×2)")
+                            st.text(f"Pendolón / pie derecho: {pend_met:.2f} m (×1)")
+                            st.text(f"Diagonales: {diag_met:.2f} m (×2)")
+                            st.text(f"Metros lineales por cercha: {ml_una_cer_met:.2f} ml")
+                            st.success(f"Perfil total cerchas: {ml_total_cer_met:.2f} ml → {piezas_cer_met} barras de {largo_perfil_cer}m")
+                            st.caption("Modelo: cercha tipo pendolón con tornapuntas. Verifique con cálculo estructural.")
+
+                    if area_met > 0 or (calc_cer_met and ml_total_cer_met > 0):
+                        items_met = [
+                            ("Costanera/perfil", met_tipo),
                             ("Área cubierta", f"{area_met:.2f} m²"),
                             ("Costaneras (c/desp.)", f"{piezas_met} de {largo_pieza_met}m"),
                             ("Tornillos", f"{tornillos_met} unidades"),
-                        ])
+                        ]
+                        if calc_cer_met and ml_total_cer_met > 0:
+                            items_met.append(("Cerchas", f"{cer_met_n} unidades"))
+                            items_met.append(("Perfil cercha", perfil_cer))
+                            items_met.append(("Altura cumbrera", f"{h_cum_met:.2f} m ({grados_met:.1f}°)"))
+                            items_met.append(("Par inclinado", f"{par_met:.2f} m (×2 por cercha)"))
+                            items_met.append(("Pendolón", f"{pend_met:.2f} m (×1 por cercha)"))
+                            items_met.append(("Diagonales", f"{diag_met:.2f} m (×2 por cercha)"))
+                            items_met.append(("Perfil cerchas (c/desp.)", f"{piezas_cer_met} barras de {largo_perfil_cer}m"))
+                        registrar_pdf("Cubierta / Techumbre", "Estructura Metálica", items_met)
 
     # --- 3. Cubierta (planchas) ---
             if ver(cubierta, "planchas"):
