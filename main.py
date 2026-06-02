@@ -458,28 +458,49 @@ if "nav_option" not in st.session_state:
 if st.session_state.get("_goto"):
     st.session_state["nav_option"] = st.session_state.pop("_goto")
 
-option = st.radio(
-    "Ir a:",
-    ["Inicio", "Crear Proyecto", "Cubicacion", "Iniciar sesión"],
-    horizontal=True,
-    key="nav_option",
-)
+def _salir_cuenta():
+    # Al tocar el menú, salir de la vista de cuenta
+    st.session_state["vista_cuenta"] = False
+
+nav_col, cuenta_col = st.columns([3, 1])
+with nav_col:
+    option = st.radio(
+        "Ir a:",
+        ["Inicio", "Crear Proyecto", "Cubicacion"],
+        horizontal=True,
+        key="nav_option",
+        on_change=_salir_cuenta,
+    )
+with cuenta_col:
+    st.write("")
+    label_cuenta = "👤 Mi cuenta" if st.session_state.get("demo_logueado") else "👤 Iniciar sesión"
+    if st.button(label_cuenta, type="primary", use_container_width=True, key="btn_cuenta"):
+        st.session_state["vista_cuenta"] = True
+        st.rerun()
+
 if option == "Cubicacion":
     st.session_state["ir_a_cubicacion"] = False
 
 st.write("---")
 
 # ============================
-# INICIAR SESIÓN / REGISTRO  (MAQUETA - sin seguridad real)
+# VISTA CUENTA: INICIAR SESIÓN / REGISTRO  (MAQUETA - sin seguridad real)
 # ============================
-if option == "Iniciar sesión":
+if st.session_state.get("vista_cuenta"):
     if st.session_state.get("demo_logueado"):
+        st.subheader("Mi cuenta")
         st.success(f"Sesión iniciada como: {st.session_state.get('demo_usuario', 'usuario')} (demo)")
         st.caption("Esto es una maqueta visual, sin sistema de cuentas real.")
-        if st.button("Cerrar sesión", use_container_width=True):
-            st.session_state["demo_logueado"] = False
-            st.session_state["demo_usuario"] = ""
-            st.rerun()
+        cc1, cc2 = st.columns(2)
+        with cc1:
+            if st.button("Cerrar sesión", use_container_width=True):
+                st.session_state["demo_logueado"] = False
+                st.session_state["demo_usuario"] = ""
+                st.rerun()
+        with cc2:
+            if st.button("← Volver a la app", type="primary", use_container_width=True):
+                st.session_state["vista_cuenta"] = False
+                st.rerun()
     else:
         st.subheader("Acceso a ObraCubic")
         st.caption("⚠️ Vista previa de diseño — todavía no es un sistema de cuentas real.")
@@ -493,6 +514,7 @@ if option == "Iniciar sesión":
             if st.button("Iniciar sesión", type="primary", use_container_width=True, key="btn_login"):
                 st.session_state["demo_logueado"] = True
                 st.session_state["demo_usuario"] = st.session_state.get("login_email") or "usuario demo"
+                st.session_state["vista_cuenta"] = False
                 st.session_state["_goto"] = "Inicio"
                 st.rerun()
             st.caption("¿Olvidaste tu contraseña?")
@@ -506,8 +528,16 @@ if option == "Iniciar sesión":
             if st.button("Crear cuenta", type="primary", use_container_width=True, key="btn_registro"):
                 st.session_state["demo_logueado"] = True
                 st.session_state["demo_usuario"] = st.session_state.get("reg_nombre") or "usuario demo"
+                st.session_state["vista_cuenta"] = False
                 st.session_state["_goto"] = "Inicio"
                 st.rerun()
+
+        st.write("")
+        if st.button("← Volver a la app", use_container_width=True, key="btn_volver_login"):
+            st.session_state["vista_cuenta"] = False
+            st.rerun()
+
+    st.stop()  # No mostrar el resto de la app mientras se ve la cuenta
 
 # ============================
 # INICIO (pantalla de bienvenida)
