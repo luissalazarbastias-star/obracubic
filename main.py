@@ -5,6 +5,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 import io
+import math
 from datetime import datetime, timezone, timedelta
 
 # --- CONFIGURACIÓN VISUAL DE LA APP ---
@@ -3216,9 +3217,15 @@ if option == "Cubicacion":
 
                         area_pf_desp = area_neta_pf * (1 + desp_pf / 100)
 
+                        # Cajas según comercio (rendimiento típico 2,2 m² por caja)
+                        M2_POR_CAJA_PF = 2.2
+                        cajas_pf = math.ceil(area_pf_desp / M2_POR_CAJA_PF) if area_pf_desp > 0 else 0
+
                         st.write("---")
                         st.info(f"Área neta: {area_neta_pf:.2f} m²")
                         st.success(f"Piso flotante con {desp_pf}% desperdicio: {area_pf_desp:.2f} m²")
+                        st.success(f"Cajas a comprar: {cajas_pf} cajas")
+                        st.caption(f"Rendimiento estimado: {M2_POR_CAJA_PF} m² por caja (verifica según marca)")
 
                         st.write("---")
                         st.subheader("🧸 Espuma Niveladora (Manta Polietileno)")
@@ -3236,6 +3243,7 @@ if option == "Cubicacion":
                                 ("Tipo", pf_tipo),
                                 ("Área neta", f"{area_neta_pf:.2f} m²"),
                                 ("Piso flotante (c/desp.)", f"{area_pf_desp:.2f} m²"),
+                                ("Cajas a comprar", f"{cajas_pf} cajas (≈{M2_POR_CAJA_PF} m²/caja)"),
                                 ("Espuma niveladora", f"{area_neta_pf:.2f} m²"),
                             ]
                             if sobre_losa:
