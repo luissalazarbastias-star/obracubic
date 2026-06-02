@@ -84,6 +84,14 @@ def mostrar_materiales(materiales):
     m3.metric("Arena",     f"{materiales['arena_kg']} kg")
     m4.metric("Agua",      f"{materiales['agua_lt']} lt")
 
+def registrar_pdf(rubro, partida, items):
+    """Registra el resultado final de una partida para el PDF.
+    items: lista de tuplas (etiqueta, valor)."""
+    st.session_state.setdefault("pdf_extra", [])
+    st.session_state["pdf_extra"].append(
+        {"rubro": rubro, "partida": partida, "items": items}
+    )
+
 PESO_BARRAS = {
     "Ø8mm":  0.395,
     "Ø10mm": 0.617,
@@ -133,6 +141,7 @@ def generar_pdf_cubicacion(
     canal_tipo=None, cant_piezas_canal=0, ml_canal=0, largo_canal=0,
     montante_tipo=None, total_montantes=0, largo_montante=0,
     esq_tipo=None, cant_esquinas=0, largo_esq=0,
+    pdf_extra=None,
 ):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -331,6 +340,43 @@ def generar_pdf_cubicacion(
         ]))
         story.append(tabla_metalcon)
         story.append(Spacer(1, 12))
+
+    # Secciones adicionales (acero, moldajes, muros, revestimientos, pisos, terminaciones)
+    if pdf_extra:
+        # Agrupar partidas por rubro respetando el orden de aparición
+        orden_rubros = []
+        agrupado = {}
+        for reg in pdf_extra:
+            r = reg["rubro"]
+            if r not in agrupado:
+                agrupado[r] = []
+                orden_rubros.append(r)
+            agrupado[r].append(reg)
+
+        for rubro in orden_rubros:
+            story.append(HRFlowable(width="100%", thickness=1, color=NARANJA, spaceAfter=6))
+            story.append(Paragraph(rubro.upper(), estilo_seccion))
+            for reg in agrupado[rubro]:
+                story.append(Paragraph(f"<b>{reg['partida']}</b>", estilo_normal))
+                filas = [["Concepto", "Cantidad"]]
+                for etiqueta, valor in reg["items"]:
+                    filas.append([str(etiqueta), str(valor)])
+                tabla_extra = Table(filas, colWidths=[8.5*cm, 8.5*cm])
+                tabla_extra.setStyle(TableStyle([
+                    ("BACKGROUND",  (0, 0), (-1, 0), NARANJA),
+                    ("TEXTCOLOR",   (0, 0), (-1, 0), BLANCO),
+                    ("FONTNAME",    (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE",    (0, 0), (-1, -1), 9),
+                    ("ALIGN",       (1, 0), (1, -1), "CENTER"),
+                    ("VALIGN",      (0, 0), (-1, -1), "MIDDLE"),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [GRIS_CLARO, BLANCO]),
+                    ("GRID",        (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                    ("TOPPADDING",  (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING",(0, 0), (-1, -1), 4),
+                ]))
+                story.append(tabla_extra)
+                story.append(Spacer(1, 8))
+            story.append(Spacer(1, 6))
 
     # Pie de página
     story.append(Spacer(1, 20))
@@ -680,7 +726,10 @@ if option == "Cubicacion":
         return not proy_creado or (rubro_dict and any(rubro_dict.values()))
     
     st.subheader("CUBICACIONES")
-    
+
+    # Reiniciar el acumulador de resultados para el PDF en cada recarga
+    st.session_state["pdf_extra"] = []
+
     if ver_rubro(horm):
             with st.expander("Hormigón y Movimiento de tierra", expanded=False):
                 if ver(horm, "excavacion"):
@@ -1222,6 +1271,11 @@ if option == "Cubicacion":
                         st.info(f"Área losa: {area_losa:.2f} m²")
                         st.text(f"Acero estimado: {kg_acero_losa:.1f} kg")
                         st.text(f"Cantidad de barras {diametro_losa}: {cant_barras_losa:.0f} barras de {largo_barra_losa}")
+                        if kg_acero_losa > 0:
+                            registrar_pdf("Acero estructural", "Losa", [
+                                ("Acero total", f"{kg_acero_losa:.1f} kg"),
+                                ("Barras", f"{cant_barras_losa:.0f} de {diametro_losa} ({largo_barra_losa})"),
+                            ])
                     elif modo_losa == "📐 Modo Detallado":
                         st.caption("Cálculo por barras en ambas direcciones")
                         ld1, ld2 = st.columns(2)
@@ -1260,6 +1314,12 @@ if option == "Cubicacion":
                         st.text(f"Dirección Y: {barras_y:.0f} barras {diam_y} de {largo_barra_y}")
                         st.text(f"Kg dirección X: {kg_x:.1f} kg")
                         st.text(f"Kg dirección Y: {kg_y:.1f} kg")
+                        if kg_total_losa > 0:
+                            registrar_pdf("Acero estructural", "Losa", [
+                                ("Acero total", f"{kg_total_losa:.1f} kg"),
+                                ("Dirección X", f"{barras_x:.0f} barras {diam_x} de {largo_barra_x}"),
+                                ("Dirección Y", f"{barras_y:.0f} barras {diam_y} de {largo_barra_y}"),
+                            ])
 
             if ver(acero, "pilar"):
                 with st.expander("2. Pilar", expanded=False):
@@ -1303,6 +1363,12 @@ if option == "Cubicacion":
                         st.text(f"Estribos: {n_estribos:.0f} estribos {diam_estribo} c/{sep_estribo}m")
                         st.text(f"Kg longitudinal: {kg_long:.1f} kg")
                         st.text(f"Kg estribos: {kg_estribos:.1f} kg")
+                        if kg_total_pilar > 0:
+                            registrar_pdf("Acero estructural", "Pilar", [
+                                ("Acero total", f"{kg_total_pilar:.1f} kg"),
+                                ("Barras long.", f"{barras_long * cant_pilares} {diam_long} x {alto_pilar_a}m"),
+                                ("Estribos", f"{n_estribos:.0f} {diam_estribo} c/{sep_estribo}m"),
+                            ])
                     elif modo_pilar == "📐 Modo Detallado":
                         st.caption("Cálculo exacto por barra")
                         pd1, pd2 = st.columns(2)
@@ -1336,6 +1402,12 @@ if option == "Cubicacion":
                         st.info(f"Acero total pilares: {kg_total_d:.1f} kg")
                         st.text(f"Barras long.: {cant_bl * cant_pil_d} barras {diam_bl} x {alto_pil_d}m → {kg_bl:.1f} kg")
                         st.text(f"Estribos: {n_estribos_d:.0f} estribos {diam_be} c/{sep_be}m → {kg_be:.1f} kg")
+                        if kg_total_d > 0:
+                            registrar_pdf("Acero estructural", "Pilar", [
+                                ("Acero total", f"{kg_total_d:.1f} kg"),
+                                ("Barras long.", f"{cant_bl * cant_pil_d} {diam_bl} x {alto_pil_d}m"),
+                                ("Estribos", f"{n_estribos_d:.0f} {diam_be} c/{sep_be}m"),
+                            ])
 
             if ver(acero, "viga"):
                     with st.expander("3. Viga", expanded=False):
@@ -1365,6 +1437,11 @@ if option == "Cubicacion":
                             st.info(f"Acero estimado: {kg_acero_viga:.1f} kg")
                             st.text(f"Cantidad de barras {diam_viga_s}: {cant_barras_viga:.0f} barras de {largo_barra_viga_s}")
                             st.caption(f"Volumen vigas: {vol_viga:.2f} m³ | Ratio: 120 kg/m³")
+                            if kg_acero_viga > 0:
+                                registrar_pdf("Acero estructural", "Viga", [
+                                    ("Acero total", f"{kg_acero_viga:.1f} kg"),
+                                    ("Barras", f"{cant_barras_viga:.0f} de {diam_viga_s} ({largo_barra_viga_s})"),
+                                ])
                         elif modo_viga == "📐 Modo Detallado":
                             st.caption("Cálculo por barras superiores, inferiores y estribos")
                             vd1, vd2, vd3 = st.columns(3)
@@ -1406,6 +1483,13 @@ if option == "Cubicacion":
                             st.text(f"Barras sup.: {cant_sup * cant_vigas_d} barras {diam_sup} → {kg_sup:.1f} kg")
                             st.text(f"Barras inf.: {cant_inf * cant_vigas_d} barras {diam_inf} → {kg_inf:.1f} kg")
                             st.text(f"Estribos: {n_estribos_v:.0f} estribos {diam_estribo_v} c/{sep_estribo_v}m → {kg_estribo_v:.1f} kg")
+                            if kg_total_viga > 0:
+                                registrar_pdf("Acero estructural", "Viga", [
+                                    ("Acero total", f"{kg_total_viga:.1f} kg"),
+                                    ("Barras sup.", f"{cant_sup * cant_vigas_d} {diam_sup}"),
+                                    ("Barras inf.", f"{cant_inf * cant_vigas_d} {diam_inf}"),
+                                    ("Estribos", f"{n_estribos_v:.0f} {diam_estribo_v} c/{sep_estribo_v}m"),
+                                ])
 
             if ver(acero, "radier"):
                     with st.expander("4. Radier", expanded=False):
@@ -1432,6 +1516,11 @@ if option == "Cubicacion":
                             st.info(f"Acero estimado: {kg_acero_rad:.1f} kg")
                             st.text(f"Cantidad de barras {diam_rad_s}: {cant_barras_rad:.0f} barras de {largo_barra_rad}")
                             st.caption(f"Área radier: {area_rad:.2f} m² | Ratio: 5 kg/m²")
+                            if kg_acero_rad > 0:
+                                registrar_pdf("Acero estructural", "Radier", [
+                                    ("Acero total", f"{kg_acero_rad:.1f} kg"),
+                                    ("Barras", f"{cant_barras_rad:.0f} de {diam_rad_s} ({largo_barra_rad})"),
+                                ])
                         elif modo_radier == "📐 Modo Detallado":
                             st.caption("Cálculo por barras en ambas direcciones")
                             rd1, rd2 = st.columns(2)
@@ -1470,6 +1559,12 @@ if option == "Cubicacion":
                             st.info(f"Acero total radier: {kg_total_rad:.1f} kg")
                             st.text(f"Dirección X: {barras_rx:.0f} barras {diam_rx} de {largo_barra_rx} → {kg_rx:.1f} kg")
                             st.text(f"Dirección Y: {barras_ry:.0f} barras {diam_ry} de {largo_barra_ry} → {kg_ry:.1f} kg")
+                            if kg_total_rad > 0:
+                                registrar_pdf("Acero estructural", "Radier", [
+                                    ("Acero total", f"{kg_total_rad:.1f} kg"),
+                                    ("Dirección X", f"{barras_rx:.0f} barras {diam_rx} de {largo_barra_rx}"),
+                                    ("Dirección Y", f"{barras_ry:.0f} barras {diam_ry} de {largo_barra_ry}"),
+                                ])
 
             if ver(acero, "cimiento"):
                     with st.expander("5. Cimiento", expanded=False):
@@ -1508,6 +1603,11 @@ if option == "Cubicacion":
                             st.info(f"Acero estimado: {kg_acero_cim:.1f} kg")
                             st.text(f"Cantidad de barras {diam_cim_s}: {cant_barras_cim:.0f} barras de {largo_barra_cim}")
                             st.caption(f"Volumen cimiento: {vol_cim:.2f} m³ | Ratio: 80 kg/m³")
+                            if kg_acero_cim > 0:
+                                registrar_pdf("Acero estructural", "Cimiento", [
+                                    ("Acero total", f"{kg_acero_cim:.1f} kg"),
+                                    ("Barras", f"{cant_barras_cim:.0f} de {diam_cim_s} ({largo_barra_cim})"),
+                                ])
 
                         elif modo_cimiento == "📐 Modo Detallado":
                             st.caption("Cálculo por barras longitudinales y estribos")
@@ -1550,6 +1650,12 @@ if option == "Cubicacion":
                             st.info(f"Acero total cimientos: {kg_total_cim:.1f} kg")
                             st.text(f"Barras long.: {cant_bl_cim * cant_cim_d} barras {diam_bl_cim} → {kg_bl_cim:.1f} kg")
                             st.text(f"Estribos: {n_estribos_cim:.0f} estribos {diam_estribo_cim} c/{sep_estribo_cim}m → {kg_estribo_cim:.1f} kg") 
+                            if kg_total_cim > 0:
+                                registrar_pdf("Acero estructural", "Cimiento", [
+                                    ("Acero total", f"{kg_total_cim:.1f} kg"),
+                                    ("Barras long.", f"{cant_bl_cim * cant_cim_d} {diam_bl_cim}"),
+                                    ("Estribos", f"{n_estribos_cim:.0f} {diam_estribo_cim} c/{sep_estribo_cim}m"),
+                                ])
                 
 
     # --- Acero No estructural ---
@@ -1745,6 +1851,18 @@ if option == "Cubicacion":
                 "Moldaje Metálico": {"solo_m2": True},
             }
 
+            def resultado_moldaje(partida, material, m2):
+                """Devuelve el item de material principal para el PDF según el tipo."""
+                mat_d = MATERIALES_MOLDAJE[material]
+                if "solo_m2" in mat_d:
+                    return ("Moldaje metálico", f"{m2:.2f} m²")
+                elif "area_plancha" in mat_d:
+                    planchas = (m2 / mat_d["area_plancha"]) * 1.10
+                    return ("Planchas terciado (10% desp.)", f"{planchas:.0f} unidades")
+                else:
+                    tablas = (m2 / mat_d["ancho"] / mat_d["largo"]) * 1.10
+                    return (f"Tablas {mat_d['largo']}m (10% desp.)", f"{tablas:.0f} unidades")
+
 # --- 1. Cimiento ---
             if ver(mold, "cimiento"):
                     with st.expander("1. Moldaje de Cimiento", expanded=False):
@@ -1791,6 +1909,12 @@ if option == "Cubicacion":
                             st.caption("Considera un 10% de desperdicio por cortes")
                             cant_tablas_real = cant_tablas * 1.10
                             st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")   
+                        if m2_cimiento > 0:
+                            registrar_pdf("Moldajes", "Cimiento", [
+                                ("Material", material_cim),
+                                ("Superficie", f"{m2_cimiento:.2f} m²"),
+                                resultado_moldaje("Cimiento", material_cim, m2_cimiento),
+                            ])
 
 # --- 2. Moldaje de Muro ---
             if ver(mold, "muro"):
@@ -1833,6 +1957,12 @@ if option == "Cubicacion":
                             st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
                             st.text(f"Cantidad de tablas de {mat_m['largo']}m: {cant_tablas:.0f} unidades")
                             st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")
+                        if m2_muro > 0:
+                            registrar_pdf("Moldajes", "Muro", [
+                                ("Material", material_muro),
+                                ("Superficie", f"{m2_muro:.2f} m²"),
+                                resultado_moldaje("Muro", material_muro, m2_muro),
+                            ])
 
 # --- 3. Moldaje de Losa ---
             if ver(mold, "losa"):
@@ -1873,6 +2003,12 @@ if option == "Cubicacion":
                             st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
                             st.text(f"Cantidad de tablas de {mat_l['largo']}m: {cant_tablas:.0f} unidades")
                             st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")
+                        if m2_losa > 0:
+                            registrar_pdf("Moldajes", "Losa", [
+                                ("Material", material_losa),
+                                ("Superficie", f"{m2_losa:.2f} m²"),
+                                resultado_moldaje("Losa", material_losa, m2_losa),
+                            ])
 
 # --- 4. Moldaje de Viga ---
             if ver(mold, "viga"):
@@ -1917,6 +2053,12 @@ if option == "Cubicacion":
                             st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
                             st.text(f"Cantidad de tablas de {mat_v['largo']}m: {cant_tablas:.0f} unidades")
                             st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")
+                        if m2_viga > 0:
+                            registrar_pdf("Moldajes", "Viga", [
+                                ("Material", material_viga),
+                                ("Superficie", f"{m2_viga:.2f} m²"),
+                                resultado_moldaje("Viga", material_viga, m2_viga),
+                            ])
 
 # --- 5. Moldaje de Pilar ---
             if ver(mold, "pilar"):
@@ -1962,6 +2104,12 @@ if option == "Cubicacion":
                             st.text(f"Metros lineales de tabla: {ml_tabla:.2f} ml")
                             st.text(f"Cantidad de tablas de {mat_p['largo']}m: {cant_tablas:.0f} unidades")
                             st.text(f"Con 10% desperdicio: {cant_tablas_real:.0f} tablas")     
+                        if m2_pilar > 0:
+                            registrar_pdf("Moldajes", "Pilar", [
+                                ("Material", material_pilar),
+                                ("Superficie", f"{m2_pilar:.2f} m²"),
+                                resultado_moldaje("Pilar", material_pilar, m2_pilar),
+                            ])
 
 # ============================
 # Muros
@@ -2096,6 +2244,15 @@ if option == "Cubicacion":
                                 if kg_diag > 0:
                                     st.info(f"Refuerzo diagonal vanos: {kg_diag:.1f} kg")
                                 st.success(f"TOTAL ACERO: {kg_total_h:.1f} kg")
+                            if vol_neto_h > 0:
+                                registrar_pdf("Muros", "Muro Hormigón", [
+                                    ("Volumen neto", f"{vol_neto_h:.2f} m³"),
+                                    ("Dosificación", dos_muro_h),
+                                    ("Cemento", f"{mat_muro_h['cemento_sacos']} sacos"),
+                                    ("Gravilla", f"{mat_muro_h['gravilla_kg']} kg"),
+                                    ("Arena", f"{mat_muro_h['arena_kg']} kg"),
+                                    ("Acero total", f"{kg_total_h:.1f} kg"),
+                                ])
 
                         elif modo_muro_h == "📐 Modo Detallado (con planos)":
                             st.caption("Ingresa los datos exactos según planos estructurales")
@@ -2162,6 +2319,15 @@ if option == "Cubicacion":
                                 if kg_diag_d > 0:
                                     st.info(f"Diagonal vanos {diam_diag_d}: {kg_diag_d:.1f} kg")
                                 st.success(f"TOTAL ACERO: {kg_total_d:.1f} kg")
+                            if vol_neto_h > 0:
+                                registrar_pdf("Muros", "Muro Hormigón", [
+                                    ("Volumen neto", f"{vol_neto_h:.2f} m³"),
+                                    ("Dosificación", dos_muro_h),
+                                    ("Cemento", f"{mat_muro_h['cemento_sacos']} sacos"),
+                                    ("Gravilla", f"{mat_muro_h['gravilla_kg']} kg"),
+                                    ("Arena", f"{mat_muro_h['arena_kg']} kg"),
+                                    ("Acero total", f"{kg_total_d:.1f} kg"),
+                                ])
 # ============================
 # MURO DE LADRILLO
 # ============================
@@ -2257,6 +2423,14 @@ if option == "Cubicacion":
                         st.text(f"Dimensiones ladrillo: {lad['largo']*100:.0f}x{lad['ancho']*100:.0f}x{lad['alto']*100:.1f}cm")
                         st.text(f"Junta de mortero: {lad['junta']*10:.0f}mm")
                         st.text(f"Dosificación mortero: 1:4 (cemento:arena)")
+                        if area_neta_l > 0:
+                            registrar_pdf("Muros", "Muro Ladrillo", [
+                                ("Tipo", ladrillo_tipo),
+                                ("Área neta", f"{area_neta_l:.2f} m²"),
+                                ("Ladrillos (c/desp.)", f"{total_ladrillos_desp:.0f} unidades"),
+                                ("Cemento mortero", f"{cemento_mortero_sacos:.0f} sacos"),
+                                ("Arena mortero", f"{arena_mortero_m3:.2f} m³"),
+                            ])
                         # ============================
 # TABIQUE METALCON
 # ============================
@@ -2389,6 +2563,15 @@ if option == "Cubicacion":
                     st.session_state["pdf_esq_tipo"] = ""
                     st.session_state["pdf_cant_esquinas"] = cant_esquinas_mu
                     st.session_state["pdf_largo_esq"] = 0
+                    if largo_tab_mu > 0:
+                        registrar_pdf("Muros", "Tabique Metalcon", [
+                            ("Canales", f"{total_canales_final:.0f} de {largo_canal_mu}m"),
+                            ("Montantes perf. (medio)", f"{total_mont_medio:.0f} de {largo_mont_medio}m"),
+                            ("Montantes normales", f"{total_mont_normal:.0f} de {largo_mont_esq}m"),
+                            ("Diagonales", f"{total_diagonales} piezas"),
+                            ("Tornillos autoperf.", f"{tornillos:.0f} unidades"),
+                            ("Lana de vidrio", f"{m2_aislacion_neta:.2f} m²"),
+                        ])
 # ============================
 # TABIQUE DE MADERA
 # ============================
@@ -2489,6 +2672,17 @@ if option == "Cubicacion":
                             st.info(f"Aislante: {m2_aislante_ma:.2f} m²")
                         with rm4:
                             st.info(f"Clavos aprox.: {clavos:.0f} unidades")
+                        if largo_tab_ma > 0:
+                            registrar_pdf("Muros", "Tabique Madera", [
+                                ("Tipo madera", madera_tipo),
+                                ("Soleras y carreras", f"{cant_soleras_ma:.0f} de {largo_mad}m"),
+                                ("Montantes", f"{total_mont_ma:.0f} de {largo_mad}m"),
+                                ("Diagonales", f"{total_diag_ma} de {largo_mad}m"),
+                                ("Cadenetas", f"{cant_cadenetas:.0f} de {largo_mad}m"),
+                                ("Total listones", f"{total_listones:.0f} piezas"),
+                                ("Aislante", f"{m2_aislante_ma:.2f} m²"),
+                                ("Clavos", f"{clavos:.0f} unidades"),
+                            ])
 
 # ============================
 # REVESTIMIENTOS
@@ -2622,6 +2816,13 @@ if option == "Cubicacion":
                             st.info(f"🔩 Tornillo: {tornillo_yc} {medida_yc}")
                             st.info("Separación: bordes cada 30cm / centro cada 40cm")
                             st.success(f"Total tornillos: {tornillos_yc} unidades")
+                            if area_neta_yc > 0:
+                                registrar_pdf("Revestimientos", "Yeso Cartón", [
+                                    ("Tipo", yeso_tipo),
+                                    ("Área neta", f"{area_neta_yc:.2f} m²"),
+                                    ("Planchas (c/desp.)", f"{cant_desp_yc:.0f} unidades"),
+                                    ("Tornillos", f"{tornillos_yc} unidades"),
+                                ])
 
                         with st.expander("1.2 Terciado Ranurado", expanded=False):
                             st.caption("Revestimiento muros y cielos interiores")
@@ -2660,6 +2861,13 @@ if option == "Cubicacion":
                             st.info("Separación: perímetro cada 15cm / apoyos internos cada 30cm")
                             st.success(f"Total fijaciones: {tornillos_tr} unidades")
                             st.caption("⚠️ Distancia mínima al borde: 1cm")
+                            if area_neta_tr > 0:
+                                registrar_pdf("Revestimientos", "Terciado Ranurado", [
+                                    ("Tipo", tr_tipo),
+                                    ("Área neta", f"{area_neta_tr:.2f} m²"),
+                                    ("Planchas (c/desp.)", f"{cant_desp_tr:.0f} unidades"),
+                                    ("Fijaciones", f"{tornillos_tr} unidades"),
+                                ])
 
 # ============================
 # EXTERIOR
@@ -2716,6 +2924,17 @@ if option == "Cubicacion":
                                 st.info(f"Planchas: {cant_desp_fo:.0f} unidades")
                                 st.info("🔩 Tornillo Autoperforante Punta Broca 8x1\"")
                                 st.success(f"Total tornillos fibrocemento: {tornillos_fo} unidades")
+                            if area_neta_osb > 0:
+                                items_osb = [
+                                    ("Espesor", osb_tipo),
+                                    ("Área neta", f"{area_neta_osb:.2f} m²"),
+                                    ("Planchas OSB (c/desp.)", f"{cant_desp_osb:.0f} unidades"),
+                                    ("Fijaciones", f"{tornillos_osb} unidades"),
+                                ]
+                                if fibro_encima:
+                                    items_osb.append(("Planchas fibrocemento", f"{cant_desp_fo:.0f} unidades"))
+                                    items_osb.append(("Tornillos fibrocemento", f"{tornillos_fo} unidades"))
+                                registrar_pdf("Revestimientos", "OSB", items_osb)
 
                         with st.expander("2.2 Fibrocemento", expanded=False):
                             st.caption("Placa fibrocemento exterior - 1,20x2,40m")
@@ -2750,6 +2969,13 @@ if option == "Cubicacion":
                             st.info("Separación: perímetro cada 15-20cm / apoyos internos cada 25-30cm")
                             st.success(f"Total tornillos: {tornillos_fc} unidades")
                             st.caption("⚠️ Distancia mínima borde horizontal: 1,5cm / vertical: 1cm")
+                            if area_neta_fc > 0:
+                                registrar_pdf("Revestimientos", "Fibrocemento", [
+                                    ("Tipo", fc_tipo),
+                                    ("Área neta", f"{area_neta_fc:.2f} m²"),
+                                    ("Planchas (c/desp.)", f"{cant_desp_fc:.0f} unidades"),
+                                    ("Tornillos", f"{tornillos_fc} unidades"),
+                                ])
 
                         with st.expander("2.3 Terciado Estructural", expanded=False):
                             st.caption("Placa estructural exterior - 1,22x2,44m")
@@ -2787,6 +3013,13 @@ if option == "Cubicacion":
                             st.info("Separación: perímetro cada 15cm / apoyos internos cada 30cm")
                             st.success(f"Total fijaciones: {tornillos_te} unidades")
                             st.caption("⚠️ Instalar fibra perpendicular a los apoyos para mayor resistencia")
+                            if area_neta_te > 0:
+                                registrar_pdf("Revestimientos", "Terciado Estructural", [
+                                    ("Espesor", te_tipo),
+                                    ("Área neta", f"{area_neta_te:.2f} m²"),
+                                    ("Planchas (c/desp.)", f"{cant_desp_te:.0f} unidades"),
+                                    ("Fijaciones", f"{tornillos_te} unidades"),
+                                ])
 
                         with st.expander("2.4 Siding Fibrocemento", expanded=False):
                             st.caption("Volcan, Pizarreño Cedral, Nativa - 19cm x 3,66m")
@@ -2832,6 +3065,14 @@ if option == "Cubicacion":
                             st.info(f"1 fijación por montante cada {sep_mont_sid}")
                             st.success(f"Total fijaciones: {tornillos_sid} unidades")
                             st.caption("⚠️ Fijación a 2cm del borde superior, quedará tapada por la tabla siguiente")
+                            if area_neta_sid > 0:
+                                registrar_pdf("Revestimientos", "Siding Fibrocemento", [
+                                    ("Traslape", traslape_sid),
+                                    ("Área neta", f"{area_neta_sid:.2f} m²"),
+                                    ("Tablas (c/desp.)", f"{cant_tablas_desp:.0f} unidades"),
+                                    ("Metros lineales", f"{ml_tablas_sid:.2f} ml"),
+                                    ("Fijaciones", f"{tornillos_sid} unidades"),
+                                ])
 # ============================
 # PISOS Y PAVIMENTOS
 # ============================
@@ -2937,6 +3178,14 @@ if option == "Cubicacion":
                         st.info(f"Fragüe necesario: {kg_frag:.1f} kg")
                         st.success(f"Bolsas de 5kg: {bolsas_frag:.0f} bolsas")
                         st.caption(f"Rendimiento: {rend_frag} kg/m² para junta de {junta_cer}")
+                        if area_neta_cer > 0:
+                            registrar_pdf("Pisos y Pavimentos", "Cerámico / Porcelanato", [
+                                ("Medida", cer_medida),
+                                ("Área neta", f"{area_neta_cer:.2f} m²"),
+                                ("Cerámicos (c/desp.)", f"{ceramicos_desp:.0f} unidades"),
+                                ("Pegamento", f"{bolsas_pegamento:.0f} bolsas de 25kg"),
+                                ("Fragüe", f"{bolsas_frag:.0f} bolsas de 5kg"),
+                            ])
 
             # ============================
             # 2. PISO FLOTANTE
@@ -2982,6 +3231,16 @@ if option == "Cubicacion":
                             st.warning("⚠️ Instalación sobre losa: Se requiere barrera de humedad bajo la espuma")
                             st.info(f"Film polietileno necesario: {area_neta_pf:.2f} m²")
                             st.caption("Traslapar 20cm en uniones y subir 10cm por los muros")
+                        if area_neta_pf > 0:
+                            items_pf = [
+                                ("Tipo", pf_tipo),
+                                ("Área neta", f"{area_neta_pf:.2f} m²"),
+                                ("Piso flotante (c/desp.)", f"{area_pf_desp:.2f} m²"),
+                                ("Espuma niveladora", f"{area_neta_pf:.2f} m²"),
+                            ]
+                            if sobre_losa:
+                                items_pf.append(("Film polietileno", f"{area_neta_pf:.2f} m²"))
+                            registrar_pdf("Pisos y Pavimentos", "Piso Flotante", items_pf)
 
             # ============================
             # 3. BALDOSA
@@ -3038,6 +3297,13 @@ if option == "Cubicacion":
                         st.info(f"Arena: {arena_bal_m3:.2f} m³")
                         st.caption(f"Espesor cama mortero: 3cm | Volumen mortero: {vol_mortero_bal:.3f} m³")
                         st.warning("⚠️ Baldosa puede requerir pulido o sellado posterior según tipo")
+                        if area_neta_bal > 0:
+                            registrar_pdf("Pisos y Pavimentos", "Baldosa", [
+                                ("Área neta", f"{area_neta_bal:.2f} m²"),
+                                ("Baldosas (c/desp.)", f"{baldosas_desp:.0f} unidades"),
+                                ("Cemento mortero", f"{cemento_bal_sacos:.0f} sacos"),
+                                ("Arena mortero", f"{arena_bal_m3:.2f} m³"),
+                            ])
 
             # ============================
             # 4. DECK DE MADERA
@@ -3103,6 +3369,13 @@ if option == "Cubicacion":
                             st.write("---")
                             st.subheader("🪵 Tratamiento recomendado")
                             st.warning(f"⚠️ {dk_madera}: Aplicar impregnante protector tipo Cerestain o Sipasol antes de instalar")
+                        if area_neta_dk > 0:
+                            registrar_pdf("Pisos y Pavimentos", "Deck de Madera", [
+                                ("Madera", dk_madera),
+                                ("Área deck", f"{area_neta_dk:.2f} m²"),
+                                ("Tablas (c/desp.)", f"{cant_tablas_desp_dk:.0f} de {largo_val_dk}m"),
+                                ("Tornillos galvanizados", f"{tornillos_dk:.0f} unidades"),
+                            ])
 
 # ============================
 # TERMINACIONES
@@ -3245,6 +3518,16 @@ if option == "Cubicacion":
                         st.info(f"Litros necesarios: {litros_pin:.1f} litros")
                         st.success(f"Galones de 4 litros: {litros_pin/4:.0f} galones")
                         st.success(f"Tarros de 1 litro: {litros_pin:.0f} litros")
+                        if area_neta_pin > 0:
+                            registrar_pdf("Terminaciones", "Pintura", [
+                                ("Tipo", pintura_tipo),
+                                ("Área neta", f"{area_neta_pin:.2f} m²"),
+                                ("Manos", str(n_manos)),
+                                ("Pintura", f"{litros_pin:.1f} litros ({litros_pin/4:.0f} galones)"),
+                                ("Pasta muro", f"{kg_pasta/25:.0f} sacos de 25kg"),
+                                ("Cinta juntas", f"{ml_cinta/75:.0f} rollos de 75m"),
+                                ("Sellador", f"{litros_sellador/4:.0f} galones"),
+                            ])
 
             # ============================
             # 2. ESTUCO / REVOQUE
@@ -3300,6 +3583,13 @@ if option == "Cubicacion":
                             sacos_est = (area_neta_est / est["rendimiento_saco"]) * n_capas
                             st.success(f"Sacos de {est['peso_saco']}kg: {sacos_est:.0f} sacos")
                             st.caption(f"Rendimiento: {est['rendimiento_saco']} m² por saco a {espesor_est}")
+                            if area_neta_est > 0:
+                                registrar_pdf("Terminaciones", "Estuco / Revoque", [
+                                    ("Tipo", estuco_tipo),
+                                    ("Área neta", f"{area_neta_est:.2f} m²"),
+                                    ("Capas", str(n_capas)),
+                                    ("Material", f"{sacos_est:.0f} sacos de {est['peso_saco']}kg"),
+                                ])
 
                         elif est["tipo"] == "tradicional":
                             vol_est = area_neta_est * espesor_val * n_capas
@@ -3314,6 +3604,15 @@ if option == "Cubicacion":
                             st.success(f"Arena: {arena_est:.2f} m³")
                             st.success(f"Cal: {sacos_cal_est:.0f} sacos de 25kg")
                             st.caption("Dosificación: 1 cemento : 4 arena : 1 cal")
+                            if area_neta_est > 0:
+                                registrar_pdf("Terminaciones", "Estuco / Revoque", [
+                                    ("Tipo", estuco_tipo),
+                                    ("Área neta", f"{area_neta_est:.2f} m²"),
+                                    ("Capas", str(n_capas)),
+                                    ("Cemento", f"{sacos_cemento_est:.0f} sacos de 25kg"),
+                                    ("Arena", f"{arena_est:.2f} m³"),
+                                    ("Cal", f"{sacos_cal_est:.0f} sacos de 25kg"),
+                                ])
 
             # ============================
             # 3. CIELOS
@@ -3385,6 +3684,19 @@ if option == "Cubicacion":
                         st.info(f"Conectores TF: {cant_conectores:.0f} unidades")
                         st.success(f"Tornillos: {tornillos_ci:.0f} unidades")
                         st.caption("Largueros cada 40cm | Conectores cada 1,20m")
+                        if area_ci > 0:
+                            if ci["tipo"] == "plancha":
+                                item_rev_ci = ("Planchas (c/desp.)", f"{cant_planchas_desp_ci:.0f} unidades")
+                            else:
+                                item_rev_ci = ("Tablas (c/desp.)", f"{tablas_desp_ci:.0f} de {largo_tabla_ci}")
+                            registrar_pdf("Terminaciones", "Cielos", [
+                                ("Tipo", cielo_tipo),
+                                ("Área total", f"{area_ci:.2f} m²"),
+                                item_rev_ci,
+                                ("Perfiles AT", f"{cant_perfiles_at_desp:.0f} de {largo_val_at}m"),
+                                ("Portante 40R", f"{cant_largueros_desp:.0f} de {largo_val_larg}m"),
+                                ("Tornillos", f"{tornillos_ci:.0f} unidades"),
+                            ])
 
             # ============================
             # 4. ZÓCALOS Y GUARDAPOLVOS
@@ -3439,6 +3751,13 @@ if option == "Cubicacion":
                         st.info(f"Medida: {medida_fijacion}")
                         st.success(f"Cantidad: {cant_fijaciones_zoc} fijaciones")
                         st.caption("Distancia mínima al borde: 2cm")         
+                        if ml_neto_zoc > 0:
+                            registrar_pdf("Terminaciones", "Zócalos y Guardapolvos", [
+                                ("Tipo", zocalo_tipo),
+                                ("Metros lineales netos", f"{ml_neto_zoc:.2f} ml"),
+                                ("Piezas (c/desp.)", f"{cant_piezas_desp_zoc:.0f} de {largo_val_zoc}m"),
+                                ("Fijaciones", f"{cant_fijaciones_zoc} unidades"),
+                            ])
 
 # ============================
 # EXPORTAR A PDF
@@ -3538,6 +3857,7 @@ if st.button("📄 Generar PDF", type="primary"):
         esq_tipo=st.session_state.get("pdf_esq_tipo", ""),
         cant_esquinas=st.session_state.get("pdf_cant_esquinas", 0),
         largo_esq=st.session_state.get("pdf_largo_esq", 0),
+        pdf_extra=st.session_state.get("pdf_extra", []),
     )
     nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
     st.download_button(
