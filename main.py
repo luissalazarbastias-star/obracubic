@@ -460,7 +460,7 @@ if st.session_state.get("_goto"):
 
 option = st.radio(
     "Ir a:",
-    ["Inicio", "Crear Proyecto", "Cubicacion"],
+    ["Inicio", "Crear Proyecto", "Cubicacion", "Iniciar sesión"],
     horizontal=True,
     key="nav_option",
 )
@@ -468,6 +468,46 @@ if option == "Cubicacion":
     st.session_state["ir_a_cubicacion"] = False
 
 st.write("---")
+
+# ============================
+# INICIAR SESIÓN / REGISTRO  (MAQUETA - sin seguridad real)
+# ============================
+if option == "Iniciar sesión":
+    if st.session_state.get("demo_logueado"):
+        st.success(f"Sesión iniciada como: {st.session_state.get('demo_usuario', 'usuario')} (demo)")
+        st.caption("Esto es una maqueta visual, sin sistema de cuentas real.")
+        if st.button("Cerrar sesión", use_container_width=True):
+            st.session_state["demo_logueado"] = False
+            st.session_state["demo_usuario"] = ""
+            st.rerun()
+    else:
+        st.subheader("Acceso a ObraCubic")
+        st.caption("⚠️ Vista previa de diseño — todavía no es un sistema de cuentas real.")
+
+        tab_login, tab_registro = st.tabs(["Iniciar sesión", "Crear cuenta"])
+
+        with tab_login:
+            st.text_input("Correo electrónico", placeholder="tucorreo@ejemplo.com", key="login_email")
+            st.text_input("Contraseña", type="password", placeholder="••••••••", key="login_pass")
+            st.checkbox("Recordarme", key="login_recordar")
+            if st.button("Iniciar sesión", type="primary", use_container_width=True, key="btn_login"):
+                st.session_state["demo_logueado"] = True
+                st.session_state["demo_usuario"] = st.session_state.get("login_email") or "usuario demo"
+                st.session_state["_goto"] = "Inicio"
+                st.rerun()
+            st.caption("¿Olvidaste tu contraseña?")
+
+        with tab_registro:
+            st.text_input("Nombre completo", placeholder="Juan Pérez", key="reg_nombre")
+            st.text_input("Correo electrónico", placeholder="tucorreo@ejemplo.com", key="reg_email")
+            st.text_input("Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="reg_pass")
+            st.text_input("Repetir contraseña", type="password", placeholder="Repite la contraseña", key="reg_pass2")
+            st.checkbox("Acepto los términos y condiciones", key="reg_terminos")
+            if st.button("Crear cuenta", type="primary", use_container_width=True, key="btn_registro"):
+                st.session_state["demo_logueado"] = True
+                st.session_state["demo_usuario"] = st.session_state.get("reg_nombre") or "usuario demo"
+                st.session_state["_goto"] = "Inicio"
+                st.rerun()
 
 # ============================
 # INICIO (pantalla de bienvenida)
