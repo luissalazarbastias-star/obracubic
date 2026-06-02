@@ -454,6 +454,10 @@ with _lc2:
 if "nav_option" not in st.session_state:
     st.session_state["nav_option"] = "Cubicacion" if st.session_state.get("ir_a_cubicacion") else "Inicio"
 
+# Cambio de sección solicitado por un botón (se aplica ANTES de crear el radio)
+if st.session_state.get("_goto"):
+    st.session_state["nav_option"] = st.session_state.pop("_goto")
+
 option = st.radio(
     "Ir a:",
     ["Inicio", "Crear Proyecto", "Cubicacion"],
@@ -510,11 +514,11 @@ if option == "Inicio":
     cini1, cini2 = st.columns(2)
     with cini1:
         if st.button("🛠️ Crear Proyecto", type="primary", use_container_width=True):
-            st.session_state["nav_option"] = "Crear Proyecto"
+            st.session_state["_goto"] = "Crear Proyecto"
             st.rerun()
     with cini2:
         if st.button("📐 Ir a Cubicación", use_container_width=True):
-            st.session_state["nav_option"] = "Cubicacion"
+            st.session_state["_goto"] = "Cubicacion"
             st.rerun()
 
 # ============================
@@ -783,7 +787,7 @@ if option == "Crear Proyecto":
             with col_ir:
                 if st.button("Ir a cubicación", type="primary", use_container_width=True):
                     st.session_state["ir_a_cubicacion"] = True
-                    st.session_state["nav_option"] = "Cubicacion"
+                    st.session_state["_goto"] = "Cubicacion"
                     st.rerun()
             with col_cerrar:
                 if st.button("Cerrar proyecto", use_container_width=True):
