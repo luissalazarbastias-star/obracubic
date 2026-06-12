@@ -4765,7 +4765,7 @@ if option == "Presupuesto":
     st.subheader("2. Mano de obra")
     metodo_mo = st.radio(
         "¿Cómo quieres calcular la mano de obra?",
-        ["Monto total", "% sobre materiales", "Por m²/m³"],
+        ["Monto total", "% sobre materiales", "Por medida (m²/m³/ml/global)"],
         key="metodo_mano_obra",
     )
 
@@ -4776,14 +4776,23 @@ if option == "Presupuesto":
         pct_mo = st.number_input("Porcentaje sobre materiales (%)", min_value=0.0, value=30.0, step=5.0, key="mo_pct")
         costo_mano_obra = subtotal_materiales * (pct_mo / 100)
         st.caption(f"{pct_mo:.0f}% de {fmt_clp(subtotal_materiales)} = {fmt_clp(costo_mano_obra)}")
-    else:  # Por m²/m³
-        cm1, cm2 = st.columns(2)
-        with cm1:
-            metros = st.number_input("Cantidad de m² o m³", min_value=0.0, value=0.0, step=1.0, key="mo_metros")
-        with cm2:
-            valor_metro = st.number_input("Valor por m²/m³ ($)", min_value=0, value=0, step=1000, key="mo_valor_metro")
-        costo_mano_obra = metros * valor_metro
-        st.caption(f"{metros:.1f} × {fmt_clp(valor_metro)} = {fmt_clp(costo_mano_obra)}")
+    else:  # Por medida
+        cm0, cm1, cm2 = st.columns([1.2, 1, 1.3])
+        with cm0:
+            unidad_mo = st.selectbox("Unidad", ["m²", "m³", "ml", "global"], key="mo_unidad")
+        if unidad_mo == "global":
+            with cm1:
+                st.caption("Monto global")
+            with cm2:
+                costo_mano_obra = st.number_input("Monto global ($)", min_value=0, value=0, step=10000, key="mo_global")
+            st.caption(f"Mano de obra global: {fmt_clp(costo_mano_obra)}")
+        else:
+            with cm1:
+                cantidad_mo = st.number_input(f"Cantidad ({unidad_mo})", min_value=0.0, value=0.0, step=1.0, key="mo_cantidad")
+            with cm2:
+                valor_unidad_mo = st.number_input(f"Valor por {unidad_mo} ($)", min_value=0, value=0, step=1000, key="mo_valor_unidad")
+            costo_mano_obra = cantidad_mo * valor_unidad_mo
+            st.caption(f"{cantidad_mo:.1f} {unidad_mo} × {fmt_clp(valor_unidad_mo)} = {fmt_clp(costo_mano_obra)}")
 
     st.success(f"**Mano de obra: {fmt_clp(costo_mano_obra)}**")
 
