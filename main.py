@@ -92,6 +92,49 @@ def eliminar_proyecto(proyecto_id):
     supabase.table("proyectos").delete().eq("id", proyecto_id).execute()
 
 
+def usuario_es_premium():
+    """True si hay sesión y el plan del usuario es premium."""
+    if not st.session_state.get("usuario"):
+        return False
+    return st.session_state.get("usuario_plan", "gratis") == "premium"
+
+
+def parsear_cantidad(valor):
+    """Extrae (cantidad, unidad) de un texto tipo '43 sacos'. Devuelve (None, None) si no hay número."""
+    import re
+    v = str(valor).strip()
+    m = re.match(r'^([\d.,]+)\s*(.*)$', v)
+    if not m:
+        return None, None
+    num_str = m.group(1)
+    resto = m.group(2).strip()
+    try:
+        if num_str.count('.') == 1 and len(num_str.split('.')[1]) == 3 and ',' not in num_str:
+            num = float(num_str.replace('.', ''))   # miles: 4.987 -> 4987
+        else:
+            num = float(num_str.replace('.', '').replace(',', '.')) if num_str.count(',') == 1 else float(num_str.replace(',', ''))
+    except Exception:
+        try:
+            num = float(num_str.replace(',', '.'))
+        except Exception:
+            return None, None
+    return num, resto
+
+
+def fmt_clp(valor):
+    """Formatea un número como pesos chilenos: 1234567 -> $1.234.567"""
+    try:
+        return "$" + f"{int(round(valor)):,}".replace(",", ".")
+    except Exception:
+        return "$0"
+
+
+def aviso_premium(funcion="Esta función"):
+    """Muestra un aviso de función premium para usuarios gratis."""
+    st.warning(f"⭐ {funcion} es parte del **Plan Premium**.")
+    st.caption("Mejora tu plan para desbloquear el presupuesto con precios, PDF con tu marca y más.")
+
+
 # ============================
 # DATOS DE DOSIFICACIÓN (CBB)
 # ============================
@@ -537,7 +580,7 @@ nav_col, cuenta_col = st.columns([3, 1])
 with nav_col:
     option = st.radio(
         "Ir a:",
-        ["Inicio", "Crear Proyecto", "Cubicacion"],
+        ["Inicio", "Crear Proyecto", "Cubicacion", "Presupuesto"],
         horizontal=True,
         key="nav_option",
         on_change=_salir_cuenta,
@@ -4489,6 +4532,172 @@ if option == "Cubicacion":
 
                     if area_ais > 0 and (usar_fieltro or usar_aislante):
                         registrar_pdf("Cubierta / Techumbre", "Aislación y Fieltro", items_ais)
+
+# ============================
+# PRESUPUESTO (Premium)
+# ============================
+if option == "Presupuesto":
+    st.title("💰 Presupuesto")
+
+    if not st.session_state.get("usuario"):
+        st.info("Inicia sesión para usar el presupuesto.")
+        st.caption("El presupuesto es una función del Plan Premium.")
+        st.stop()
+
+    if not usuario_es_premium():
+        aviso_premium("El presupuesto con precios")
+        st.write("---")
+        st.markdown(
+            "Con el **Plan Premium** podrás:\n"
+            "- Ponerle **precio a cada material** y obtener el costo total\n"
+            "- Sumar **mano de obra** y **margen de ganancia**\n"
+            "- Ver el total **con IVA y sin IVA**\n"
+            "- Llevar el presupuesto a un **PDF profesional**"
+        )
+        st.stop()
+
+    # --- Usuario premium: presupuesto real ---
+    pdf_extra = st.session_state.get("pdf_extra", [])
+
+    if not pdf_extra:
+        st.info("Primero realiza una cubicación en la sección **Cubicacion**. "
+                "Aquí aparecerán los materiales para ponerles precio.")
+        st.stop()
+
+    st.caption("Elige las partidas y materiales que quieres incluir, ponles precio y arma tu presupuesto.")
+
+    # Construir lista de materiales presupuestables desde pdf_extra
+    materiales_disponibles = []
+    for bloque in pdf_extra:
+        rubro = bloque.get("rubro", "")
+        partida = bloque.get("partida", "")
+        for etiqueta, valor in bloque.get("items", []):
+            cant, uni = parsear_cantidad(valor)
+            if cant is not None and cant > 0:
+                materiales_disponibles.append({
+                    "rubro": rubro, "partida": partida,
+                    "material": etiqueta, "cantidad": cant, "unidad": uni,
+                })
+
+    if not materiales_disponibles:
+        st.warning("No se encontraron materiales con cantidad en la cubicación actual.")
+        st.stop()
+
+    st.write("---")
+    st.subheader("1. Materiales")
+    st.caption("Marca los que quieras incluir y ponles precio unitario (referencial, ajústalo a tu proveedor).")
+
+    # Agrupar por rubro
+    rubros_unicos = []
+    for m in materiales_disponibles:
+        if m["rubro"] not in rubros_unicos:
+            rubros_unicos.append(m["rubro"])
+
+    subtotal_materiales = 0
+    items_presupuesto = []
+
+    for rubro in rubros_unicos:
+        mats_rubro = [m for m in materiales_disponibles if m["rubro"] == rubro]
+        with st.expander(f"📦 {rubro}", expanded=True):
+            for idx, m in enumerate(mats_rubro):
+                key_base = f"pres_{rubro}_{m['partida']}_{m['material']}_{idx}".replace(" ", "_")
+                c_incluir, c_info, c_precio = st.columns([1, 3, 2])
+                with c_incluir:
+                    incluir = st.checkbox("Incluir", value=True, key=f"inc_{key_base}", label_visibility="collapsed")
+                with c_info:
+                    st.markdown(f"**{m['material']}**")
+                    st.caption(f"{m['partida']} · {m['cantidad']:.0f} {m['unidad']}")
+                with c_precio:
+                    precio = st.number_input(
+                        f"Precio unit. ({m['unidad']})",
+                        min_value=0, value=0, step=100,
+                        key=f"precio_{key_base}",
+                        label_visibility="collapsed",
+                    )
+                if incluir and precio > 0:
+                    sub = m["cantidad"] * precio
+                    subtotal_materiales += sub
+                    items_presupuesto.append({
+                        "material": m["material"], "cantidad": m["cantidad"],
+                        "unidad": m["unidad"], "precio": precio, "subtotal": sub,
+                    })
+
+    st.success(f"**Subtotal materiales: {fmt_clp(subtotal_materiales)}**")
+
+    # --- Mano de obra ---
+    st.write("---")
+    st.subheader("2. Mano de obra")
+    metodo_mo = st.radio(
+        "¿Cómo quieres calcular la mano de obra?",
+        ["Monto total", "% sobre materiales", "Por m²/m³"],
+        key="metodo_mano_obra",
+    )
+
+    costo_mano_obra = 0
+    if metodo_mo == "Monto total":
+        costo_mano_obra = st.number_input("Monto de mano de obra ($)", min_value=0, value=0, step=10000, key="mo_monto")
+    elif metodo_mo == "% sobre materiales":
+        pct_mo = st.number_input("Porcentaje sobre materiales (%)", min_value=0.0, value=30.0, step=5.0, key="mo_pct")
+        costo_mano_obra = subtotal_materiales * (pct_mo / 100)
+        st.caption(f"{pct_mo:.0f}% de {fmt_clp(subtotal_materiales)} = {fmt_clp(costo_mano_obra)}")
+    else:  # Por m²/m³
+        cm1, cm2 = st.columns(2)
+        with cm1:
+            metros = st.number_input("Cantidad de m² o m³", min_value=0.0, value=0.0, step=1.0, key="mo_metros")
+        with cm2:
+            valor_metro = st.number_input("Valor por m²/m³ ($)", min_value=0, value=0, step=1000, key="mo_valor_metro")
+        costo_mano_obra = metros * valor_metro
+        st.caption(f"{metros:.1f} × {fmt_clp(valor_metro)} = {fmt_clp(costo_mano_obra)}")
+
+    st.success(f"**Mano de obra: {fmt_clp(costo_mano_obra)}**")
+
+    # --- Margen de ganancia ---
+    st.write("---")
+    st.subheader("3. Margen de ganancia")
+    pct_margen = st.number_input("Margen de ganancia (%)", min_value=0.0, value=15.0, step=5.0, key="margen_pct")
+    base_margen = subtotal_materiales + costo_mano_obra
+    monto_margen = base_margen * (pct_margen / 100)
+    st.caption(f"{pct_margen:.0f}% sobre (materiales + mano de obra) = {fmt_clp(monto_margen)}")
+
+    # --- Totales con IVA ---
+    neto = subtotal_materiales + costo_mano_obra + monto_margen
+    iva = neto * 0.19
+    total_con_iva = neto + iva
+
+    st.write("---")
+    st.subheader("Resumen del presupuesto")
+
+    res1, res2 = st.columns(2)
+    with res1:
+        st.markdown(f"Subtotal materiales: **{fmt_clp(subtotal_materiales)}**")
+        st.markdown(f"Mano de obra: **{fmt_clp(costo_mano_obra)}**")
+        st.markdown(f"Margen ({pct_margen:.0f}%): **{fmt_clp(monto_margen)}**")
+    with res2:
+        st.markdown(f"Neto (sin IVA): **{fmt_clp(neto)}**")
+        st.markdown(f"IVA (19%): **{fmt_clp(iva)}**")
+
+    st.markdown(
+        f"<div style='background:#1a3a1a;border-radius:8px;padding:14px 18px;margin-top:10px;"
+        f"display:flex;justify-content:space-between;align-items:center;'>"
+        f"<span style='font-size:16px;color:#7CFC7C;'>Total con IVA</span>"
+        f"<span style='font-size:22px;font-weight:600;color:#7CFC7C;'>{fmt_clp(total_con_iva)}</span></div>",
+        unsafe_allow_html=True,
+    )
+
+    st.caption("Los precios son referenciales y definidos por ti. Ajusta a tu proveedor y a tu realidad de obra.")
+
+    # Guardar el presupuesto en session_state para el PDF (paso siguiente)
+    st.session_state["presupuesto_actual"] = {
+        "items": items_presupuesto,
+        "subtotal_materiales": subtotal_materiales,
+        "mano_obra": costo_mano_obra,
+        "margen_pct": pct_margen,
+        "margen": monto_margen,
+        "neto": neto,
+        "iva": iva,
+        "total": total_con_iva,
+    }
+
 
 # ============================
 # EXPORTAR A PDF
