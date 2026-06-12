@@ -4580,6 +4580,9 @@ if option == "Presupuesto":
 
     st.caption("Elige las partidas y materiales que quieres incluir, ponles precio y arma tu presupuesto.")
 
+    # Densidades estándar para convertir kg → m³ (solo en el presupuesto)
+    DENSIDADES_M3 = {"gravilla": 1500, "arena": 1600}
+
     # Construir lista de materiales presupuestables desde pdf_extra
     materiales_disponibles = []
     for bloque in pdf_extra:
@@ -4588,6 +4591,17 @@ if option == "Presupuesto":
         for etiqueta, valor in bloque.get("items", []):
             cant, uni = parsear_cantidad(valor)
             if cant is not None and cant > 0:
+                # Convertir arena y gravilla de kg a m³ (se venden por m³)
+                etiqueta_baja = etiqueta.lower()
+                if uni and "kg" in uni.lower():
+                    densidad = None
+                    if "gravilla" in etiqueta_baja:
+                        densidad = DENSIDADES_M3["gravilla"]
+                    elif "arena" in etiqueta_baja:
+                        densidad = DENSIDADES_M3["arena"]
+                    if densidad:
+                        cant = cant / densidad
+                        uni = "m³"
                 materiales_disponibles.append({
                     "rubro": rubro, "partida": partida,
                     "material": etiqueta, "cantidad": cant, "unidad": uni,
@@ -4624,7 +4638,8 @@ if option == "Presupuesto":
                     incluir = st.checkbox("Incluir", value=True, key=f"inc_{key_base}", label_visibility="collapsed")
                 with c_info:
                     st.markdown(f"**{m['material']}**")
-                    st.caption(f"{m['partida']} · {m['cantidad']:.0f} {m['unidad']}")
+                    cant_fmt = f"{m['cantidad']:.2f}" if m['unidad'] == "m³" else f"{m['cantidad']:.0f}"
+                    st.caption(f"{m['partida']} · {cant_fmt} {m['unidad']}")
                 with c_precio:
                     precio = st.number_input(
                         f"Precio unit. ({m['unidad']})",
