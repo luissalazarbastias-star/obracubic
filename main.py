@@ -4580,6 +4580,16 @@ if option == "Presupuesto":
 
     st.caption("Elige las partidas y materiales que quieres incluir, ponles precio y arma tu presupuesto.")
 
+    # --- DIAGNÓSTICO TEMPORAL (se quita después) ---
+    with st.expander("🔧 Diagnóstico (temporal)", expanded=True):
+        st.write("Partidas registradas en el acumulador:")
+        for clave in persistente.keys():
+            st.text(f"• {clave}")
+        if st.button("🗑️ Limpiar acumulador (reiniciar materiales)"):
+            st.session_state["materiales_persistente"] = {}
+            st.rerun()
+    # --- FIN DIAGNÓSTICO ---
+
     # Construir lista de materiales presupuestables desde pdf_extra
     materiales_disponibles = []
     for bloque in pdf_extra:
