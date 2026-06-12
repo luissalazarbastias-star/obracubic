@@ -1578,12 +1578,6 @@ if option == "Cubicacion":
                             st.session_state["_rad_perdida"] = rad_perdida
                             st.session_state["_rad_dos"] = dos_rad
 
-                            vol_radier_final = vol_radier * (1 + rad_perdida / 100)
-                            mat_rad = calcular_materiales(vol_radier_final, dos_rad)
-                            st.session_state["mat_rad"] = mat_rad
-                            st.session_state["vol_radier"] = vol_radier_final
-                            mostrar_materiales(mat_rad)
-
                 _vol_rad = st.session_state.get("_rad_vol", 0)
                 _perd_rad = st.session_state.get("_rad_perdida", 5)
                 _dos_rad = st.session_state.get("_rad_dos", "G-20")
