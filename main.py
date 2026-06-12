@@ -129,6 +129,39 @@ def fmt_clp(valor):
         return "$0"
 
 
+# Precios referenciales NETOS (sin IVA). Valores de ejemplo, el usuario los ajusta.
+# La coincidencia es por palabra clave dentro del nombre del material.
+PRECIOS_REFERENCIALES = [
+    # (palabra_clave_en_minusculas, precio_neto)
+    ("cemento", 4370),       # saco 25kg
+    ("gravilla", 26891),     # m³
+    ("arena", 21849),        # m³
+    ("canal", 5882),         # canal estructural 92x30 (6m)
+    ("montantes perf", 1891),  # montante tabique 60x38 (3,0m) perforado
+    ("montantes normal", 1891),
+    ("montante perf", 1891),
+    ("montante normal", 1891),
+    ("montante", 1891),      # tabique por defecto (estructural se ajusta a mano)
+    ("diagonal", 1891),      # tira metalcon similar a montante
+    ("tornillo", 6294),      # caja de 1.000 (neto)
+    ("lana de vidrio", 3500),# m² (referencial)
+    ("fierro", 5336),        # barra 6m (12mm como referencia media)
+    ("acero", 5336),
+    ("barra", 5336),
+    ("malla", 45000),        # plancha ACMA (referencial)
+    ("clavos", 2185),        # por kilo (neto)
+    ("clavo", 2185),
+]
+
+def precio_referencial(material):
+    """Devuelve un precio neto referencial según el nombre del material, o 0 si no hay."""
+    nombre = material.lower()
+    for clave, precio in PRECIOS_REFERENCIALES:
+        if clave in nombre:
+            return precio
+    return 0
+
+
 def aviso_premium(funcion="Esta función"):
     """Muestra un aviso de función premium para usuarios gratis."""
     st.warning(f"⭐ {funcion} es parte del **Plan Premium**.")
@@ -4583,6 +4616,10 @@ if option == "Presupuesto":
     # Densidades estándar para convertir kg → m³ (solo en el presupuesto)
     DENSIDADES_M3 = {"gravilla": 1500, "arena": 1600}
 
+    import math as _math
+    CLAVOS_POR_KILO = 75       # estimado para clavos de 3"
+    TORNILLOS_POR_CAJA = 1000  # caja estándar Metalcon
+
     # Construir lista de materiales presupuestables desde pdf_extra
     materiales_disponibles = []
     for bloque in pdf_extra:
@@ -4591,8 +4628,8 @@ if option == "Presupuesto":
         for etiqueta, valor in bloque.get("items", []):
             cant, uni = parsear_cantidad(valor)
             if cant is not None and cant > 0:
-                # Convertir arena y gravilla de kg a m³ (se venden por m³)
                 etiqueta_baja = etiqueta.lower()
+                # Arena y gravilla: kg → m³
                 if uni and "kg" in uni.lower():
                     densidad = None
                     if "gravilla" in etiqueta_baja:
@@ -4602,6 +4639,14 @@ if option == "Presupuesto":
                     if densidad:
                         cant = cant / densidad
                         uni = "m³"
+                # Tornillos: unidades → cajas de 1.000 (redondeo hacia arriba)
+                if "tornillo" in etiqueta_baja and uni and "unidad" in uni.lower():
+                    cant = _math.ceil(cant / TORNILLOS_POR_CAJA)
+                    uni = "caja(s) de 1.000"
+                # Clavos: unidades → kilos estimados
+                elif "clavo" in etiqueta_baja and uni and "unidad" in uni.lower():
+                    cant = cant / CLAVOS_POR_KILO
+                    uni = "kg"
                 materiales_disponibles.append({
                     "rubro": rubro, "partida": partida,
                     "material": etiqueta, "cantidad": cant, "unidad": uni,
@@ -4614,6 +4659,8 @@ if option == "Presupuesto":
     st.write("---")
     st.subheader("1. Materiales")
     st.caption("Marca los que quieras incluir y ponles precio unitario (referencial, ajústalo a tu proveedor).")
+    st.info("💡 Los precios que aparecen son **valores referenciales netos (sin IVA)** de ejemplo. "
+            "Ajústalos a los de tu proveedor y tu región. El IVA se agrega al final del presupuesto.")
     with st.popover("⚙️ Opciones"):
         if st.button("🗑️ Reiniciar materiales", help="Borra los materiales acumulados y vuelve a tomarlos de la cubicación actual"):
             st.session_state["materiales_persistente"] = {}
@@ -4638,12 +4685,18 @@ if option == "Presupuesto":
                     incluir = st.checkbox("Incluir", value=True, key=f"inc_{key_base}", label_visibility="collapsed")
                 with c_info:
                     st.markdown(f"**{m['material']}**")
-                    cant_fmt = f"{m['cantidad']:.2f}" if m['unidad'] == "m³" else f"{m['cantidad']:.0f}"
+                    if m['unidad'] == "m³" or m['unidad'] == "kg":
+                        cant_fmt = f"{m['cantidad']:.2f}"
+                    elif "caja" in m['unidad']:
+                        cant_fmt = f"{m['cantidad']:.0f}"
+                    else:
+                        cant_fmt = f"{m['cantidad']:.0f}"
                     st.caption(f"{m['partida']} · {cant_fmt} {m['unidad']}")
                 with c_precio:
+                    precio_sugerido = precio_referencial(m["material"])
                     precio = st.number_input(
                         f"Precio unit. ({m['unidad']})",
-                        min_value=0, value=0, step=100,
+                        min_value=0, value=precio_sugerido, step=100,
                         key=f"precio_{key_base}",
                         label_visibility="collapsed",
                     )
