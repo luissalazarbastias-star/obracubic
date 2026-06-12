@@ -207,6 +207,12 @@ def registrar_pdf(rubro, partida, items):
     st.session_state["pdf_extra"].append(
         {"rubro": rubro, "partida": partida, "items": items}
     )
+    # Acumulador PERSISTENTE por (rubro, partida) para el presupuesto.
+    # No se reinicia al cambiar de sección; se sobrescribe solo esa partida.
+    st.session_state.setdefault("materiales_persistente", {})
+    st.session_state["materiales_persistente"][f"{rubro}||{partida}"] = {
+        "rubro": rubro, "partida": partida, "items": items,
+    }
 
 PESO_BARRAS = {
     "Ø8mm":  0.395,
@@ -1056,6 +1062,8 @@ if option == "Crear Proyecto":
                 "profesional": profesional,
                 "partidas": partidas_seleccionadas,
             }
+            # Limpiar materiales acumulados del proyecto anterior
+            st.session_state["materiales_persistente"] = {}
             st.rerun()
 
     # --- Expander del proyecto creado ---
@@ -1151,8 +1159,10 @@ if option == "Cubicacion":
     
     st.subheader("CUBICACIONES")
 
-    # Reiniciar el acumulador de resultados para el PDF en cada recarga
+    # pdf_extra se reinicia para reflejar lo que se renderiza en este ciclo,
+    # pero el acumulador persistente conserva todo lo cubicado entre secciones.
     st.session_state["pdf_extra"] = []
+    st.session_state.setdefault("materiales_persistente", {})
 
     if ver_rubro(horm):
             with st.expander("Hormigón y Movimiento de tierra", expanded=False):
@@ -4551,7 +4561,9 @@ if option == "Presupuesto":
         st.stop()
 
     # --- Usuario premium: presupuesto real ---
-    pdf_extra = st.session_state.get("pdf_extra", [])
+    # Leer materiales del acumulador persistente (no se borra al cambiar de sección)
+    persistente = st.session_state.get("materiales_persistente", {})
+    pdf_extra = list(persistente.values())
 
     if not pdf_extra:
         st.info("Primero realiza una cubicación en la sección **Cubicacion**. "
@@ -4793,7 +4805,7 @@ if option == "Cubicacion":
             esq_tipo=st.session_state.get("pdf_esq_tipo", ""),
             cant_esquinas=st.session_state.get("pdf_cant_esquinas", 0),
             largo_esq=st.session_state.get("pdf_largo_esq", 0),
-            pdf_extra=st.session_state.get("pdf_extra", []),
+            pdf_extra=list(st.session_state.get("materiales_persistente", {}).values()),
         )
         nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
         st.download_button(
