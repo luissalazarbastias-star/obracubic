@@ -162,6 +162,42 @@ def precio_referencial(material):
     return 0
 
 
+# Opciones de marca/tipo por material (precios NETOS). El usuario elige una o usa "Otro".
+# La coincidencia es por palabra clave en el nombre del material.
+OPCIONES_PRECIO = {
+    "cemento": [
+        ("Polpaico (25kg)", 4881),
+        ("Melón (25kg)", 4353),
+        ("Bío Bío (25kg)", 4269),
+        ("Transex (25kg)", 4101),
+    ],
+    "gravilla": [
+        ("Chancada 3/4\"", 27601),
+        ("Fina 3/8\"", 27118),
+        ("Mayorista/camionada", 22900),
+    ],
+    "arena": [
+        ("Gruesa (mayorista)", 20250),
+        ("Gruesa (detalle)", 29113),
+        ("Fina/estuco", 25920),
+    ],
+    "fierro": [
+        ("8mm (barra 6m)", 2500),
+        ("10mm (barra 6m)", 3655),
+        ("12mm (barra 6m)", 5336),
+        ("16mm (barra 6m)", 9664),
+    ],
+}
+
+def opciones_para(material):
+    """Devuelve la lista de opciones (etiqueta, precio) para un material, o None."""
+    nombre = material.lower()
+    for clave, opciones in OPCIONES_PRECIO.items():
+        if clave in nombre:
+            return opciones
+    return None
+
+
 def aviso_premium(funcion="Esta función"):
     """Muestra un aviso de función premium para usuarios gratis."""
     st.warning(f"⭐ {funcion} es parte del **Plan Premium**.")
@@ -4680,26 +4716,39 @@ if option == "Presupuesto":
         with st.expander(f"📦 {rubro}", expanded=True):
             for idx, m in enumerate(mats_rubro):
                 key_base = f"pres_{rubro}_{m['partida']}_{m['material']}_{idx}".replace(" ", "_")
-                c_incluir, c_info, c_precio = st.columns([1, 3, 2])
+                c_incluir, c_info = st.columns([1, 5])
                 with c_incluir:
                     incluir = st.checkbox("Incluir", value=True, key=f"inc_{key_base}", label_visibility="collapsed")
                 with c_info:
                     st.markdown(f"**{m['material']}**")
-                    if m['unidad'] == "m³" or m['unidad'] == "kg":
+                    if m['unidad'] in ("m³", "kg"):
                         cant_fmt = f"{m['cantidad']:.2f}"
-                    elif "caja" in m['unidad']:
-                        cant_fmt = f"{m['cantidad']:.0f}"
                     else:
                         cant_fmt = f"{m['cantidad']:.0f}"
                     st.caption(f"{m['partida']} · {cant_fmt} {m['unidad']}")
-                with c_precio:
-                    precio_sugerido = precio_referencial(m["material"])
-                    precio = st.number_input(
-                        f"Precio unit. ({m['unidad']})",
-                        min_value=0, value=precio_sugerido, step=100,
-                        key=f"precio_{key_base}",
-                        label_visibility="collapsed",
+
+                # Menú de opciones (marca/tipo) si existen para este material
+                opciones = opciones_para(m["material"])
+                precio_sugerido = precio_referencial(m["material"])
+                sufijo_precio = ""
+                if opciones:
+                    etiquetas = [f"{nombre} — {fmt_clp(p)}" for nombre, p in opciones] + ["Otro (precio libre)"]
+                    sel = st.selectbox(
+                        "Tipo / marca",
+                        etiquetas,
+                        key=f"opt_{key_base}",
                     )
+                    if sel != "Otro (precio libre)":
+                        i_sel = etiquetas.index(sel)
+                        precio_sugerido = opciones[i_sel][1]
+                        sufijo_precio = f"_{i_sel}"   # cambia la key al cambiar de marca
+
+                precio = st.number_input(
+                    f"Precio unitario ({m['unidad']}) — neto sin IVA",
+                    min_value=0, value=precio_sugerido, step=100,
+                    key=f"precio_{key_base}{sufijo_precio}",
+                )
+
                 if incluir and precio > 0:
                     sub = m["cantidad"] * precio
                     subtotal_materiales += sub
@@ -4707,6 +4756,7 @@ if option == "Presupuesto":
                         "material": m["material"], "cantidad": m["cantidad"],
                         "unidad": m["unidad"], "precio": precio, "subtotal": sub,
                     })
+                st.divider()
 
     st.success(f"**Subtotal materiales: {fmt_clp(subtotal_materiales)}**")
 
