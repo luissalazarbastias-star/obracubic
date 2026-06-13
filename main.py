@@ -3404,6 +3404,11 @@ if option == "Cubicacion":
                     with ec2:
                         cant_encuentros_mu = st.number_input("Cantidad de encuentros", value=0, step=1, key="cant_enc_mu")
 
+                    incluir_diagonales_mu = st.checkbox(
+                        "Incluir diagonales (riostras)", value=True, key="incluir_diag_mu",
+                        help="Las diagonales rigidizan el tabique. Inclúyelas si tu diseño las requiere.",
+                    )
+
                     # Cálculos — igual que tenías
                     largo_canal_mu = CANALES_MU[canal_tipo_mu]["largo"]
                     largo_mont_medio = MONTANTES_MU[montante_medio]["largo"]
@@ -3419,7 +3424,7 @@ if option == "Cubicacion":
                     total_mont_normal = mont_extremos + mont_esquinas + mont_encuentros + mont_vanos
                     canales_extra_vanos = (cant_puertas_mu + cant_ventanas_mu) * 2
                     total_canales_final = cant_canales_mu + canales_extra_vanos
-                    total_diagonales = cant_tab_mu * 2
+                    total_diagonales = (cant_tab_mu * 2) if incluir_diagonales_mu else 0
                     total_pletinas = cant_esquinas_mu
                     tornillos = ((total_mont_medio + total_mont_normal) * 4) + (total_canales_final * 2)
                     m2_aislacion = largo_tab_mu * alto_tab_mu
@@ -3436,7 +3441,8 @@ if option == "Cubicacion":
                         st.info(f"Montantes normales (esquinas/extremos): {total_mont_normal:.0f} piezas de {largo_mont_esq}m")
                         st.info(f"Total montantes: {total_mont_medio + total_mont_normal:.0f} piezas")
                     with r2:
-                        st.info(f"Diagonales: {total_diagonales} piezas")
+                        if incluir_diagonales_mu:
+                            st.info(f"Diagonales: {total_diagonales} piezas")
                         st.info(f"Pletinas esquinas: {total_pletinas} unidades")
                         st.info(f"Tornillos autoperf.: {tornillos:.0f} unidades")
                         st.info(f"Lana de vidrio: {m2_aislacion_neta:.2f} m²")
@@ -3452,14 +3458,18 @@ if option == "Cubicacion":
                     st.session_state["pdf_cant_esquinas"] = cant_esquinas_mu
                     st.session_state["pdf_largo_esq"] = 0
                     if largo_tab_mu > 0 and total_canales_final > 0:
-                        registrar_pdf("Muros", "Tabique Metalcon", [
+                        items_metalcon = [
                             ("Canales", f"{total_canales_final:.0f} de {largo_canal_mu}m"),
                             ("Montantes perf. (medio)", f"{total_mont_medio:.0f} de {largo_mont_medio}m"),
                             ("Montantes normales", f"{total_mont_normal:.0f} de {largo_mont_esq}m"),
-                            ("Diagonales", f"{total_diagonales} piezas"),
+                        ]
+                        if incluir_diagonales_mu:
+                            items_metalcon.append(("Diagonales", f"{total_diagonales} piezas"))
+                        items_metalcon.extend([
                             ("Tornillos autoperf.", f"{tornillos:.0f} unidades"),
                             ("Lana de vidrio", f"{m2_aislacion_neta:.2f} m²"),
                         ])
+                        registrar_pdf("Muros", "Tabique Metalcon", items_metalcon)
 # ============================
 # TABIQUE DE MADERA
 # ============================
