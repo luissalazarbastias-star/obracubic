@@ -193,6 +193,8 @@ PRECIOS_REFERENCIALES = [
     ("diagonal", 3529),
     ("lana de vidrio", 16378),  # rollo
     # --- Madera tabique ---
+    ("pino tabique", 3571),
+    ("pino", 3571),
     ("soleras", 3571),
     ("cadenetas", 3571),
     ("total listones", 3571),
@@ -301,6 +303,83 @@ def opciones_para(material):
         if clave in nombre:
             return opciones
     return None
+
+
+# Catálogo de materiales por rubro para el apartado "Mis precios" (Mi cuenta).
+# Permite ponerle precio a cada material sin necesidad de una cubicación abierta.
+CATALOGO_MATERIALES = {
+    "Hormigón": [
+        ("Cemento", "saco 25kg"),
+        ("Gravilla", "m³"),
+        ("Arena", "m³"),
+    ],
+    "Acero estructural": [
+        ("Fierro 8mm", "barra 6m"),
+        ("Fierro 10mm", "barra 6m"),
+        ("Fierro 12mm", "barra 6m"),
+        ("Fierro 16mm", "barra 6m"),
+        ("Alambre de amarre", "kg"),
+    ],
+    "Moldajes": [
+        ("Terciado moldaje", "plancha"),
+        ("Pino dimensionado", "unidad"),
+    ],
+    "Muros": [
+        ("Ladrillo", "unidad"),
+        ("Canales", "barra 3m"),
+        ("Montantes normales", "barra 3m"),
+        ("Montantes perforados", "barra 3m"),
+        ("Diagonales", "barra 3m"),
+        ("Tornillos autoperforantes", "caja 1.000"),
+        ("Lana de vidrio", "rollo"),
+        ("Pino tabique", "unidad 3.2m"),
+        ("Clavos", "kg"),
+    ],
+    "Revestimientos": [
+        ("Yeso cartón (Volcanita)", "plancha"),
+        ("Tornillos yeso-cartón", "caja 1.000"),
+        ("Fibrocemento", "plancha"),
+        ("Siding fibrocemento", "tabla"),
+        ("Terciado estructural", "plancha"),
+        ("Terciado ranurado", "plancha"),
+        ("OSB", "plancha"),
+        ("Fijaciones", "caja 100u"),
+    ],
+    "Pisos y Pavimentos": [
+        ("Cerámico / Porcelanato", "m²"),
+        ("Pegamento", "saco 25kg"),
+        ("Fragüe", "bolsa 1kg"),
+        ("Piso flotante", "caja"),
+        ("Baldosa", "m²"),
+        ("Deck de madera", "m²"),
+        ("Tornillos galvanizados", "caja 100u"),
+    ],
+    "Terminaciones": [
+        ("Pintura", "galón"),
+        ("Sellador", "galón"),
+        ("Pasta muro", "tineta"),
+        ("Cinta de juntas", "rollo"),
+        ("Estuco", "saco"),
+        ("Cal", "saco"),
+        ("Cielo (plancha)", "plancha"),
+        ("Perfiles cielo (Portante 40R)", "barra 3m"),
+        ("Zócalos / Guardapolvos", "unidad 2.4m"),
+    ],
+    "Cubierta / Techumbre": [
+        ("Costanera madera", "unidad"),
+        ("Madera cerchas", "unidad"),
+        ("Perfil Omega 92x50", "barra 6m"),
+        ("Perfil Omega 70x40", "barra 6m"),
+        ("Costanera metálica", "barra 6m"),
+        ("Perfil C (cercha)", "barra 6m"),
+        ("Zinc acanalado", "plancha"),
+        ("Teja asfáltica", "paquete"),
+        ("Teja de arcilla", "unidad"),
+        ("Panel sándwich", "m²"),
+        ("Fieltro asfáltico", "rollo"),
+        ("Aislación térmica", "rollo"),
+    ],
+}
 
 
 def aviso_premium(funcion="Esta función"):
@@ -1074,6 +1153,52 @@ if st.session_state.get("vista_cuenta"):
                             st.error("No se pudo eliminar.")
         else:
             st.info("Todavía no tienes proyectos guardados.")
+
+        # ---------------------------------------
+        # MIS PRECIOS
+        # ---------------------------------------
+        st.write("---")
+        st.subheader("💲 Mis precios")
+
+        if plan_u != "premium":
+            st.info("La lista de precios personalizada es una función del **Plan Premium**. "
+                    "Con ella defines tus precios una vez y se aplican en todos tus presupuestos.")
+        else:
+            st.caption("Ajusta el precio de cada material (neto, sin IVA) y guarda tu lista. "
+                       "Se aplicará automáticamente en tus presupuestos. Los valores que ves son referenciales.")
+
+            # Cargar precios guardados del usuario
+            mis_precios = cargar_precios_usuario(usuario["id"])
+            nuevos_precios = {}
+
+            for rubro_cat, materiales_cat in CATALOGO_MATERIALES.items():
+                with st.expander(f"📦 {rubro_cat}", expanded=False):
+                    for material, unidad in materiales_cat:
+                        # Prioridad: precio guardado del usuario > referencial
+                        valor_inicial = mis_precios.get(material, precio_referencial(material))
+                        col_m, col_p = st.columns([3, 2])
+                        with col_m:
+                            st.markdown(f"**{material}**")
+                            st.caption(f"por {unidad}")
+                        with col_p:
+                            p = st.number_input(
+                                f"Precio {material}",
+                                min_value=0, value=int(valor_inicial), step=100,
+                                key=f"miprecio_{rubro_cat}_{material}".replace(" ", "_"),
+                                label_visibility="collapsed",
+                            )
+                        nuevos_precios[material] = p
+
+            st.write("")
+            if st.button("💾 Guardar mi lista de precios", type="primary", use_container_width=True, key="btn_guardar_mis_precios"):
+                try:
+                    guardar_precios_usuario(usuario["id"], nuevos_precios)
+                    # Refrescar el dict en memoria para que el presupuesto los use
+                    st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
+                    st.success("¡Tu lista de precios fue guardada! Se aplicará en tus próximos presupuestos.")
+                except Exception:
+                    st.error("No se pudieron guardar los precios. Intenta de nuevo.")
+
     else:
         # --- Sin sesión: login / registro ---
         st.subheader("Acceso a ObraCubic")
