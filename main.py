@@ -1155,15 +1155,11 @@ if st.session_state.get("vista_cuenta"):
             st.info("Todavía no tienes proyectos guardados.")
 
         # ---------------------------------------
-        # MIS PRECIOS
+        # MIS PRECIOS (solo premium)
         # ---------------------------------------
-        st.write("---")
-        st.subheader("💲 Mis precios")
-
-        if plan_u != "premium":
-            st.info("La lista de precios personalizada es una función del **Plan Premium**. "
-                    "Con ella defines tus precios una vez y se aplican en todos tus presupuestos.")
-        else:
+        if plan_u == "premium":
+            st.write("---")
+            st.subheader("💲 Mis precios")
             st.caption("Ajusta el precio de cada material (neto, sin IVA) y guarda tu lista. "
                        "Se aplicará automáticamente en tus presupuestos. Los valores que ves son referenciales.")
 
