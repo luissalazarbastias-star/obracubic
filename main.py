@@ -1285,9 +1285,14 @@ if st.session_state.get("vista_cuenta"):
             email_r = st.text_input("Correo electrónico", placeholder="tucorreo@ejemplo.com", key="reg_email")
             pass_r = st.text_input("Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="reg_pass")
             pass_r2 = st.text_input("Repetir contraseña", type="password", placeholder="Repite la contraseña", key="reg_pass2")
+            st.markdown("Para crear tu cuenta, abre y lee los términos y condiciones. Al final podrás aceptarlos.")
             with st.expander("📄 Leer términos y condiciones"):
                 mostrar_terminos()
-            acepta = st.checkbox("He leído y acepto los términos y condiciones", key="reg_terminos")
+                st.write("---")
+                acepta = st.checkbox("He leído y acepto los términos y condiciones", key="reg_terminos")
+            if not st.session_state.get("reg_terminos"):
+                st.caption("☝️ Debes abrir los términos y aceptarlos al final para crear tu cuenta.")
+            acepta = st.session_state.get("reg_terminos", False)
             if st.button("Crear cuenta", type="primary", use_container_width=True, key="btn_registro"):
                 if not nombre_r or not email_r or not pass_r:
                     st.warning("Completa nombre, correo y contraseña.")
