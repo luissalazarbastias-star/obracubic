@@ -1104,7 +1104,7 @@ nav_col, cuenta_col = st.columns([3, 1])
 with nav_col:
     option = st.radio(
         "Ir a:",
-        ["Inicio", "Crear Proyecto", "Cubicacion", "Presupuesto"],
+        ["Inicio", "Crear Proyecto", "Cubicacion", "Presupuesto", "Planes"],
         horizontal=True,
         key="nav_option",
         on_change=_salir_cuenta,
@@ -5552,3 +5552,88 @@ if option == "Cubicacion":
             file_name=nombre_archivo,
             mime="application/pdf",
         )
+
+
+
+# ============================
+# SECCIÓN PLANES
+# ============================
+if option == "Planes":
+    st.subheader("💎 Planes de ObraCubic")
+    st.caption("Elige el plan que mejor se adapte a tu trabajo. Estamos en fase beta: "
+               "los planes de pago estarán disponibles muy pronto.")
+
+    _plan_user = plan_actual()
+
+    col_g, col_b, col_e = st.columns(3)
+
+    # --- Plan Gratis ---
+    with col_g:
+        with st.container(border=True):
+            st.markdown("### ☕ Plan Gratis")
+            st.markdown("## $0")
+            st.caption("Para empezar a cubicar")
+            st.write("---")
+            st.markdown(
+                "✅ Todas las partidas de cubicación\n\n"
+                "✅ Hasta **5 cubicaciones** guardadas\n\n"
+                "✅ PDF estándar (con marca ObraCubic)\n\n"
+                "❌ Presupuestos\n\n"
+                "❌ PDF con tu logo\n\n"
+                "❌ Exportar a Excel"
+            )
+            st.write("")
+            if _plan_user == "gratis":
+                st.success("✓ Tu plan actual")
+            else:
+                st.button("Plan Gratis", disabled=True, use_container_width=True, key="plan_g")
+
+    # --- Plan Pro Básico ---
+    with col_b:
+        with st.container(border=True):
+            st.markdown("### 🚀 Plan Pro Básico")
+            st.markdown("## $5.990 <span style='font-size:0.5em; color:gray;'>/ mes</span>", unsafe_allow_html=True)
+            st.caption("Para profesionales independientes")
+            st.write("---")
+            st.markdown(
+                "✅ Todo lo del Plan Gratis\n\n"
+                "✅ **Cubicaciones ilimitadas**\n\n"
+                "✅ Historial completo en la nube\n\n"
+                "✅ **PDF con tu logo y nombre**\n\n"
+                "✅ **Presupuestos** (precios + IVA)\n\n"
+                "✅ Lista personal de precios"
+            )
+            st.write("")
+            if _plan_user == "pro_basico":
+                st.success("✓ Tu plan actual")
+            else:
+                st.button("🔜 Próximamente", disabled=True, use_container_width=True, key="plan_b")
+
+    # --- Plan Pro Élite ---
+    with col_e:
+        with st.container(border=True):
+            st.markdown("### 👑 Plan Pro Élite")
+            st.markdown("## $14.990 <span style='font-size:0.5em; color:gray;'>/ mes</span>", unsafe_allow_html=True)
+            st.caption("Para oficinas técnicas")
+            st.write("---")
+            st.markdown(
+                "✅ Todo lo del Plan Pro Básico\n\n"
+                "✅ Presupuesto avanzado (**APU**)\n\n"
+                "✅ **Exportar a Excel** (.xlsx)\n\n"
+                "✅ PDF + formatos ejecutivos\n\n"
+                "✅ **Bitácora de obra** (notas + fotos)\n\n"
+                "✅ Soporte prioritario"
+            )
+            st.write("")
+            if _plan_user == "pro_elite":
+                st.success("✓ Tu plan actual")
+            else:
+                st.button("🔜 Próximamente", disabled=True, use_container_width=True, key="plan_e")
+
+    st.write("")
+    st.info("🚧 **ObraCubic está en fase beta.** Los planes de pago aún no están disponibles. "
+            "Estamos afinando la app con usuarios reales antes de habilitar el cobro. "
+            "¡Gracias por acompañarnos en esta etapa!")
+
+    if _plan_user == "sin_cuenta":
+        st.caption("Crea una cuenta gratis para empezar a usar ObraCubic.")
