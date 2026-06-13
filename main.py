@@ -50,6 +50,8 @@ CLAVES_SISTEMA = {
     "_goto", "_supabase_error", "ir_a_cubicacion",
     "login_email", "login_pass", "reg_nombre", "reg_email", "reg_pass",
     "reg_pass2", "reg_terminos", "nombre_nuevo_proyecto_guardar",
+    "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales",
+    "presupuesto_actual",
 }
 
 def _es_serializable(valor):
@@ -90,6 +92,27 @@ def cargar_proyecto(proyecto_id):
 
 def eliminar_proyecto(proyecto_id):
     supabase.table("proyectos").delete().eq("id", proyecto_id).execute()
+
+
+def cargar_precios_usuario(usuario_id):
+    """Devuelve un dict {material: precio} con los precios guardados del usuario."""
+    try:
+        res = supabase.table("precios_usuario").select("material, precio").eq("usuario_id", usuario_id).execute()
+        return {fila["material"]: fila["precio"] for fila in (res.data or [])}
+    except Exception:
+        return {}
+
+
+def guardar_precios_usuario(usuario_id, precios):
+    """Guarda/actualiza un dict {material: precio} para el usuario (upsert)."""
+    if not precios:
+        return
+    filas = [
+        {"usuario_id": usuario_id, "material": mat, "precio": int(p)}
+        for mat, p in precios.items() if p and p > 0
+    ]
+    if filas:
+        supabase.table("precios_usuario").upsert(filas, on_conflict="usuario_id,material").execute()
 
 
 def usuario_es_premium():
@@ -859,7 +882,8 @@ if st.session_state.get("vista_cuenta"):
                     supabase.auth.sign_out()
                 except Exception:
                     pass
-                for k in ["usuario", "usuario_nombre", "usuario_plan"]:
+                for k in ["usuario", "usuario_nombre", "usuario_plan",
+                          "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales"]:
                     st.session_state.pop(k, None)
                 st.rerun()
         with cc2:
@@ -4849,9 +4873,22 @@ if option == "Presupuesto":
     st.caption("Marca los que quieras incluir y ponles precio unitario (referencial, ajústalo a tu proveedor).")
     st.info("💡 Los precios que aparecen son **valores referenciales netos (sin IVA)** de ejemplo. "
             "Ajústalos a los de tu proveedor y tu región. El IVA se agrega al final del presupuesto.")
+
+    # Cargar precios personales guardados del usuario (una vez por sesión)
+    if "precios_usuario_cargados" not in st.session_state:
+        st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
+        st.session_state["precios_usuario_cargados"] = True
+    precios_guardados = st.session_state.get("precios_usuario_dict", {})
+
+    if precios_guardados:
+        st.success(f"✓ Tienes {len(precios_guardados)} precios personales guardados. Se aplican automáticamente.")
+
     with st.popover("⚙️ Opciones"):
         if st.button("🗑️ Reiniciar materiales", help="Borra los materiales acumulados y vuelve a tomarlos de la cubicación actual"):
             st.session_state["materiales_persistente"] = {}
+            st.rerun()
+        if st.button("🔄 Recargar mis precios guardados"):
+            st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
             st.rerun()
 
     # Agrupar por rubro
@@ -4895,6 +4932,10 @@ if option == "Presupuesto":
                         precio_sugerido = opciones[i_sel][1]
                         sufijo_precio = f"_{i_sel}"   # cambia la key al cambiar de marca
 
+                # Prioridad: precio personal guardado > referencial/marca
+                if m["material"] in precios_guardados:
+                    precio_sugerido = precios_guardados[m["material"]]
+
                 precio = st.number_input(
                     f"Precio unitario ({m['unidad']}) — neto sin IVA",
                     min_value=0, value=precio_sugerido, step=100,
@@ -4908,9 +4949,25 @@ if option == "Presupuesto":
                         "material": m["material"], "cantidad": m["cantidad"],
                         "unidad": m["unidad"], "precio": precio, "subtotal": sub,
                     })
+                # Recordar el precio actual de este material para poder guardarlo
+                st.session_state.setdefault("_precios_actuales", {})
+                st.session_state["_precios_actuales"][m["material"]] = precio
                 st.divider()
 
     st.success(f"**Subtotal materiales: {fmt_clp(subtotal_materiales)}**")
+
+    # Guardar precios como lista personal
+    with st.expander("💾 Guardar mis precios"):
+        st.caption("Guarda los precios actuales en tu cuenta. Se aplicarán automáticamente en tus próximos presupuestos.")
+        if st.button("💾 Guardar mis precios", type="primary"):
+            precios_a_guardar = st.session_state.get("_precios_actuales", {})
+            try:
+                guardar_precios_usuario(usuario["id"], precios_a_guardar)
+                # Actualizar el dict en memoria
+                st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
+                st.success("¡Precios guardados! Se aplicarán en tus próximos presupuestos.")
+            except Exception:
+                st.error("No se pudieron guardar los precios. Intenta de nuevo.")
 
     # --- Mano de obra ---
     st.write("---")
