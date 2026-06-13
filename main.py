@@ -115,11 +115,65 @@ def guardar_precios_usuario(usuario_id, precios):
         supabase.table("precios_usuario").upsert(filas, on_conflict="usuario_id,material").execute()
 
 
-def usuario_es_premium():
-    """True si hay sesión y el plan del usuario es premium."""
+# ============================
+# SISTEMA DE PLANES
+# ============================
+# Planes: "gratis", "pro_basico", "pro_elite"
+# (el caso "sin cuenta" = sin sesión iniciada)
+
+PLANES_INFO = {
+    "gratis":     {"nombre": "Plan Gratis", "emoji": "☕", "precio": "$0"},
+    "pro_basico": {"nombre": "Plan Pro Básico", "emoji": "🚀", "precio": "$5.990 / mes"},
+    "pro_elite":  {"nombre": "Plan Pro Élite", "emoji": "👑", "precio": "$14.990 / mes"},
+}
+
+# Jerarquía de planes (para comparar "al menos este nivel")
+NIVEL_PLAN = {"sin_cuenta": 0, "gratis": 1, "pro_basico": 2, "pro_elite": 3}
+
+def plan_actual():
+    """Devuelve el plan del usuario actual: 'sin_cuenta', 'gratis', 'pro_basico' o 'pro_elite'."""
     if not st.session_state.get("usuario"):
-        return False
-    return st.session_state.get("usuario_plan", "gratis") == "premium"
+        return "sin_cuenta"
+    plan = st.session_state.get("usuario_plan", "gratis")
+    # Compatibilidad: el plan antiguo "premium" se trata como Pro Élite
+    if plan == "premium":
+        return "pro_elite"
+    if plan not in NIVEL_PLAN:
+        return "gratis"
+    return plan
+
+def tiene_nivel(plan_minimo):
+    """True si el plan actual es al menos el nivel indicado."""
+    return NIVEL_PLAN.get(plan_actual(), 0) >= NIVEL_PLAN.get(plan_minimo, 99)
+
+# Permisos por funcionalidad (qué plan mínimo se requiere)
+def puede_presupuesto():
+    """Generar presupuestos: Pro Básico hacia arriba."""
+    return tiene_nivel("pro_basico")
+
+def puede_pdf_con_logo():
+    """PDF personalizado con logo del usuario: Pro Básico hacia arriba."""
+    return tiene_nivel("pro_basico")
+
+def puede_cubicaciones_ilimitadas():
+    """Cubicaciones ilimitadas: Pro Básico hacia arriba."""
+    return tiene_nivel("pro_basico")
+
+def puede_exportar_excel():
+    """Exportar a Excel: solo Pro Élite."""
+    return tiene_nivel("pro_elite")
+
+def puede_apu():
+    """Presupuesto avanzado (APU): solo Pro Élite."""
+    return tiene_nivel("pro_elite")
+
+def puede_bitacora():
+    """Bitácora de obra: solo Pro Élite."""
+    return tiene_nivel("pro_elite")
+
+def usuario_es_premium():
+    """Compatibilidad: True si el usuario tiene algún plan de pago (Pro Básico o Élite)."""
+    return tiene_nivel("pro_basico")
 
 
 def parsear_cantidad(valor):
@@ -383,9 +437,9 @@ CATALOGO_MATERIALES = {
 
 
 def aviso_premium(funcion="Esta función"):
-    """Muestra un aviso de función premium para usuarios gratis."""
-    st.warning(f"⭐ {funcion} es parte del **Plan Premium**.")
-    st.caption("Mejora tu plan para desbloquear el presupuesto con precios, PDF con tu marca y más.")
+    """Muestra un aviso de función de pago para usuarios sin plan Pro."""
+    st.warning(f"⭐ {funcion} es parte de los **Planes Pro**.")
+    st.caption("Mejora a Plan Pro para desbloquear el presupuesto con precios, PDF con tu marca y más.")
 
 
 def mostrar_terminos():
@@ -1086,7 +1140,9 @@ if st.session_state.get("vista_cuenta"):
         nombre_u = st.session_state.get("usuario_nombre") or usuario.get("email", "usuario")
         st.success(f"Sesión iniciada como: {nombre_u}")
         plan_u = st.session_state.get("usuario_plan", "gratis")
-        st.caption(f"Plan actual: **{plan_u.upper()}**")
+        _p = plan_actual()
+        _info = PLANES_INFO.get(_p, {"nombre": "Plan Gratis", "emoji": "☕"})
+        st.caption(f"Plan actual: **{_info['nombre']} {_info['emoji']}**")
         cc1, cc2 = st.columns(2)
         with cc1:
             if st.button("Cerrar sesión", use_container_width=True):
@@ -1110,7 +1166,7 @@ if st.session_state.get("vista_cuenta"):
         st.subheader("📁 Mis proyectos")
 
         proyectos = listar_proyectos(usuario["id"])
-        es_premium = (plan_u == "premium")
+        es_premium = puede_cubicaciones_ilimitadas()
         limite = None if es_premium else LIMITE_GRATIS
         n_proy = len(proyectos)
 
@@ -1206,9 +1262,9 @@ if st.session_state.get("vista_cuenta"):
             st.info("Todavía no tienes proyectos guardados.")
 
         # ---------------------------------------
-        # MIS PRECIOS (solo premium)
+        # MIS PRECIOS (solo planes de pago)
         # ---------------------------------------
-        if plan_u == "premium":
+        if puede_presupuesto():
             st.write("---")
             st.subheader("💲 Mis precios")
             st.caption("Ajusta el precio de cada material (neto, sin IVA) y guarda tu lista. "
@@ -5077,11 +5133,11 @@ if option == "Presupuesto":
         st.caption("El presupuesto es una función del Plan Premium.")
         st.stop()
 
-    if not usuario_es_premium():
+    if not puede_presupuesto():
         aviso_premium("El presupuesto con precios")
         st.write("---")
         st.markdown(
-            "Con el **Plan Premium** podrás:\n"
+            "Con el **Plan Pro** podrás:\n"
             "- Ponerle **precio a cada material** y obtener el costo total\n"
             "- Sumar **mano de obra** y **margen de ganancia**\n"
             "- Ver el total **con IVA y sin IVA**\n"
