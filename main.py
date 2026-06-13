@@ -388,6 +388,57 @@ def aviso_premium(funcion="Esta función"):
     st.caption("Mejora tu plan para desbloquear el presupuesto con precios, PDF con tu marca y más.")
 
 
+def mostrar_terminos():
+    """Muestra el texto de los términos y condiciones de ObraCubic.
+    BORRADOR base: debe ser revisado por un abogado antes de uso definitivo."""
+    st.markdown("""
+## Términos y Condiciones de Uso — ObraCubic
+
+**Última actualización:** revise y ajuste esta fecha.
+
+Al crear una cuenta y utilizar ObraCubic ("la aplicación", "el servicio"), usted acepta los siguientes términos. Le recomendamos leerlos con atención.
+
+### 1. Descripción del servicio
+ObraCubic es una herramienta digital que permite calcular cantidades de materiales de construcción (cubicación) y generar presupuestos referenciales. El servicio se ofrece en un plan gratuito y un plan premium con funciones adicionales.
+
+### 2. Naturaleza referencial de los cálculos y precios
+Los resultados de cubicación, las cantidades de materiales, los precios y los presupuestos generados por ObraCubic son **estimaciones de carácter referencial**. No constituyen un cálculo estructural, una cotización oficial ni una garantía de cantidades o costos exactos.
+
+Es responsabilidad exclusiva del usuario **verificar** todos los resultados con un profesional competente (arquitecto, ingeniero, constructor) y con proveedores reales antes de tomar decisiones de compra, construcción o contratación. ObraCubic no se hace responsable por diferencias entre los valores estimados y los valores reales de obra.
+
+### 3. Uso aceptable
+El usuario se compromete a utilizar la aplicación de forma lícita y a no:
+- Usar el servicio para fines ilegales o no autorizados.
+- Intentar vulnerar la seguridad de la aplicación o de otros usuarios.
+- Compartir su cuenta con terceros de forma que infrinja estos términos.
+
+### 4. Cuenta de usuario
+El usuario es responsable de mantener la confidencialidad de su contraseña y de toda actividad realizada desde su cuenta. Los datos que ingrese (proyectos, precios) son de su responsabilidad.
+
+### 5. Planes y pagos
+El plan gratuito ofrece funciones básicas de cubicación. El plan premium ofrece funciones adicionales y puede tener un costo. Las condiciones de cobro, renovación y cancelación se informarán al momento de contratar el plan premium.
+
+### 6. Datos personales
+ObraCubic recopila los datos necesarios para prestar el servicio (correo, nombre, proyectos guardados). Estos datos se almacenan de forma segura y no se comparten con terceros salvo obligación legal. El usuario puede solicitar la eliminación de su cuenta y datos.
+
+### 7. Limitación de responsabilidad
+ObraCubic se ofrece "tal cual", sin garantías de disponibilidad ininterrumpida ni de ausencia de errores. En la máxima medida permitida por la ley, ObraCubic no será responsable por daños directos o indirectos derivados del uso o la imposibilidad de uso del servicio, ni por decisiones tomadas en base a los cálculos referenciales entregados.
+
+### 8. Propiedad intelectual
+La aplicación, su diseño, código y contenidos son propiedad de ObraCubic. El usuario conserva la propiedad de los datos que ingrese.
+
+### 9. Modificaciones
+ObraCubic puede actualizar estos términos en cualquier momento. Los cambios se informarán a través de la aplicación.
+
+### 10. Contacto
+Para consultas sobre estos términos, escriba a: *(indique su correo de contacto)*.
+
+---
+
+*Este documento es un borrador base de referencia y no constituye asesoría legal. Antes de su uso definitivo, especialmente si el servicio tendrá costo, debe ser revisado por un abogado para asegurar su cumplimiento con la legislación chilena vigente (incluyendo la Ley 19.496 de Protección al Consumidor y la Ley 19.628 sobre Protección de la Vida Privada).*
+""")
+
+
 # ============================
 # DATOS DE DOSIFICACIÓN (CBB)
 # ============================
@@ -1195,6 +1246,11 @@ if st.session_state.get("vista_cuenta"):
                 except Exception:
                     st.error("No se pudieron guardar los precios. Intenta de nuevo.")
 
+        # Términos y condiciones (siempre accesibles con sesión)
+        st.write("---")
+        with st.expander("📄 Términos y condiciones"):
+            mostrar_terminos()
+
     else:
         # --- Sin sesión: login / registro ---
         st.subheader("Acceso a ObraCubic")
@@ -1229,7 +1285,9 @@ if st.session_state.get("vista_cuenta"):
             email_r = st.text_input("Correo electrónico", placeholder="tucorreo@ejemplo.com", key="reg_email")
             pass_r = st.text_input("Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="reg_pass")
             pass_r2 = st.text_input("Repetir contraseña", type="password", placeholder="Repite la contraseña", key="reg_pass2")
-            acepta = st.checkbox("Acepto los términos y condiciones", key="reg_terminos")
+            with st.expander("📄 Leer términos y condiciones"):
+                mostrar_terminos()
+            acepta = st.checkbox("He leído y acepto los términos y condiciones", key="reg_terminos")
             if st.button("Crear cuenta", type="primary", use_container_width=True, key="btn_registro"):
                 if not nombre_r or not email_r or not pass_r:
                     st.warning("Completa nombre, correo y contraseña.")
