@@ -3326,7 +3326,7 @@ if option == "Cubicacion":
                     st.session_state["pdf_esq_tipo"] = ""
                     st.session_state["pdf_cant_esquinas"] = cant_esquinas_mu
                     st.session_state["pdf_largo_esq"] = 0
-                    if largo_tab_mu > 0:
+                    if largo_tab_mu > 0 and total_canales_final > 0:
                         registrar_pdf("Muros", "Tabique Metalcon", [
                             ("Canales", f"{total_canales_final:.0f} de {largo_canal_mu}m"),
                             ("Montantes perf. (medio)", f"{total_mont_medio:.0f} de {largo_mont_medio}m"),
@@ -4915,15 +4915,27 @@ if option == "Presupuesto":
     CLAVOS_POR_KILO = 75       # estimado para clavos de 3"
     TORNILLOS_POR_CAJA = 1000  # caja estándar Metalcon
 
+    # Etiquetas que NO son materiales presupuestables (datos informativos)
+    NO_MATERIALES = [
+        "área", "area", "superficie", "volumen", "dosificación", "dosificacion",
+        "espesor", "medida", "tipo madera", "manos", "capas", "traslape",
+        "dirección x", "dirección y", "direccion x", "direccion y",
+        "altura cumbrera", "pendiente", "par inclinado", "pendolón", "pendolon",
+        "metros lineales netos", "acero total",
+    ]
+
     # Construir lista de materiales presupuestables desde pdf_extra
     materiales_disponibles = []
     for bloque in pdf_extra:
         rubro = bloque.get("rubro", "")
         partida = bloque.get("partida", "")
         for etiqueta, valor in bloque.get("items", []):
+            etiqueta_baja = etiqueta.lower()
+            # Saltar datos informativos que no son materiales
+            if any(palabra in etiqueta_baja for palabra in NO_MATERIALES):
+                continue
             cant, uni = parsear_cantidad(valor)
             if cant is not None and cant > 0:
-                etiqueta_baja = etiqueta.lower()
                 # Arena y gravilla: kg → m³
                 if uni and "kg" in uni.lower():
                     densidad = None
@@ -4986,55 +4998,67 @@ if option == "Presupuesto":
     for rubro in rubros_unicos:
         mats_rubro = [m for m in materiales_disponibles if m["rubro"] == rubro]
         with st.expander(f"📦 {rubro}", expanded=True):
-            for idx, m in enumerate(mats_rubro):
-                key_base = f"pres_{rubro}_{m['partida']}_{m['material']}_{idx}".replace(" ", "_")
-                c_incluir, c_info = st.columns([1, 5])
-                with c_incluir:
-                    incluir = st.checkbox("Incluir", value=True, key=f"inc_{key_base}", label_visibility="collapsed")
-                with c_info:
-                    st.markdown(f"**{m['material']}**")
-                    if m['unidad'] in ("m³", "kg"):
-                        cant_fmt = f"{m['cantidad']:.2f}"
-                    else:
-                        cant_fmt = f"{m['cantidad']:.0f}"
-                    st.caption(f"{m['partida']} · {cant_fmt} {m['unidad']}")
+            # Agrupar por partida dentro del rubro
+            partidas_rubro = []
+            for m in mats_rubro:
+                if m["partida"] not in partidas_rubro:
+                    partidas_rubro.append(m["partida"])
 
-                # Menú de opciones (marca/tipo) si existen para este material
-                opciones = opciones_para(m["material"])
-                precio_sugerido = precio_referencial(m["material"])
-                sufijo_precio = ""
-                if opciones:
-                    etiquetas = [f"{nombre} — {fmt_clp(p)}" for nombre, p in opciones] + ["Otro (precio libre)"]
-                    sel = st.selectbox(
-                        "Tipo / marca",
-                        etiquetas,
-                        key=f"opt_{key_base}",
+            for partida in partidas_rubro:
+                mats_part = [m for m in mats_rubro if m["partida"] == partida]
+                pc1, pc2 = st.columns([4, 1])
+                with pc1:
+                    st.markdown(f"**{partida}**")
+                with pc2:
+                    if st.button("✕ Quitar", key=f"quitar_{rubro}_{partida}".replace(" ", "_"),
+                                 help=f"Quitar {partida} del presupuesto"):
+                        clave = f"{rubro}||{partida}"
+                        st.session_state.get("materiales_persistente", {}).pop(clave, None)
+                        st.rerun()
+
+                for idx, m in enumerate(mats_part):
+                    key_base = f"pres_{rubro}_{m['partida']}_{m['material']}_{idx}".replace(" ", "_")
+                    c_incluir, c_info = st.columns([1, 5])
+                    with c_incluir:
+                        incluir = st.checkbox("Incluir", value=True, key=f"inc_{key_base}", label_visibility="collapsed")
+                    with c_info:
+                        st.markdown(f"{m['material']}")
+                        if m['unidad'] in ("m³", "kg"):
+                            cant_fmt = f"{m['cantidad']:.2f}"
+                        else:
+                            cant_fmt = f"{m['cantidad']:.0f}"
+                        st.caption(f"{cant_fmt} {m['unidad']}")
+
+                    # Menú de opciones (marca/tipo) si existen para este material
+                    opciones = opciones_para(m["material"])
+                    precio_sugerido = precio_referencial(m["material"])
+                    sufijo_precio = ""
+                    if opciones:
+                        etiquetas = [f"{nombre} — {fmt_clp(p)}" for nombre, p in opciones] + ["Otro (precio libre)"]
+                        sel = st.selectbox("Tipo / marca", etiquetas, key=f"opt_{key_base}")
+                        if sel != "Otro (precio libre)":
+                            i_sel = etiquetas.index(sel)
+                            precio_sugerido = opciones[i_sel][1]
+                            sufijo_precio = f"_{i_sel}"
+
+                    if m["material"] in precios_guardados:
+                        precio_sugerido = precios_guardados[m["material"]]
+
+                    precio = st.number_input(
+                        f"Precio unitario ({m['unidad']}) — neto sin IVA",
+                        min_value=0, value=precio_sugerido, step=100,
+                        key=f"precio_{key_base}{sufijo_precio}",
                     )
-                    if sel != "Otro (precio libre)":
-                        i_sel = etiquetas.index(sel)
-                        precio_sugerido = opciones[i_sel][1]
-                        sufijo_precio = f"_{i_sel}"   # cambia la key al cambiar de marca
 
-                # Prioridad: precio personal guardado > referencial/marca
-                if m["material"] in precios_guardados:
-                    precio_sugerido = precios_guardados[m["material"]]
-
-                precio = st.number_input(
-                    f"Precio unitario ({m['unidad']}) — neto sin IVA",
-                    min_value=0, value=precio_sugerido, step=100,
-                    key=f"precio_{key_base}{sufijo_precio}",
-                )
-
-                if incluir and precio > 0:
-                    sub = m["cantidad"] * precio
-                    subtotal_materiales += sub
-                    items_presupuesto.append({
-                        "material": m["material"], "cantidad": m["cantidad"],
-                        "unidad": m["unidad"], "precio": precio, "subtotal": sub,
-                    })
-                # Recordar el precio actual de este material para poder guardarlo
-                st.session_state.setdefault("_precios_actuales", {})
-                st.session_state["_precios_actuales"][m["material"]] = precio
+                    if incluir and precio > 0:
+                        sub = m["cantidad"] * precio
+                        subtotal_materiales += sub
+                        items_presupuesto.append({
+                            "material": m["material"], "cantidad": m["cantidad"],
+                            "unidad": m["unidad"], "precio": precio, "subtotal": sub,
+                        })
+                    st.session_state.setdefault("_precios_actuales", {})
+                    st.session_state["_precios_actuales"][m["material"]] = precio
                 st.divider()
 
     st.success(f"**Subtotal materiales: {fmt_clp(subtotal_materiales)}**")
