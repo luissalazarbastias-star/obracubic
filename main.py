@@ -155,25 +155,107 @@ def fmt_clp(valor):
 # Precios referenciales NETOS (sin IVA). Valores de ejemplo, el usuario los ajusta.
 # La coincidencia es por palabra clave dentro del nombre del material.
 PRECIOS_REFERENCIALES = [
-    # (palabra_clave_en_minusculas, precio_neto)
-    ("cemento", 4370),       # saco 25kg
+    # (palabra_clave_en_minusculas, precio_neto). Orden: más específico primero.
+    # --- Hormigón ---
+    ("fibrocemento", 8395),  # antes que "cemento" para evitar colisión
+    ("cemento", 3992),       # saco 25kg
     ("gravilla", 26891),     # m³
-    ("arena", 21849),        # m³
-    ("canal", 5882),         # canal estructural 92x30 (6m)
-    ("montantes perf", 1891),  # montante tabique 60x38 (3,0m) perforado
-    ("montantes normal", 1891),
-    ("montante perf", 1891),
-    ("montante normal", 1891),
-    ("montante", 1891),      # tabique por defecto (estructural se ajusta a mano)
-    ("diagonal", 1891),      # tira metalcon similar a montante
-    ("tornillo", 6294),      # caja de 1.000 (neto)
-    ("lana de vidrio", 3500),# m² (referencial)
-    ("fierro", 5336),        # barra 6m (12mm como referencia media)
-    ("acero", 5336),
-    ("barra", 5336),
-    ("malla", 45000),        # plancha ACMA (referencial)
-    ("clavos", 2185),        # por kilo (neto)
-    ("clavo", 2185),
+    ("arena mortero", 23950),
+    ("arena", 23950),        # m³
+    # --- Acero ---
+    ("fierro 8", 3269),
+    ("fierro 10", 5034),
+    ("fierro 12", 7269),
+    ("fierro 16", 13017),
+    ("fierro", 7269),        # barra 6m (12mm por defecto)
+    ("alambre", 2429),       # kg
+    ("acero", 7269),
+    ("barra", 7269),
+    # --- Moldajes ---
+    ("terciado ranurado", 23941),
+    ("terciado estructural", 18479),
+    ("terciado", 18479),
+    ("tabla moldaje", 18479),
+    ("pino dimensionado", 4109),
+    # --- Muros ---
+    ("ladrillo", 454),       # unidad
+    # --- Metalcon ---
+    ("zócalo", 2429),        # antes que "canal"/"cal"
+    ("zocalo", 2429),
+    ("guardapolvo", 2429),
+    ("zinc", 10496),         # antes que "canal" (acanalado)
+    ("canal", 4613),         # barra 3m
+    ("montantes perf", 5286),
+    ("montantes normal", 4193),
+    ("montante perf", 5286),
+    ("montante normal", 4193),
+    ("montante", 4193),
+    ("diagonal", 3529),
+    ("lana de vidrio", 16378),  # rollo
+    # --- Madera tabique ---
+    ("soleras", 3571),
+    ("cadenetas", 3571),
+    ("total listones", 3571),
+    ("aislante", 16378),
+    # --- Revestimientos ---
+    ("yeso cartón", 6126),
+    ("yeso carton", 6126),
+    ("siding", 4109),
+    ("osb", 9655),
+    ("planchas", 8395),      # genérico revestimiento
+    ("tablas", 4109),
+    ("fijaciones", 2933),
+    # --- Pisos ---
+    ("cerámico", 5874),
+    ("ceramico", 5874),
+    ("pegamento", 5454),
+    ("fragüe", 2092),
+    ("fragüe", 2092),
+    ("piso flotante", 14773),
+    ("flotante", 14773),
+    ("baldosa", 12597),
+    ("deck", 15958),
+    ("tornillos galvanizados", 4445),
+    # --- Terminaciones ---
+    ("pintura", 21000),      # galón
+    ("sellador", 12597),
+    ("pasta muro", 15538),
+    ("cinta", 3521),
+    ("estuco", 3521),
+    ("cal", 4950),
+    ("cielo", 5874),
+    ("perfiles at", 2681),
+    ("portante", 2681),
+    # --- Cubierta madera ---
+    ("costanera metálica", 15538),
+    ("costanera metalica", 15538),
+    ("costanera", 2092),     # madera 2x2 unidad
+    ("madera cerchas", 3571),
+    # --- Cubierta metálica ---
+    ("omega 92", 9655),
+    ("omega 70", 7555),
+    ("omega", 9655),
+    ("perfil c", 19319),
+    # --- Planchas cubierta ---
+    ("teja asf", 29403),     # paquete
+    ("teja de arcilla", 521),
+    ("teja arcilla", 521),
+    ("teja", 521),
+    ("panel sándwich", 18067),
+    ("panel sandwich", 18067),
+    ("sándwich", 18067),
+    ("sandwich", 18067),
+    # --- Aislación ---
+    ("fieltro", 12513),      # rollo
+    ("aislación térmica", 16378),
+    ("aislacion termica", 16378),
+    # --- Tornillos / clavos (genéricos al final) ---
+    ("tornillos autoperf", 10916),  # caja 1.000 metalcon
+    ("tornillos yeso", 8395),
+    ("tornillo", 10916),
+    ("clavos", 2681),        # kg
+    ("clavo", 2681),
+    ("malla", 45000),
 ]
 
 def precio_referencial(material):
