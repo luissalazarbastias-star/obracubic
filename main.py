@@ -594,7 +594,159 @@ def generar_pdf_cubicacion(
     buffer.seek(0)
     return buffer
 
-# Inicializar session_state
+
+def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None):
+    """Genera un PDF del presupuesto con desglose, IVA y total."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=letter,
+        rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm,
+    )
+    styles = getSampleStyleSheet()
+    estilo_titulo = ParagraphStyle("TituloP", parent=styles["Title"],
+        fontSize=22, textColor=NARANJA, spaceAfter=4)
+    estilo_seccion = ParagraphStyle("SeccionP", parent=styles["Heading2"],
+        fontSize=13, textColor=NARANJA, spaceBefore=14, spaceAfter=6)
+    estilo_normal = ParagraphStyle("NormalP", parent=styles["Normal"],
+        fontSize=10, textColor=GRIS_OSCURO)
+    estilo_pie = ParagraphStyle("PieP", parent=styles["Normal"],
+        fontSize=8, textColor=colors.grey, alignment=1)
+
+    def _clp(v):
+        try:
+            return "$" + f"{int(round(v)):,}".replace(",", ".")
+        except Exception:
+            return "$0"
+
+    story = []
+    zona_chile = timezone(timedelta(hours=-4))
+    fecha_hoy = datetime.now(zona_chile).strftime("%d/%m/%Y %H:%M")
+
+    # Encabezado con logo
+    import urllib.request
+    from reportlab.platypus import Image as RLImage
+    try:
+        logo_url = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%202.png"
+        logo_data = urllib.request.urlopen(logo_url).read()
+        logo = RLImage(io.BytesIO(logo_data), width=2*cm, height=2*cm)
+    except Exception:
+        logo = Paragraph("", estilo_normal)
+
+    encabezado = Table(
+        [[
+            Paragraph("ObraCubic<br/><font size=9 color='grey'>Presupuesto de Obra</font>", estilo_titulo),
+            logo
+        ]],
+        colWidths=[14.5*cm, 2.5*cm]
+    )
+    encabezado.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+    ]))
+    story.append(encabezado)
+    story.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=6))
+
+    # Datos del proyecto
+    filas_header = [
+        ["Proyecto:", nombre_proyecto or "Sin nombre"],
+        ["Fecha:", fecha_hoy],
+    ]
+    if cliente:
+        filas_header.append(["Cliente:", cliente])
+    tabla_header = Table(filas_header, colWidths=[4*cm, 13*cm])
+    tabla_header.setStyle(TableStyle([
+        ("TEXTCOLOR", (0, 0), (0, -1), NARANJA),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(tabla_header)
+
+    # Tabla de materiales
+    story.append(Paragraph("Materiales", estilo_seccion))
+    filas = [["Material", "Cantidad", "Precio unit.", "Subtotal"]]
+    for it in datos_pres.get("items", []):
+        unidad = it.get("unidad", "")
+        unidad_pdf = unidad.replace("m³", "m3").replace("m²", "m2")
+        cant = it.get("cantidad", 0)
+        cant_str = f"{cant:.2f} {unidad_pdf}" if unidad in ("m³", "kg") else f"{cant:.0f} {unidad_pdf}"
+        filas.append([
+            it.get("material", ""),
+            cant_str,
+            _clp(it.get("precio", 0)),
+            _clp(it.get("subtotal", 0)),
+        ])
+    tabla_mat = Table(filas, colWidths=[7*cm, 4*cm, 3*cm, 3*cm])
+    tabla_mat.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), NARANJA),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+        ("ALIGN", (0, 0), (0, -1), "LEFT"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FFF3E9")]),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    story.append(tabla_mat)
+
+    # Totales
+    story.append(Paragraph("Resumen", estilo_seccion))
+    filas_tot = [
+        ["Subtotal materiales", _clp(datos_pres.get("subtotal_materiales", 0))],
+        ["Mano de obra", _clp(datos_pres.get("mano_obra", 0))],
+        [f"Margen de ganancia ({datos_pres.get('margen_pct', 0):.0f}%)", _clp(datos_pres.get("margen", 0))],
+        ["Neto (sin IVA)", _clp(datos_pres.get("neto", 0))],
+        ["IVA (19%)", _clp(datos_pres.get("iva", 0))],
+    ]
+    tabla_tot = Table(filas_tot, colWidths=[13*cm, 4*cm])
+    tabla_tot.setStyle(TableStyle([
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+        ("LINEABOVE", (0, 3), (-1, 3), 0.5, colors.grey),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(tabla_tot)
+
+    # Total con IVA destacado
+    tabla_total = Table(
+        [["TOTAL CON IVA", _clp(datos_pres.get("total", 0))]],
+        colWidths=[13*cm, 4*cm]
+    )
+    tabla_total.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), NARANJA),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.white),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 13),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+    ]))
+    story.append(Spacer(1, 6))
+    story.append(tabla_total)
+
+    story.append(Spacer(1, 14))
+    story.append(Paragraph(
+        "Los precios son referenciales y definidos por el usuario. "
+        "Valores netos sin IVA; el IVA se aplica sobre el neto total. "
+        "Este presupuesto es una estimación y debe verificarse con proveedores reales.",
+        estilo_pie
+    ))
+    story.append(Spacer(1, 6))
+    story.append(Paragraph(
+        f"Generado por ObraCubic — {fecha_hoy}",
+        estilo_pie
+    ))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+
 if "ir_a_cubicacion" not in st.session_state:
     st.session_state["ir_a_cubicacion"] = False
 if "proyecto_creado" not in st.session_state:
@@ -4842,6 +4994,39 @@ if option == "Presupuesto":
         "iva": iva,
         "total": total_con_iva,
     }
+
+    # --- Exportar presupuesto a PDF ---
+    st.write("---")
+    st.subheader("📄 Exportar presupuesto")
+    pcol1, pcol2 = st.columns(2)
+    with pcol1:
+        nombre_pres = st.text_input(
+            "Nombre del proyecto",
+            value=st.session_state.get("proyecto", {}).get("nombre", ""),
+            placeholder="Ej: Casa Don Pedro - Angol",
+            key="pres_nombre_proyecto",
+        )
+    with pcol2:
+        cliente_pres = st.text_input("Cliente (opcional)", placeholder="Nombre del cliente", key="pres_cliente")
+
+    if subtotal_materiales > 0 or costo_mano_obra > 0:
+        if st.button("📄 Generar PDF del presupuesto", type="primary", use_container_width=True):
+            try:
+                pdf_buffer = generar_pdf_presupuesto(
+                    nombre_pres, st.session_state["presupuesto_actual"], cliente_pres or None
+                )
+                nombre_archivo = f"Presupuesto_{nombre_pres or 'obracubic'}.pdf".replace(" ", "_")
+                st.download_button(
+                    label="⬇️ Descargar presupuesto PDF",
+                    data=pdf_buffer,
+                    file_name=nombre_archivo,
+                    mime="application/pdf",
+                    use_container_width=True,
+                )
+            except Exception as e:
+                st.error("No se pudo generar el PDF. Intenta de nuevo.")
+    else:
+        st.caption("Agrega al menos un material con precio o mano de obra para generar el PDF.")
 
 
 # ============================
