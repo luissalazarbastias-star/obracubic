@@ -4814,6 +4814,7 @@ if option == "Presupuesto":
         st.stop()
 
     # --- Usuario premium: presupuesto real ---
+    usuario = st.session_state.get("usuario")
     # Leer materiales del acumulador persistente (no se borra al cambiar de sección)
     persistente = st.session_state.get("materiales_persistente", {})
     pdf_extra = list(persistente.values())
