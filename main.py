@@ -5651,5 +5651,41 @@ if option == "Planes":
         "</div>", unsafe_allow_html=True
     )
 
+    # Botones que abren el correo con asunto y mensaje predeterminados
+    import urllib.parse as _urlparse
+    correo_destino = "contacto.obracubic@gmail.com"
+    correo_usuario = ""
+    if st.session_state.get("usuario"):
+        correo_usuario = st.session_state["usuario"].get("email", "")
+
+    def _link_correo(nombre_plan):
+        asunto = f"Solicitud de prueba {nombre_plan} - ObraCubic"
+        cuerpo = (
+            "Hola equipo de ObraCubic,\n\n"
+            f"Quiero probar el plan: {nombre_plan}\n"
+            f"El correo de mi cuenta es: {correo_usuario}\n\n"
+            "¡Gracias!"
+        )
+        params = _urlparse.urlencode({"subject": asunto, "body": cuerpo})
+        return f"mailto:{correo_destino}?{params}"
+
+    st.write("")
+    bcol1, bcol2 = st.columns(2)
+    with bcol1:
+        st.markdown(
+            f"<a href='{_link_correo('Pro Básico')}' target='_blank' "
+            "style='display:block; text-align:center; background:#FF6B00; color:white; "
+            "padding:10px; border-radius:8px; text-decoration:none; font-weight:bold;'>"
+            "🚀 Solicitar prueba Pro Básico</a>", unsafe_allow_html=True
+        )
+    with bcol2:
+        st.markdown(
+            f"<a href='{_link_correo('Pro Élite')}' target='_blank' "
+            "style='display:block; text-align:center; background:#1E1E1E; color:white; "
+            "padding:10px; border-radius:8px; text-decoration:none; font-weight:bold;'>"
+            "👑 Solicitar prueba Pro Élite</a>", unsafe_allow_html=True
+        )
+    st.caption("Si el botón no abre tu correo, escríbenos manualmente a contacto.obracubic@gmail.com")
+
     if _plan_user == "sin_cuenta":
         st.caption("Crea una cuenta gratis para empezar a usar ObraCubic.")
