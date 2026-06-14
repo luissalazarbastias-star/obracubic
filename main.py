@@ -5666,8 +5666,9 @@ if option == "Planes":
             f"El correo de mi cuenta es: {correo_usuario}\n\n"
             "¡Gracias!"
         )
-        params = _urlparse.urlencode({"subject": asunto, "body": cuerpo})
-        return f"mailto:{correo_destino}?{params}"
+        asunto_q = _urlparse.quote(asunto)
+        cuerpo_q = _urlparse.quote(cuerpo)
+        return f"mailto:{correo_destino}?subject={asunto_q}&body={cuerpo_q}"
 
     st.write("")
     bcol1, bcol2 = st.columns(2)
