@@ -1103,7 +1103,11 @@ def _salir_cuenta():
 nav_col, cuenta_col = st.columns([3, 1])
 with nav_col:
     if st.session_state.get("usuario"):
-        opciones_menu = ["Inicio", "Crear Proyecto", "Cubicacion", "Presupuesto", "Planes"]
+        # Con cuenta: menú completo, pero Presupuesto solo para planes Pro
+        if puede_presupuesto():
+            opciones_menu = ["Inicio", "Crear Proyecto", "Cubicacion", "Presupuesto", "Planes"]
+        else:
+            opciones_menu = ["Inicio", "Crear Proyecto", "Cubicacion", "Planes"]
     else:
         # Usuario sin cuenta: acceso limitado
         opciones_menu = ["Inicio", "Cubicacion", "Planes"]
@@ -1463,19 +1467,32 @@ if option == "Inicio":
         )
         st.info("También puedes usar la **Cubicacion** directamente, sin crear un proyecto.")
 
-        cini1, cini2, cini3 = st.columns(3)
-        with cini1:
-            if st.button("🛠️ Crear Proyecto", type="primary", use_container_width=True):
-                st.session_state["_goto"] = "Crear Proyecto"
-                st.rerun()
-        with cini2:
-            if st.button("📐 Ir a Cubicación", use_container_width=True):
-                st.session_state["_goto"] = "Cubicacion"
-                st.rerun()
-        with cini3:
-            if st.button("💰 Ir a Presupuesto", use_container_width=True):
-                st.session_state["_goto"] = "Presupuesto"
-                st.rerun()
+        if puede_presupuesto():
+            cini1, cini2, cini3 = st.columns(3)
+            with cini1:
+                if st.button("🛠️ Crear Proyecto", type="primary", use_container_width=True):
+                    st.session_state["_goto"] = "Crear Proyecto"
+                    st.rerun()
+            with cini2:
+                if st.button("📐 Ir a Cubicación", use_container_width=True):
+                    st.session_state["_goto"] = "Cubicacion"
+                    st.rerun()
+            with cini3:
+                if st.button("💰 Ir a Presupuesto", use_container_width=True):
+                    st.session_state["_goto"] = "Presupuesto"
+                    st.rerun()
+        else:
+            cini1, cini2 = st.columns(2)
+            with cini1:
+                if st.button("🛠️ Crear Proyecto", type="primary", use_container_width=True):
+                    st.session_state["_goto"] = "Crear Proyecto"
+                    st.rerun()
+            with cini2:
+                if st.button("📐 Ir a Cubicación", use_container_width=True):
+                    st.session_state["_goto"] = "Cubicacion"
+                    st.rerun()
+            st.write("")
+            st.caption("💎 ¿Quieres armar presupuestos con precios e IVA? Mira los **Planes Pro**.")
 
 # ============================
 # CREAR PROYECTO
