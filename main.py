@@ -51,7 +51,7 @@ CLAVES_SISTEMA = {
     "login_email", "login_pass", "reg_nombre", "reg_email", "reg_pass",
     "reg_pass2", "reg_terminos", "nombre_nuevo_proyecto_guardar",
     "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales",
-    "presupuesto_actual",
+    "presupuesto_actual", "usuario_plan_vence",
 }
 
 def _es_serializable(valor):
@@ -129,6 +129,27 @@ PLANES_INFO = {
 
 # Jerarquía de planes (para comparar "al menos este nivel")
 NIVEL_PLAN = {"sin_cuenta": 0, "gratis": 1, "pro_basico": 2, "pro_elite": 3}
+
+def _plan_vigente(plan_bd, plan_vence):
+    """Devuelve el plan efectivo considerando la fecha de vencimiento.
+    Si el plan de pago ya venció, devuelve 'gratis'."""
+    plan_pago = plan_bd in ("pro_basico", "pro_elite", "premium")
+    if plan_pago and plan_vence:
+        try:
+            from datetime import datetime, timezone
+            # plan_vence viene como string ISO desde Supabase
+            if isinstance(plan_vence, str):
+                fecha_vence = datetime.fromisoformat(plan_vence.replace("Z", "+00:00"))
+            else:
+                fecha_vence = plan_vence
+            if fecha_vence.tzinfo is None:
+                fecha_vence = fecha_vence.replace(tzinfo=timezone.utc)
+            ahora = datetime.now(timezone.utc)
+            if ahora > fecha_vence:
+                return "gratis"  # el plan venció
+        except Exception:
+            pass
+    return plan_bd
 
 def plan_actual():
     """Devuelve el plan del usuario actual: 'sin_cuenta', 'gratis', 'pro_basico' o 'pro_elite'."""
@@ -1155,6 +1176,17 @@ if st.session_state.get("vista_cuenta"):
         _p = plan_actual()
         _info = PLANES_INFO.get(_p, {"nombre": "Plan Gratis", "emoji": "☕"})
         st.caption(f"Plan actual: **{_info['nombre']} {_info['emoji']}**")
+        # Mostrar vencimiento si el plan es de pago y tiene fecha
+        _vence = st.session_state.get("usuario_plan_vence")
+        if _p in ("pro_basico", "pro_elite") and _vence:
+            try:
+                from datetime import datetime, timezone
+                _fv = datetime.fromisoformat(str(_vence).replace("Z", "+00:00"))
+                _dias = (_fv - datetime.now(timezone.utc)).days
+                if _dias >= 0:
+                    st.caption(f"⏳ Tu plan vence el **{_fv.strftime('%d/%m/%Y')}** (en {_dias} días).")
+            except Exception:
+                pass
         cc1, cc2 = st.columns(2)
         with cc1:
             if st.button("Cerrar sesión", use_container_width=True):
@@ -1163,7 +1195,8 @@ if st.session_state.get("vista_cuenta"):
                 except Exception:
                     pass
                 for k in ["usuario", "usuario_nombre", "usuario_plan",
-                          "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales"]:
+                          "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales",
+                          "usuario_plan_vence"]:
                     st.session_state.pop(k, None)
                 st.rerun()
         with cc2:
@@ -1335,13 +1368,18 @@ if st.session_state.get("vista_cuenta"):
                     try:
                         res = supabase.auth.sign_in_with_password({"email": email_l, "password": pass_l})
                         st.session_state["usuario"] = {"id": res.user.id, "email": res.user.email}
-                        # Cargar perfil (nombre y plan)
+                        # Cargar perfil (nombre, plan y vencimiento)
                         try:
-                            perfil = supabase.table("perfiles").select("nombre, plan").eq("id", res.user.id).single().execute()
+                            perfil = supabase.table("perfiles").select("nombre, plan, plan_vence").eq("id", res.user.id).single().execute()
                             st.session_state["usuario_nombre"] = perfil.data.get("nombre")
-                            st.session_state["usuario_plan"] = perfil.data.get("plan", "gratis")
+                            plan_bd = perfil.data.get("plan", "gratis")
+                            vence = perfil.data.get("plan_vence")
+                            st.session_state["usuario_plan_vence"] = vence
+                            # Si el plan de pago venció, tratarlo como gratis
+                            st.session_state["usuario_plan"] = _plan_vigente(plan_bd, vence)
                         except Exception:
                             st.session_state["usuario_plan"] = "gratis"
+                            st.session_state["usuario_plan_vence"] = None
                         st.session_state["vista_cuenta"] = False
                         st.session_state["_goto"] = "Inicio"
                         st.rerun()
