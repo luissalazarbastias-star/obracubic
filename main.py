@@ -115,6 +115,22 @@ def guardar_precios_usuario(usuario_id, precios):
         supabase.table("precios_usuario").upsert(filas, on_conflict="usuario_id,material").execute()
 
 
+def refrescar_plan_usuario():
+    """Vuelve a leer el plan y su vencimiento desde Supabase y actualiza la sesión.
+    Aplica el vencimiento automático (si venció, queda en gratis)."""
+    usuario = st.session_state.get("usuario")
+    if not usuario:
+        return
+    try:
+        perfil = supabase.table("perfiles").select("plan, plan_vence").eq("id", usuario["id"]).single().execute()
+        plan_bd = perfil.data.get("plan", "gratis")
+        vence = perfil.data.get("plan_vence")
+        st.session_state["usuario_plan_vence"] = vence
+        st.session_state["usuario_plan"] = _plan_vigente(plan_bd, vence)
+    except Exception:
+        pass
+
+
 # ============================
 # SISTEMA DE PLANES
 # ============================
@@ -1168,6 +1184,8 @@ if st.session_state.get("vista_cuenta"):
     usuario = st.session_state.get("usuario")
 
     if usuario:
+        # Refrescar plan desde la base (aplica vencimiento automático)
+        refrescar_plan_usuario()
         # --- Usuario con sesión iniciada ---
         st.subheader("Mi cuenta")
         nombre_u = st.session_state.get("usuario_nombre") or usuario.get("email", "usuario")
@@ -5706,6 +5724,8 @@ if option == "Planes":
     st.caption("Elige el plan que mejor se adapte a tu trabajo. Estamos en fase beta: "
                "los planes de pago estarán disponibles muy pronto.")
 
+    # Refrescar plan desde la base (aplica vencimiento automático)
+    refrescar_plan_usuario()
     _plan_user = plan_actual()
 
     col_g, col_b, col_e = st.columns(3)
