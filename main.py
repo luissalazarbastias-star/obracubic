@@ -1392,53 +1392,90 @@ if st.session_state.get("vista_cuenta"):
 # INICIO (pantalla de bienvenida)
 # ============================
 if option == "Inicio":
-    st.title("Bienvenido a ObraCubic")
-    st.markdown("#### Grandes Estructuras se Levantan con Decisiones Precisas")
+    _tiene_sesion = bool(st.session_state.get("usuario"))
+    _nombre = st.session_state.get("usuario_nombre", "")
+
+    if _tiene_sesion and _nombre:
+        st.title(f"¡Hola, {_nombre}! 👋")
+    else:
+        st.title("Bienvenido a ObraCubic")
+    st.markdown("#### Grandes estructuras se levantan con decisiones precisas")
     st.write("")
     st.markdown(
-        "**ObraCubic** es tu calculadora de cubicación para obras de construcción. "
-        "Estima de forma rápida y ordenada los materiales que necesitas para cada "
-        "etapa de tu proyecto y genera un informe en PDF listo para presupuestar."
+        "**ObraCubic** es tu herramienta para **cubicar materiales** y **armar presupuestos** "
+        "de obras de construcción. Calcula de forma rápida y ordenada lo que necesitas en cada "
+        "etapa, ponle precio y genera informes profesionales en PDF, listos para tu cliente."
     )
 
     st.write("---")
-    st.subheader("¿Qué puedes cubicar?")
+    st.subheader("¿Qué puedes hacer?")
     ini1, ini2 = st.columns(2)
     with ini1:
+        st.markdown("##### 📐 Cubicar")
         st.markdown(
-            "- **Hormigón y Mov. de tierra** — excavación, emplantillado, cimientos, radier\n"
-            "- **Acero estructural** — losas, pilares, vigas, cimientos\n"
-            "- **Acero No Estructural (Metalcon)** — tabiques y perfiles\n"
-            "- **Moldajes** — cimiento, muro, losa, viga, pilar\n"
-            "- **Muros** — hormigón, ladrillo y tabiques"
+            "Estima materiales de muchos rubros:\n"
+            "- **Hormigón** — excavación, cimientos, radier\n"
+            "- **Acero** estructural y **Metalcon**\n"
+            "- **Muros** — hormigón, ladrillo, tabiques\n"
+            "- **Revestimientos**, **Pisos** y **Terminaciones**\n"
+            "- **Cubierta** — cerchas y planchas"
         )
     with ini2:
+        st.markdown("##### 💰 Presupuestar")
         st.markdown(
-            "- **Revestimientos** — interiores y exteriores\n"
-            "- **Pisos y Pavimentos** — cerámico, flotante, baldosa, deck\n"
-            "- **Terminaciones** — pintura, estuco, cielos, zócalos\n"
-            "- **Cubierta / Techumbre** — estructura, cerchas y planchas\n"
-            "- **Informe PDF** — resumen de todos los materiales"
+            "Convierte tu cubicación en un presupuesto:\n"
+            "- Precios **referenciales** editables por material\n"
+            "- **Mano de obra**, margen e **IVA**\n"
+            "- Tu **lista personal de precios** guardada\n"
+            "- **PDF profesional** del presupuesto\n"
+            "- *(funciones de los Planes Pro)*"
         )
 
     st.write("---")
-    st.subheader("¿Cómo empezar?")
-    st.markdown(
-        "1. Ve a **Crear Proyecto** y selecciona los rubros que vas a trabajar.\n"
-        "2. Pasa a **Cubicacion** e ingresa las medidas de cada partida.\n"
-        "3. Genera tu **PDF** con el resumen de materiales."
-    )
-    st.info("También puedes usar la **Cubicacion** directamente, sin crear un proyecto — está siempre disponible.")
 
-    cini1, cini2 = st.columns(2)
-    with cini1:
-        if st.button("🛠️ Crear Proyecto", type="primary", use_container_width=True):
-            st.session_state["_goto"] = "Crear Proyecto"
-            st.rerun()
-    with cini2:
-        if st.button("📐 Ir a Cubicación", use_container_width=True):
-            st.session_state["_goto"] = "Cubicacion"
-            st.rerun()
+    if not _tiene_sesion:
+        # Usuario sin cuenta
+        st.subheader("Empieza ahora")
+        st.markdown(
+            "Estás usando ObraCubic **sin cuenta**. Puedes probar la cubicación de **radier, "
+            "tabiques y revestimientos**. Crea una cuenta **gratis** para desbloquear todas las "
+            "partidas, guardar tus proyectos y más."
+        )
+        ccta1, ccta2 = st.columns(2)
+        with ccta1:
+            if st.button("👤 Crear cuenta gratis", type="primary", use_container_width=True):
+                st.session_state["vista_cuenta"] = True
+                st.rerun()
+        with ccta2:
+            if st.button("📐 Probar cubicación", use_container_width=True):
+                st.session_state["_goto"] = "Cubicacion"
+                st.rerun()
+        st.write("")
+        st.caption("💎 Mira todo lo que incluye cada plan en la sección **Planes**.")
+    else:
+        # Usuario con cuenta
+        st.subheader("¿Cómo empezar?")
+        st.markdown(
+            "1. Ve a **Crear Proyecto** y selecciona los rubros de tu obra.\n"
+            "2. Pasa a **Cubicacion** e ingresa las medidas de cada partida.\n"
+            "3. Genera tu **PDF** de cubicación.\n"
+            "4. Si tienes Plan Pro, ve a **Presupuesto** para ponerle precio y obtener el total con IVA."
+        )
+        st.info("También puedes usar la **Cubicacion** directamente, sin crear un proyecto.")
+
+        cini1, cini2, cini3 = st.columns(3)
+        with cini1:
+            if st.button("🛠️ Crear Proyecto", type="primary", use_container_width=True):
+                st.session_state["_goto"] = "Crear Proyecto"
+                st.rerun()
+        with cini2:
+            if st.button("📐 Ir a Cubicación", use_container_width=True):
+                st.session_state["_goto"] = "Cubicacion"
+                st.rerun()
+        with cini3:
+            if st.button("💰 Ir a Presupuesto", use_container_width=True):
+                st.session_state["_goto"] = "Presupuesto"
+                st.rerun()
 
 # ============================
 # CREAR PROYECTO
