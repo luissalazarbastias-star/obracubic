@@ -667,6 +667,7 @@ def generar_pdf_cubicacion(
     montante_tipo=None, total_montantes=0, largo_montante=0,
     esq_tipo=None, cant_esquinas=0, largo_esq=0,
     pdf_extra=None,
+    con_marca_agua=True,
 ):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -916,7 +917,26 @@ def generar_pdf_cubicacion(
         estilo_pie
     ))
 
-    doc.build(story)
+    def _marca_agua(canvas, doc_):
+        """Dibuja la marca de agua diagonal 'ObraCubic' en la página."""
+        canvas.saveState()
+        canvas.setFont("Helvetica-Bold", 60)
+        try:
+            canvas.setFillColor(NARANJA)
+            canvas.setFillAlpha(0.08)  # muy tenue
+        except Exception:
+            canvas.setFillColor(colors.lightgrey)
+        canvas.translate(letter[0] / 2, letter[1] / 2)
+        canvas.rotate(45)
+        canvas.drawCentredString(0, 0, "ObraCubic")
+        canvas.drawCentredString(0, -120, "ObraCubic")
+        canvas.drawCentredString(0, 120, "ObraCubic")
+        canvas.restoreState()
+
+    if con_marca_agua:
+        doc.build(story, onFirstPage=_marca_agua, onLaterPages=_marca_agua)
+    else:
+        doc.build(story)
     buffer.seek(0)
     return buffer
 
@@ -5705,6 +5725,7 @@ if option == "Cubicacion":
             cant_esquinas=st.session_state.get("pdf_cant_esquinas", 0),
             largo_esq=st.session_state.get("pdf_largo_esq", 0),
             pdf_extra=list(st.session_state.get("materiales_persistente", {}).values()),
+            con_marca_agua=not puede_pdf_con_logo(),
         )
         nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
         st.download_button(
