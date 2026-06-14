@@ -5607,7 +5607,8 @@ if option == "Planes":
             if _plan_user == "pro_basico":
                 st.success("✓ Tu plan actual")
             else:
-                st.button("🔜 Próximamente", disabled=True, use_container_width=True, key="plan_b")
+                st.button("✉️ Probar gratis 7 días", disabled=True, use_container_width=True, key="plan_b",
+                          help="Escríbenos a contacto.obracubic@gmail.com para activar tu prueba")
 
     # --- Plan Pro Élite ---
     with col_e:
@@ -5628,12 +5629,27 @@ if option == "Planes":
             if _plan_user == "pro_elite":
                 st.success("✓ Tu plan actual")
             else:
-                st.button("🔜 Próximamente", disabled=True, use_container_width=True, key="plan_e")
+                st.button("✉️ Probar gratis 7 días", disabled=True, use_container_width=True, key="plan_e",
+                          help="Escríbenos a contacto.obracubic@gmail.com para activar tu prueba")
 
     st.write("")
-    st.info("🚧 **ObraCubic está en fase beta.** Los planes de pago aún no están disponibles. "
-            "Estamos afinando la app con usuarios reales antes de habilitar el cobro. "
-            "¡Gracias por acompañarnos en esta etapa!")
+    st.info(
+        "🚧 **ObraCubic está en fase beta.** Los planes de pago aún no tienen cobro automático, "
+        "pero **ya puedes probar los planes Pro gratis**.\n\n"
+        "**¿Cómo probar el Plan Pro Básico o Pro Élite?**\n\n"
+        "1. Escríbenos a **contacto.obracubic@gmail.com** indicando el correo de tu cuenta "
+        "y qué plan quieres probar.\n"
+        "2. Te activamos una **prueba gratuita de 7 días** para que uses todas las funciones Pro.\n"
+        "3. Si te sirve, puedes mantener el plan mediante una membresía (por ahora, pago por transferencia).\n\n"
+        "Estamos afinando la app con usuarios reales antes de habilitar el cobro automático. "
+        "¡Gracias por acompañarnos en esta etapa! 🙌"
+    )
+
+    st.markdown(
+        "<div style='text-align:center; margin-top:8px;'>"
+        "📧 <strong>Contacto:</strong> contacto.obracubic@gmail.com"
+        "</div>", unsafe_allow_html=True
+    )
 
     if _plan_user == "sin_cuenta":
         st.caption("Crea una cuenta gratis para empezar a usar ObraCubic.")
