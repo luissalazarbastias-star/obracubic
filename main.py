@@ -192,6 +192,23 @@ def puede_pdf_con_logo():
     """PDF personalizado con logo del usuario: Pro Básico hacia arriba."""
     return tiene_nivel("pro_basico")
 
+def datos_usuario_pdf():
+    """Arma el diccionario de datos profesionales para el PDF, desde la sesión.
+    Devuelve None si el usuario no es Pro (así el PDF usa el branding de ObraCubic)."""
+    if not puede_pdf_con_logo():
+        return None
+    datos = {
+        "empresa": st.session_state.get("usuario_empresa") or st.session_state.get("usuario_nombre"),
+        "rut": st.session_state.get("usuario_rut"),
+        "email": (st.session_state.get("usuario") or {}).get("email"),
+        "telefono": st.session_state.get("usuario_telefono"),
+        "logo_url": st.session_state.get("usuario_logo_url"),
+    }
+    # Si no hay ningún dato útil, devolver None
+    if not any(datos.values()):
+        return None
+    return datos
+
 def puede_cubicaciones_ilimitadas():
     """Cubicaciones ilimitadas: Pro Básico hacia arriba."""
     return tiene_nivel("pro_basico")
@@ -651,6 +668,64 @@ GRIS_OSCURO = colors.HexColor("#1E1E1E")
 GRIS_CLARO  = colors.HexColor("#F5F5F5")
 BLANCO     = colors.white
 
+LOGO_OBRACUBIC_URL = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%202.png"
+
+
+def _obtener_logo_pdf(datos_usuario, estilo_fallback, ancho=2*cm, alto=2*cm):
+    """Devuelve un flowable de logo para el PDF.
+    - Si el usuario es Pro y tiene logo personalizado, usa ese.
+    - Si no, usa el logo de ObraCubic.
+    - Si algo falla (red, formato), devuelve un espacio vacío sin romper el PDF.
+    """
+    import urllib.request
+    from reportlab.platypus import Image as RLImage
+
+    # Determinar qué URL de logo usar
+    logo_url = LOGO_OBRACUBIC_URL
+    try:
+        usa_logo_personalizado = (
+            datos_usuario
+            and datos_usuario.get("logo_url")
+            and "puede_pdf_con_logo" in globals()
+            and puede_pdf_con_logo()
+        )
+        if usa_logo_personalizado:
+            logo_url = datos_usuario["logo_url"]
+    except Exception:
+        logo_url = LOGO_OBRACUBIC_URL
+
+    # Intentar descargar el logo elegido; si falla, intentar el de ObraCubic; si todo falla, vacío
+    for url_intento in (logo_url, LOGO_OBRACUBIC_URL):
+        try:
+            req = urllib.request.Request(url_intento, headers={"User-Agent": "Mozilla/5.0"})
+            logo_data = urllib.request.urlopen(req, timeout=8).read()
+            return RLImage(io.BytesIO(logo_data), width=ancho, height=alto)
+        except Exception:
+            continue
+    # Si ni el personalizado ni el de ObraCubic cargaron, espacio vacío (no rompe el PDF)
+    return Paragraph("", estilo_fallback)
+
+
+def _filas_datos_profesional(datos_usuario):
+    """Devuelve filas (etiqueta, valor) con los datos profesionales del usuario,
+    para insertarlas en la tabla de encabezado del PDF. Solo incluye lo que venga."""
+    filas = []
+    if not datos_usuario:
+        return filas
+    if datos_usuario.get("empresa"):
+        filas.append(["Profesional/Empresa:", datos_usuario["empresa"]])
+    if datos_usuario.get("rut"):
+        filas.append(["RUT / Matrícula:", datos_usuario["rut"]])
+    contacto = []
+    if datos_usuario.get("email"):
+        contacto.append(datos_usuario["email"])
+    if datos_usuario.get("telefono"):
+        contacto.append(datos_usuario["telefono"])
+    if contacto:
+        filas.append(["Contacto:", "  ·  ".join(contacto)])
+    return filas
+
+
 def generar_pdf_cubicacion(
     nombre_proyecto,
     vol_emp, dos_emp, mat_emp,
@@ -668,6 +743,7 @@ def generar_pdf_cubicacion(
     esq_tipo=None, cant_esquinas=0, largo_esq=0,
     pdf_extra=None,
     con_marca_agua=True,
+    datos_usuario=None,
 ):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -692,20 +768,18 @@ def generar_pdf_cubicacion(
     zona_chile = timezone(timedelta(hours=-4))
     fecha_hoy = datetime.now(zona_chile).strftime("%d/%m/%Y %H:%M")
 
-    # Encabezado con logo arriba a la derecha
-    import urllib.request
-    from reportlab.platypus import Image as RLImage
-    try:
-        logo_url = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%202.png"
-        logo_data = urllib.request.urlopen(logo_url).read()
-        logo_buffer = io.BytesIO(logo_data)
-        logo = RLImage(logo_buffer, width=2*cm, height=2*cm)
-    except:
-        logo = Paragraph("", estilo_normal)
+    # Encabezado con logo arriba a la derecha (logo personalizado si es Pro)
+    logo = _obtener_logo_pdf(datos_usuario, estilo_normal)
+
+    # Título del encabezado: nombre de la empresa del usuario si la tiene
+    if datos_usuario and datos_usuario.get("empresa") and "puede_pdf_con_logo" in globals() and puede_pdf_con_logo():
+        titulo_enc = f"{datos_usuario['empresa']}<br/><font size=9 color='grey'>Generado con ObraCubic</font>"
+    else:
+        titulo_enc = "ObraCubic<br/><font size=9 color='grey'>Grandes Estructuras se Levantan con Decisiones Precisas</font>"
 
     encabezado = Table(
         [[
-            Paragraph("ObraCubic<br/><font size=9 color='grey'>Grandes Estructuras se Levantan con Decisiones Precisas</font>", estilo_titulo),
+            Paragraph(titulo_enc, estilo_titulo),
             logo
         ]],
         colWidths=[14.5*cm, 2.5*cm]
@@ -722,6 +796,8 @@ def generar_pdf_cubicacion(
         ["Fecha:", fecha_hoy],
         ["Volumen Total:", f"{total_hormigon:.2f} m3"],
     ]
+    # Agregar datos profesionales del usuario (Pro) si vienen
+    datos_header = _filas_datos_profesional(datos_usuario) + datos_header
     tabla_header = Table(datos_header, colWidths=[4*cm, 13*cm])
     tabla_header.setStyle(TableStyle([
         ("TEXTCOLOR", (0, 0), (0, -1), NARANJA),
@@ -941,7 +1017,7 @@ def generar_pdf_cubicacion(
     return buffer
 
 
-def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None):
+def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_usuario=None):
     """Genera un PDF del presupuesto con desglose, IVA y total."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -968,19 +1044,17 @@ def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None):
     zona_chile = timezone(timedelta(hours=-4))
     fecha_hoy = datetime.now(zona_chile).strftime("%d/%m/%Y %H:%M")
 
-    # Encabezado con logo
-    import urllib.request
-    from reportlab.platypus import Image as RLImage
-    try:
-        logo_url = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%202.png"
-        logo_data = urllib.request.urlopen(logo_url).read()
-        logo = RLImage(io.BytesIO(logo_data), width=2*cm, height=2*cm)
-    except Exception:
-        logo = Paragraph("", estilo_normal)
+    # Encabezado con logo (personalizado si es Pro)
+    logo = _obtener_logo_pdf(datos_usuario, estilo_normal)
+
+    if datos_usuario and datos_usuario.get("empresa") and "puede_pdf_con_logo" in globals() and puede_pdf_con_logo():
+        titulo_enc = f"{datos_usuario['empresa']}<br/><font size=9 color='grey'>Presupuesto de Obra · ObraCubic</font>"
+    else:
+        titulo_enc = "ObraCubic<br/><font size=9 color='grey'>Presupuesto de Obra</font>"
 
     encabezado = Table(
         [[
-            Paragraph("ObraCubic<br/><font size=9 color='grey'>Presupuesto de Obra</font>", estilo_titulo),
+            Paragraph(titulo_enc, estilo_titulo),
             logo
         ]],
         colWidths=[14.5*cm, 2.5*cm]
@@ -992,8 +1066,8 @@ def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None):
     story.append(encabezado)
     story.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=6))
 
-    # Datos del proyecto
-    filas_header = [
+    # Datos del proyecto (incluye datos profesionales del usuario si vienen)
+    filas_header = _filas_datos_profesional(datos_usuario) + [
         ["Proyecto:", nombre_proyecto or "Sin nombre"],
         ["Fecha:", fecha_hoy],
     ]
@@ -5608,7 +5682,8 @@ if option == "Presupuesto":
         if st.button("📄 Generar PDF del presupuesto", type="primary", use_container_width=True):
             try:
                 pdf_buffer = generar_pdf_presupuesto(
-                    nombre_pres, st.session_state["presupuesto_actual"], cliente_pres or None
+                    nombre_pres, st.session_state["presupuesto_actual"], cliente_pres or None,
+                    datos_usuario=datos_usuario_pdf()
                 )
                 nombre_archivo = f"Presupuesto_{nombre_pres or 'obracubic'}.pdf".replace(" ", "_")
                 st.download_button(
@@ -5732,6 +5807,7 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
             largo_esq=st.session_state.get("pdf_largo_esq", 0),
             pdf_extra=list(st.session_state.get("materiales_persistente", {}).values()),
             con_marca_agua=not puede_pdf_con_logo(),
+            datos_usuario=datos_usuario_pdf(),
         )
         nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
         st.download_button(
