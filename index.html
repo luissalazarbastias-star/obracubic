@@ -19,13 +19,15 @@
   --border:rgba(255,255,255,0.06);
   --border2:rgba(232,86,10,0.2);
 }
-html{scroll-behavior:smooth;}
+html{scroll-behavior:smooth;overflow-x:hidden;}
 body{
   background:var(--dark);
   color:var(--cream);
   font-family:'Cabinet Grotesk',sans-serif;
   font-weight:400;
   overflow-x:hidden;
+  width:100%;
+  max-width:100%;
   -webkit-font-smoothing:antialiased;
 }
 
@@ -312,7 +314,7 @@ nav{
 /* ── PARTIDAS ── */
 .partidas-sec{padding:120px 0;background:var(--dark2);}
 .partidas-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
   gap:1px;margin-top:70px;background:var(--border);
 }
 .partida{
@@ -369,7 +371,7 @@ nav{
 /* ── CÓMO FUNCIONA ── */
 .como-sec{padding:120px 0;}
 .como-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
   gap:24px;margin-top:70px;
 }
 .como-card{
@@ -616,6 +618,76 @@ footer{
 .hero-actions{animation-delay:.4s}
 .hero-trust{animation-delay:.5s}
 .hero-right{animation:fadeUp .9s .3s ease forwards;opacity:0;}
+
+/* ════════════════════════════════
+   RESPONSIVE — TABLET Y MÓVIL
+   ════════════════════════════════ */
+
+/* Tablet y pantallas medianas */
+@media (max-width: 960px){
+  nav{padding:0 24px;}
+  .w{padding:0 24px;}
+  .hero{
+    grid-template-columns:1fr;
+    padding:96px 24px 60px;
+    gap:40px;
+    min-height:auto;
+    text-align:left;
+  }
+  .hero-right{margin-top:20px;}
+  .ps-grid{grid-template-columns:1fr;}
+  .planes-grid{grid-template-columns:1fr;max-width:480px;margin-left:auto;margin-right:auto;}
+}
+
+/* Teléfonos celulares */
+@media (max-width: 768px){
+  /* Ocultar links de navegación largos en móvil (deja la marca y el botón) */
+  .nav-links{display:none;}
+  nav{padding:0 18px;}
+
+  /* Padding lateral seguro para que el texto no toque el borde */
+  .w{padding:0 20px;}
+  .hero{padding:90px 20px 50px;}
+
+  /* Tipografías fluidas reducidas en móvil */
+  .hero-h1{font-size:clamp(34px,9vw,52px);line-height:1.0;}
+  .h2{font-size:clamp(26px,7vw,40px);line-height:1.1;}
+  .hero-p, .lead{font-size:15px;max-width:100%;}
+
+  /* Reducir el padding vertical de las secciones */
+  .problema-sec, .partidas-sec, .como-sec, .planes-sec{padding:72px 0;}
+
+  /* Tarjetas con menos padding interno */
+  .ps-card{padding:28px 24px;}
+  .partida{padding:28px 22px;}
+
+  /* CTA: botones apilados */
+  .cta-actions{flex-direction:column;align-items:stretch;}
+  .cta-actions a{text-align:center;justify-content:center;}
+
+  /* Footer: apilar columnas */
+  .footer-top{
+    grid-template-columns:1fr;
+    gap:32px;
+  }
+  .footer-bottom{
+    flex-direction:column;
+    gap:8px;
+    text-align:center;
+  }
+}
+
+/* Teléfonos pequeños */
+@media (max-width: 480px){
+  .hero-h1{font-size:clamp(30px,8.5vw,40px);}
+  .h2{font-size:clamp(24px,7vw,32px);}
+  .w{padding:0 16px;}
+  .hero{padding:84px 16px 40px;}
+  .ps-num{font-size:40px;}
+  /* En pantallas muy chicas, dejar solo el botón principal */
+  .nav-cta .btn-ghost{display:none;}
+  nav{padding:0 14px;}
+}
 </style>
 </head>
 <body>
