@@ -5628,7 +5628,13 @@ if option == "Presupuesto":
 # EXPORTAR A PDF
 # ============================
 # Solo mostrar la exportación de PDF en la sección Cubicación
-if option == "Cubicacion":
+if option == "Cubicacion" and not st.session_state.get("usuario"):
+    # Usuario sin cuenta: no genera informes (según plan)
+    st.write("---")
+    st.info("📄 **¿Quieres generar el PDF de tu cubicación?** "
+            "Crea una cuenta **gratis** para descargar tus informes en PDF.")
+
+if option == "Cubicacion" and st.session_state.get("usuario"):
     st.write("---")
     st.subheader("📄 Exportar Cubicación")
     nombre_proyecto = st.text_input(
