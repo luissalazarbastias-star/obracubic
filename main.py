@@ -1102,9 +1102,17 @@ def _salir_cuenta():
 
 nav_col, cuenta_col = st.columns([3, 1])
 with nav_col:
+    if st.session_state.get("usuario"):
+        opciones_menu = ["Inicio", "Crear Proyecto", "Cubicacion", "Presupuesto", "Planes"]
+    else:
+        # Usuario sin cuenta: acceso limitado
+        opciones_menu = ["Inicio", "Cubicacion", "Planes"]
+    # Si la opción guardada ya no está disponible, volver a Inicio
+    if st.session_state.get("nav_option") not in opciones_menu:
+        st.session_state["nav_option"] = "Inicio"
     option = st.radio(
         "Ir a:",
-        ["Inicio", "Crear Proyecto", "Cubicacion", "Presupuesto", "Planes"],
+        opciones_menu,
         horizontal=True,
         key="nav_option",
         on_change=_salir_cuenta,
@@ -1726,13 +1734,56 @@ if option == "Cubicacion":
     term   = partidas_proy.get("terminaciones", {})
     cubierta = partidas_proy.get("cubierta", {})
 
+    # Usuario sin cuenta: acceso limitado a algunas partidas (según plan)
+    sin_cuenta = not st.session_state.get("usuario")
+
+    # Rubros/partidas permitidas sin cuenta: radier, tabiques (madera/metalcon), revestimiento
+    RUBROS_SIN_CUENTA = {"hormigon", "muros", "revestimientos"}
+    PARTIDAS_SIN_CUENTA = {
+        "hormigon": {"radier"},
+        "muros": {"tabique_metalcon", "tabique_madera"},
+        "revestimientos": None,  # None = todas las de ese rubro
+    }
+
+    def rubro_permitido(nombre_rubro):
+        if not sin_cuenta:
+            return True
+        return nombre_rubro in RUBROS_SIN_CUENTA
+
+    def partida_permitida(nombre_rubro, nombre_partida):
+        if not sin_cuenta:
+            return True
+        if nombre_rubro not in RUBROS_SIN_CUENTA:
+            return False
+        permitidas = PARTIDAS_SIN_CUENTA.get(nombre_rubro)
+        if permitidas is None:
+            return True
+        return nombre_partida in permitidas
+
+    # Mapeo de dict de rubro a su nombre interno (para chequear permisos sin cuenta)
+    _MAPA_RUBRO = {
+        id(horm): "hormigon", id(acero): "acero_estructural", id(metal): "metalcon",
+        id(mold): "moldajes", id(muros): "muros", id(revest): "revestimientos",
+        id(pisos): "pisos", id(term): "terminaciones", id(cubierta): "cubierta",
+    }
+
     def ver(rubro_dict, partida):
+        # Sin cuenta: respetar partidas permitidas
+        if sin_cuenta:
+            nombre_rubro = _MAPA_RUBRO.get(id(rubro_dict))
+            if nombre_rubro and not partida_permitida(nombre_rubro, partida):
+                return False
         return not proy_creado or rubro_dict.get(partida, False)
 
     def ver_rubro(rubro_dict):
         return not proy_creado or (rubro_dict and any(rubro_dict.values()))
     
     st.subheader("CUBICACIONES")
+
+    if sin_cuenta:
+        st.info("👋 Estás usando ObraCubic **sin cuenta**. Puedes probar la cubicación de "
+                "**radier, tabiques (Metalcon y madera) y revestimientos**. "
+                "**Crea una cuenta gratis** para acceder a todas las partidas, guardar tus proyectos y más.")
 
     # pdf_extra se reinicia para reflejar lo que se renderiza en este ciclo,
     # pero el acumulador persistente conserva todo lo cubicado entre secciones.
@@ -2248,7 +2299,7 @@ if option == "Cubicacion":
                 r4.metric("Agua Total",     f"{total_agua} lt")
 
     # --- Acero estructural ---
-    if ver_rubro(acero):
+    if ver_rubro(acero) and rubro_permitido("acero_estructural"):
         with st.expander("Acero estructural", expanded=False):
             if ver(acero, "losa"):
                 with st.expander("1. Losa", expanded=False):
@@ -2662,7 +2713,7 @@ if option == "Cubicacion":
                 
 
     # --- Acero No estructural ---
-    if ver_rubro(metal):
+    if ver_rubro(metal) and rubro_permitido("metalcon"):
         with st.expander("Acero No Estructural (Tabiques Metalcon)", expanded=False):
 
             # ============================
@@ -2843,7 +2894,7 @@ if option == "Cubicacion":
 # ============================
 # MOLDAJES
 # ============================
-    if ver_rubro(mold):
+    if ver_rubro(mold) and rubro_permitido("moldajes"):
         with st.expander("Moldajes", expanded=False):
 
             # Datos materiales
@@ -4089,7 +4140,7 @@ if option == "Cubicacion":
 # ============================
 # PISOS Y PAVIMENTOS
 # ============================
-    if ver_rubro(pisos):
+    if ver_rubro(pisos) and rubro_permitido("pisos"):
         with st.expander("Pisos y Pavimentos", expanded=False):
 
             # ============================
@@ -4400,7 +4451,7 @@ if option == "Cubicacion":
 # ============================
 # TERMINACIONES
 # ============================
-    if ver_rubro(term):
+    if ver_rubro(term) and rubro_permitido("terminaciones"):
         with st.expander("Terminaciones", expanded=False):
 
             # ============================
@@ -4782,7 +4833,7 @@ if option == "Cubicacion":
 # ============================
 # CUBIERTA / TECHUMBRE
 # ============================
-    if ver_rubro(cubierta):
+    if ver_rubro(cubierta) and rubro_permitido("cubierta"):
         with st.expander("Cubierta / Techumbre", expanded=False):
 
             def area_cubierta(key_prefix):
