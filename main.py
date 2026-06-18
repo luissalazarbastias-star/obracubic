@@ -13,7 +13,7 @@ from supabase import create_client
 # --- CONFIGURACIÓN VISUAL DE LA APP ---
 st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
-    page_icon="🏗️",
+    page_icon="https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%202.png",
     initial_sidebar_state="collapsed"
 )
 
