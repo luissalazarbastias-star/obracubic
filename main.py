@@ -3563,7 +3563,10 @@ if option == "Cubicacion":
                             kg_total_h = kg_v_s + kg_h_s + kg_borde + kg_diag
                             st.write("---")
                             st.subheader("📦 Resultados Hormigón")
-                            mostrar_materiales(mat_muro_h, "Muros", "Muro de hormigón")
+                            if vol_neto_h and vol_neto_h > 0:
+                                mostrar_materiales(mat_muro_h, "Muros", "Muro de hormigón")
+                            else:
+                                mostrar_materiales(mat_muro_h)
                             st.subheader("📦 Resultados Enfierradura")
                             re1, re2 = st.columns(2)
                             with re1:
@@ -3637,7 +3640,10 @@ if option == "Cubicacion":
                             kg_total_d = kg_v_d + kg_h_d + kg_borde_d + kg_estribos_borde + kg_diag_d
                             st.write("---")
                             st.subheader("📦 Resultados Hormigón")
-                            mostrar_materiales(mat_muro_h, "Muros", "Muro de hormigón")
+                            if vol_neto_h and vol_neto_h > 0:
+                                mostrar_materiales(mat_muro_h, "Muros", "Muro de hormigón")
+                            else:
+                                mostrar_materiales(mat_muro_h)
                             st.subheader("📦 Resultados Enfierradura")
                             rd1, rd2 = st.columns(2)
                             with rd1:
@@ -5791,10 +5797,12 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
         placeholder="Ej: Casa Don Pedro - Angol",
         key="nombre_proyecto"
     )
-    _vol_emp = sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_emp", [{"largo":0,"ancho":0,"espesor":0}]))
+    # Cada partida usa su volumen guardado (_xxx_vol), que solo se llena al cubicar de verdad.
+    # Así, una partida no cubicada queda en 0 y no aparece en el PDF.
+    _vol_emp = st.session_state.get("_emp_vol", 0)
     _perd_emp = st.session_state.get("emp_perdida", 5)
     _dos_emp = st.session_state.get("dos_emp", "G-15")
-    vol_emp_final = _vol_emp * (1 + _perd_emp / 100)
+    vol_emp_final = _vol_emp * (1 + _perd_emp / 100) if _vol_emp else 0
     st.session_state["mat_emp"] = calcular_materiales(vol_emp_final, _dos_emp)
     st.session_state["vol_emp"] = vol_emp_final
 
@@ -5808,10 +5816,10 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
     st.session_state["mat_sc"] = calcular_materiales(_vol_sc, _dos_sc)
     st.session_state["vol_sc_neto"] = _vol_sc
 
-    _vol_rad = sum(s["largo"] * s["ancho"] * s["espesor"] for s in st.session_state.get("secciones_rad", [{"largo":0,"ancho":0,"espesor":0}]))
+    _vol_rad = st.session_state.get("_rad_vol", 0)
     _perd_rad = st.session_state.get("radier_perdida", 5)
     _dos_rad = st.session_state.get("dos_rad", "G-20")
-    vol_radier_final = _vol_rad * (1 + _perd_rad / 100)
+    vol_radier_final = _vol_rad * (1 + _perd_rad / 100) if _vol_rad else 0
     st.session_state["mat_rad"] = calcular_materiales(vol_radier_final, _dos_rad)
     st.session_state["vol_radier"] = vol_radier_final
 
