@@ -52,6 +52,7 @@ CLAVES_SISTEMA = {
     "reg_pass2", "reg_terminos", "nombre_nuevo_proyecto_guardar",
     "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales",
     "presupuesto_actual", "usuario_plan_vence",
+    "usuario_empresa", "usuario_rut", "usuario_telefono", "usuario_logo_url",
 }
 
 def _es_serializable(valor):
@@ -113,6 +114,26 @@ def guardar_precios_usuario(usuario_id, precios):
     ]
     if filas:
         supabase.table("precios_usuario").upsert(filas, on_conflict="usuario_id,material").execute()
+
+
+def cargar_datos_profesional(usuario_id):
+    """Carga empresa, rut y teléfono del usuario desde Supabase a la sesión."""
+    try:
+        perfil = supabase.table("perfiles").select("empresa, rut, telefono").eq("id", usuario_id).single().execute()
+        st.session_state["usuario_empresa"] = perfil.data.get("empresa")
+        st.session_state["usuario_rut"] = perfil.data.get("rut")
+        st.session_state["usuario_telefono"] = perfil.data.get("telefono")
+    except Exception:
+        pass
+
+
+def guardar_datos_profesional(usuario_id, empresa, rut, telefono):
+    """Guarda los datos profesionales del usuario en Supabase."""
+    supabase.table("perfiles").update({
+        "empresa": empresa or None,
+        "rut": rut or None,
+        "telefono": telefono or None,
+    }).eq("id", usuario_id).execute()
 
 
 def refrescar_plan_usuario():
@@ -1308,7 +1329,8 @@ if st.session_state.get("vista_cuenta"):
                     pass
                 for k in ["usuario", "usuario_nombre", "usuario_plan",
                           "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales",
-                          "usuario_plan_vence"]:
+                          "usuario_plan_vence", "usuario_empresa", "usuario_rut",
+                          "usuario_telefono", "usuario_logo_url"]:
                     st.session_state.pop(k, None)
                 st.rerun()
         with cc2:
@@ -1419,6 +1441,54 @@ if st.session_state.get("vista_cuenta"):
             st.info("Todavía no tienes proyectos guardados.")
 
         # ---------------------------------------
+        # MIS DATOS PROFESIONALES (solo Pro, para el PDF)
+        # ---------------------------------------
+        if puede_pdf_con_logo():
+            st.write("---")
+            st.subheader("🏢 Mis datos profesionales")
+            st.caption("Estos datos aparecerán en el encabezado de tus PDF (cubicación y presupuesto). "
+                       "Déjalos en blanco si no quieres mostrarlos.")
+
+            dp1, dp2 = st.columns(2)
+            with dp1:
+                in_empresa = st.text_input(
+                    "Nombre o empresa",
+                    value=st.session_state.get("usuario_empresa") or "",
+                    placeholder="Ej: Constructora Salazar Ltda.",
+                    key="in_empresa",
+                )
+                in_rut = st.text_input(
+                    "RUT o matrícula (opcional)",
+                    value=st.session_state.get("usuario_rut") or "",
+                    placeholder="Ej: 76.123.456-7",
+                    key="in_rut",
+                )
+            with dp2:
+                in_telefono = st.text_input(
+                    "Teléfono de contacto (opcional)",
+                    value=st.session_state.get("usuario_telefono") or "",
+                    placeholder="Ej: +56 9 1234 5678",
+                    key="in_telefono",
+                )
+                st.text_input(
+                    "Correo (de tu cuenta)",
+                    value=usuario.get("email", ""),
+                    disabled=True,
+                    key="in_correo_pro",
+                    help="Es el correo de tu cuenta. Aparecerá en el PDF.",
+                )
+
+            if st.button("💾 Guardar mis datos profesionales", type="primary", key="btn_guardar_datos_pro"):
+                try:
+                    guardar_datos_profesional(usuario["id"], in_empresa.strip(), in_rut.strip(), in_telefono.strip())
+                    st.session_state["usuario_empresa"] = in_empresa.strip() or None
+                    st.session_state["usuario_rut"] = in_rut.strip() or None
+                    st.session_state["usuario_telefono"] = in_telefono.strip() or None
+                    st.success("¡Datos guardados! Aparecerán en tus próximos PDF.")
+                except Exception:
+                    st.error("No se pudieron guardar los datos. Intenta de nuevo.")
+
+        # ---------------------------------------
         # MIS PRECIOS (solo planes de pago)
         # ---------------------------------------
         if puede_presupuesto():
@@ -1482,13 +1552,17 @@ if st.session_state.get("vista_cuenta"):
                         st.session_state["usuario"] = {"id": res.user.id, "email": res.user.email}
                         # Cargar perfil (nombre, plan y vencimiento)
                         try:
-                            perfil = supabase.table("perfiles").select("nombre, plan, plan_vence").eq("id", res.user.id).single().execute()
+                            perfil = supabase.table("perfiles").select("nombre, plan, plan_vence, empresa, rut, telefono").eq("id", res.user.id).single().execute()
                             st.session_state["usuario_nombre"] = perfil.data.get("nombre")
                             plan_bd = perfil.data.get("plan", "gratis")
                             vence = perfil.data.get("plan_vence")
                             st.session_state["usuario_plan_vence"] = vence
                             # Si el plan de pago venció, tratarlo como gratis
                             st.session_state["usuario_plan"] = _plan_vigente(plan_bd, vence)
+                            # Datos profesionales (para PDF Pro)
+                            st.session_state["usuario_empresa"] = perfil.data.get("empresa")
+                            st.session_state["usuario_rut"] = perfil.data.get("rut")
+                            st.session_state["usuario_telefono"] = perfil.data.get("telefono")
                         except Exception:
                             st.session_state["usuario_plan"] = "gratis"
                             st.session_state["usuario_plan_vence"] = None
