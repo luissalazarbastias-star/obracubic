@@ -574,53 +574,58 @@ Para consultas sobre estos términos, escriba a: *(indique su correo de contacto
 DOSIFICACIONES = {
     "G-5": {
         "descripcion": "Hormigón de muy baja resistencia",
-        "cemento_sacos": round(170 / 25),
+        "cemento_kg": 170,
         "gravilla_kg": 1025,
         "arena_kg": 910,
         "agua_lt": 195,
     },
     "G-10": {
         "descripcion": "Hormigón de baja resistencia",
-        "cemento_sacos": round(230 / 25),
+        "cemento_kg": 230,
         "gravilla_kg": 1055,
         "arena_kg": 835,
         "agua_lt": 195,
     },
     "G-15": {
         "descripcion": "Emplantillado, sobrecimientos simples",
-        "cemento_sacos": round(275 / 25),
+        "cemento_kg": 275,
         "gravilla_kg": 1070,
         "arena_kg": 800,
         "agua_lt": 195,
     },
     "G-20": {
         "descripcion": "Radier, cimientos normales",
-        "cemento_sacos": round(340 / 25),
+        "cemento_kg": 340,
         "gravilla_kg": 1095,
         "arena_kg": 715,
         "agua_lt": 200,
     },
     "G-25": {
         "descripcion": "Losas estructurales, pilares",
-        "cemento_sacos": round(380 / 25),
+        "cemento_kg": 380,
         "gravilla_kg": 1120,
         "arena_kg": 645,
         "agua_lt": 200,
     },
     "G-30": {
         "descripcion": "Obras especiales, alta resistencia",
-        "cemento_sacos": round(440 / 25),
+        "cemento_kg": 440,
         "gravilla_kg": 1145,
         "arena_kg": 585,
         "agua_lt": 200,
     },
 }
 
+# Peso de un saco de cemento (kg). En Chile el saco estándar es de 25 kg.
+KG_POR_SACO_CEMENTO = 25
+
 def calcular_materiales(volumen_m3, dosificacion):
     dos = DOSIFICACIONES[dosificacion]
     vol = volumen_m3
+    # El cemento se calcula con el valor exacto en kg/m³ y se redondea solo
+    # el total de sacos al final (más preciso que redondear sacos por m³).
     return {
-        "cemento_sacos": round(vol * dos["cemento_sacos"]),
+        "cemento_sacos": round(vol * dos["cemento_kg"] / KG_POR_SACO_CEMENTO),
         "gravilla_kg":   round(vol * dos["gravilla_kg"]),
         "arena_kg":      round(vol * dos["arena_kg"]),
         "agua_lt":       round(vol * dos["agua_lt"]),
@@ -5812,7 +5817,9 @@ if option == "Presupuesto":
                     mime="application/pdf",
                     use_container_width=True,
                 )
-            except Exception as e:
+            except Exception:
+                import traceback
+                print("ERROR generando PDF de presupuesto:", traceback.format_exc())
                 st.error("No se pudo generar el PDF. Intenta de nuevo.")
     else:
         st.caption("Agrega al menos un material con precio o mano de obra para generar el PDF.")
@@ -5897,46 +5904,51 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
         st.session_state.get("mat_rad", {}).get("agua_lt", 0)
     )
     if st.button("📄 Generar PDF", type="primary"):
-        pdf_buffer = generar_pdf_cubicacion(
-            nombre_proyecto=nombre_proyecto,
-            vol_emp=st.session_state.get("vol_emp", 0),
-            dos_emp=st.session_state.get("dos_emp", "G-15"),
-            mat_emp=st.session_state.get("mat_emp", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
-            vol_pilares=st.session_state.get("vol_pilares", 0),
-            dos_cim=st.session_state.get("dos_cim", "G-20"),
-            mat_cim=st.session_state.get("mat_cim", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
-            vol_sc_neto=st.session_state.get("vol_sc_neto", 0),
-            dos_sc=st.session_state.get("dos_sc", "G-20"),
-            mat_sc=st.session_state.get("mat_sc", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
-            vol_radier=st.session_state.get("vol_radier", 0),
-            dos_rad=st.session_state.get("dos_rad", "G-20"),
-            mat_rad=st.session_state.get("mat_rad", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
-            total_hormigon=total_hormigon,
-            total_sacos=total_sacos,
-            total_gravilla=total_gravilla,
-            total_arena=total_arena,
-            total_agua=total_agua,
-            canal_tipo=st.session_state.get("pdf_canal_tipo", ""),
-            cant_piezas_canal=st.session_state.get("pdf_cant_piezas_canal", 0),
-            ml_canal=st.session_state.get("pdf_ml_canal", 0),
-            largo_canal=st.session_state.get("pdf_largo_canal", 0),
-            montante_tipo=st.session_state.get("pdf_montante_tipo", ""),
-            total_montantes=st.session_state.get("pdf_total_montantes", 0),
-            largo_montante=st.session_state.get("pdf_largo_montante", 0),
-            esq_tipo=st.session_state.get("pdf_esq_tipo", ""),
-            cant_esquinas=st.session_state.get("pdf_cant_esquinas", 0),
-            largo_esq=st.session_state.get("pdf_largo_esq", 0),
-            pdf_extra=list(st.session_state.get("materiales_persistente", {}).values()),
-            con_marca_agua=not puede_pdf_con_logo(),
-            datos_usuario=datos_usuario_pdf(),
-        )
-        nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
-        st.download_button(
-            label="⬇️ Descargar PDF",
-            data=pdf_buffer,
-            file_name=nombre_archivo,
-            mime="application/pdf",
-        )
+        try:
+            pdf_buffer = generar_pdf_cubicacion(
+                nombre_proyecto=nombre_proyecto,
+                vol_emp=st.session_state.get("vol_emp", 0),
+                dos_emp=st.session_state.get("dos_emp", "G-15"),
+                mat_emp=st.session_state.get("mat_emp", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
+                vol_pilares=st.session_state.get("vol_pilares", 0),
+                dos_cim=st.session_state.get("dos_cim", "G-20"),
+                mat_cim=st.session_state.get("mat_cim", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
+                vol_sc_neto=st.session_state.get("vol_sc_neto", 0),
+                dos_sc=st.session_state.get("dos_sc", "G-20"),
+                mat_sc=st.session_state.get("mat_sc", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
+                vol_radier=st.session_state.get("vol_radier", 0),
+                dos_rad=st.session_state.get("dos_rad", "G-20"),
+                mat_rad=st.session_state.get("mat_rad", {"cemento_sacos": 0, "gravilla_kg": 0, "arena_kg": 0, "agua_lt": 0}),
+                total_hormigon=total_hormigon,
+                total_sacos=total_sacos,
+                total_gravilla=total_gravilla,
+                total_arena=total_arena,
+                total_agua=total_agua,
+                canal_tipo=st.session_state.get("pdf_canal_tipo", ""),
+                cant_piezas_canal=st.session_state.get("pdf_cant_piezas_canal", 0),
+                ml_canal=st.session_state.get("pdf_ml_canal", 0),
+                largo_canal=st.session_state.get("pdf_largo_canal", 0),
+                montante_tipo=st.session_state.get("pdf_montante_tipo", ""),
+                total_montantes=st.session_state.get("pdf_total_montantes", 0),
+                largo_montante=st.session_state.get("pdf_largo_montante", 0),
+                esq_tipo=st.session_state.get("pdf_esq_tipo", ""),
+                cant_esquinas=st.session_state.get("pdf_cant_esquinas", 0),
+                largo_esq=st.session_state.get("pdf_largo_esq", 0),
+                pdf_extra=list(st.session_state.get("materiales_persistente", {}).values()),
+                con_marca_agua=not puede_pdf_con_logo(),
+                datos_usuario=datos_usuario_pdf(),
+            )
+            nombre_archivo = f"ObraCubic_{nombre_proyecto or 'cubicacion'}.pdf".replace(" ", "_")
+            st.download_button(
+                label="⬇️ Descargar PDF",
+                data=pdf_buffer,
+                file_name=nombre_archivo,
+                mime="application/pdf",
+            )
+        except Exception:
+            import traceback
+            print("ERROR generando PDF de cubicación:", traceback.format_exc())
+            st.error("No se pudo generar el PDF. Revisa que las partidas tengan datos válidos e inténtalo de nuevo.")
 
 
 
