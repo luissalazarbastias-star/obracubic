@@ -3602,10 +3602,8 @@ if option == "Cubicacion":
                             kg_total_h = kg_v_s + kg_h_s + kg_borde + kg_diag
                             st.write("---")
                             st.subheader("📦 Resultados Hormigón")
-                            if vol_neto_h and vol_neto_h > 0:
-                                mostrar_materiales(mat_muro_h, "Muros", "Muro de hormigón")
-                            else:
-                                mostrar_materiales(mat_muro_h)
+                            # mostrar_materiales se auto-limpia si el volumen es 0
+                            mostrar_materiales(mat_muro_h, "Muros", "Muro de hormigón")
                             st.subheader("📦 Resultados Enfierradura")
                             re1, re2 = st.columns(2)
                             with re1:
@@ -3627,6 +3625,8 @@ if option == "Cubicacion":
                                     ("Arena", f"{mat_muro_h['arena_kg']} kg"),
                                     ("Acero total", f"{kg_total_h:.1f} kg"),
                                 ])
+                            else:
+                                quitar_pdf("Muros", "Muro Hormigón")
 
                         elif modo_muro_h == "📐 Modo Detallado (con planos)":
                             st.caption("Ingresa los datos exactos según planos estructurales")
@@ -3679,10 +3679,8 @@ if option == "Cubicacion":
                             kg_total_d = kg_v_d + kg_h_d + kg_borde_d + kg_estribos_borde + kg_diag_d
                             st.write("---")
                             st.subheader("📦 Resultados Hormigón")
-                            if vol_neto_h and vol_neto_h > 0:
-                                mostrar_materiales(mat_muro_h, "Muros", "Muro de hormigón")
-                            else:
-                                mostrar_materiales(mat_muro_h)
+                            # mostrar_materiales se auto-limpia si el volumen es 0
+                            mostrar_materiales(mat_muro_h, "Muros", "Muro de hormigón")
                             st.subheader("📦 Resultados Enfierradura")
                             rd1, rd2 = st.columns(2)
                             with rd1:
@@ -3705,6 +3703,8 @@ if option == "Cubicacion":
                                     ("Arena", f"{mat_muro_h['arena_kg']} kg"),
                                     ("Acero total", f"{kg_total_d:.1f} kg"),
                                 ])
+                            else:
+                                quitar_pdf("Muros", "Muro Hormigón")
 # ============================
 # MURO DE LADRILLO
 # ============================
