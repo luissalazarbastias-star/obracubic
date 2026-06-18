@@ -632,18 +632,57 @@ def mostrar_materiales(materiales, rubro=None, partida=None):
     m2.metric("Gravilla",  f"{materiales['gravilla_kg']} kg")
     m3.metric("Arena",     f"{materiales['arena_kg']} kg")
     m4.metric("Agua",      f"{materiales['agua_lt']} lt")
-    # Si se indica la partida, registrar los materiales para PDF y presupuesto
+    # Si se indica la partida, registrar los materiales para PDF y presupuesto.
+    # Solo se registra si la partida tiene al menos un material > 0; de lo
+    # contrario se elimina del registro (evita partidas "fantasma" en el PDF).
     if rubro and partida:
-        registrar_pdf(rubro, partida, [
-            ("Cemento", f"{materiales['cemento_sacos']} sacos"),
-            ("Gravilla", f"{materiales['gravilla_kg']} kg"),
-            ("Arena", f"{materiales['arena_kg']} kg"),
-            ("Agua", f"{materiales['agua_lt']} lt"),
-        ])
+        tiene_datos = any(
+            (materiales.get(k, 0) or 0) > 0
+            for k in ("cemento_sacos", "gravilla_kg", "arena_kg", "agua_lt")
+        )
+        if tiene_datos:
+            registrar_pdf(rubro, partida, [
+                ("Cemento", f"{materiales['cemento_sacos']} sacos"),
+                ("Gravilla", f"{materiales['gravilla_kg']} kg"),
+                ("Arena", f"{materiales['arena_kg']} kg"),
+                ("Agua", f"{materiales['agua_lt']} lt"),
+            ])
+        else:
+            quitar_pdf(rubro, partida)
+
+
+def _items_todos_cero(items):
+    """Devuelve True si todos los valores numéricos de los items son cero.
+    Sirve para detectar partidas vacías que no deben aparecer en el PDF."""
+    import re
+    encontro_numero = False
+    for _etiqueta, valor in items:
+        for num in re.findall(r"-?\d+[.,]?\d*", str(valor)):
+            encontro_numero = True
+            try:
+                if float(num.replace(",", ".")) != 0:
+                    return False
+            except ValueError:
+                continue
+    # Si no había ningún número, no la consideramos "todo cero" (puede ser texto)
+    return encontro_numero
+
+
+def quitar_pdf(rubro, partida):
+    """Elimina una partida del registro persistente (PDF y presupuesto)."""
+    clave = f"{rubro}||{partida}"
+    st.session_state.setdefault("materiales_persistente", {})
+    st.session_state["materiales_persistente"].pop(clave, None)
+
 
 def registrar_pdf(rubro, partida, items):
     """Registra el resultado final de una partida para el PDF.
-    items: lista de tuplas (etiqueta, valor)."""
+    items: lista de tuplas (etiqueta, valor).
+    Si todos los valores son cero, no la registra (y la elimina si existía)."""
+    # No registrar partidas completamente vacías (todo en cero)
+    if _items_todos_cero(items):
+        quitar_pdf(rubro, partida)
+        return
     st.session_state.setdefault("pdf_extra", [])
     st.session_state["pdf_extra"].append(
         {"rubro": rubro, "partida": partida, "items": items}
