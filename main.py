@@ -2141,6 +2141,238 @@ if option == "Cubicacion":
     st.session_state["pdf_extra"] = []
     st.session_state.setdefault("materiales_persistente", {})
 
+# ============================
+# CIERRES PERIMETRALES Y FAENA
+# ============================
+    if ver_rubro(cierres) and rubro_permitido("cierres"):
+        with st.expander("Cierres Perimetrales y Faena", expanded=False):
+            st.caption("Cierres provisionales de obra: delimitan la faena, impiden el acceso "
+                       "de terceros y protegen a peatones y trabajadores.")
+
+            # Nota técnica OGUC
+            st.warning(
+                "⚖️ **Normativa (OGUC):** El cierre provisional **no debe invadir la vía "
+                "pública** más allá de lo autorizado y debe mantener condiciones de seguridad "
+                "e higiene durante toda la ejecución de la obra (Ordenanza General de "
+                "Urbanismo y Construcciones)."
+            )
+
+            # --- Datos generales del cierre ---
+            cg1, cg2 = st.columns(2)
+            with cg1:
+                largo_cierre = st.number_input(
+                    "Largo total del cierre (mL)", value=0.0, min_value=0.0, step=1.0,
+                    key="cierre_largo")
+            with cg2:
+                alto_cierre = st.number_input(
+                    "Altura del cierre (m)", value=2.0, min_value=0.0, step=0.1,
+                    key="cierre_alto")
+
+            area_cierre = largo_cierre * alto_cierre
+            st.info(f"Superficie de cierre: {area_cierre:.2f} m²  ·  Largo: {largo_cierre:.2f} mL")
+
+            tipo_cierre = st.selectbox(
+                "Tipo de cierre",
+                [
+                    "Planchas de Zinc Alum (metálico opaco)",
+                    "Paneles tipo Acmafor (provisional móvil)",
+                    "Malla eslabonada / simple torsión",
+                    "Planchas de OSB / Aglomerada (madera)",
+                    "Tablas de Pino (empalizada)",
+                ],
+                key="cierre_tipo",
+            )
+
+            desp_cierre = st.slider("% Desperdicio", 0, 20, 10, key="cierre_desp")
+            factor_desp = 1 + desp_cierre / 100
+
+            # Separación estándar de los apoyos verticales (postes/polines)
+            sep_apoyo = st.selectbox(
+                "Separación entre apoyos verticales (m)", ["2,00", "2,50", "3,00"],
+                index=1, key="cierre_sep_apoyo",
+                help="Distancia estándar entre polines, postes o perfiles de soporte.")
+            sep_apoyo_v = float(sep_apoyo.replace(",", "."))
+
+            # Resumen informativo (estos items NO se cobran: el valor parte con un símbolo)
+            items_cierre = [
+                ("Tipo de cierre", tipo_cierre),
+                ("Largo total", f"≈ {largo_cierre:.2f} mL"),
+                ("Altura", f"≈ {alto_cierre:.2f} m"),
+                ("Superficie", f"≈ {area_cierre:.2f} m²"),
+            ]
+
+            st.write("---")
+            st.subheader("📦 Materiales calculados")
+
+            # =====================================================
+            # 1.A — PLANCHAS DE ZINC ALUM (metálico opaco)
+            # =====================================================
+            if tipo_cierre.startswith("Planchas de Zinc"):
+                largo_plancha_z = st.selectbox(
+                    "Largo plancha zinc", ["2,00m", "2,50m", "3,00m", "3,66m"],
+                    key="cierre_z_largo")
+                sop_z = st.selectbox(
+                    "Estructura de soporte", ["Polines de madera", "Perfiles metálicos"],
+                    key="cierre_z_sop")
+
+                ancho_util_z = 0.80  # ancho útil plancha zinc acanalada
+                n_planchas_z = math.ceil(largo_cierre / ancho_util_z) if largo_cierre > 0 else 0
+                n_planchas_z_d = math.ceil(n_planchas_z * factor_desp)
+                n_apoyos_z = (math.ceil(largo_cierre / sep_apoyo_v) + 1) if largo_cierre > 0 else 0
+                ml_rieles_z = 2 * largo_cierre  # solera superior + inferior
+                tornillos_z = n_planchas_z_d * 10  # ~10 por plancha
+
+                st.success(f"Planchas de zinc ({largo_plancha_z}): {n_planchas_z_d} unidades "
+                           f"(c/{desp_cierre}% desp.)")
+                st.info(f"Apoyos verticales: {n_apoyos_z} · Rieles horizontales: {ml_rieles_z:.1f} mL · "
+                        f"Tornillos: {tornillos_z}")
+
+                items_cierre.append(("Planchas de zinc acanaladas", f"{n_planchas_z_d} unidades de {largo_plancha_z}"))
+                if sop_z == "Polines de madera":
+                    items_cierre.append(("Polines impregnados (soporte)", f"{n_apoyos_z} piezas"))
+                    items_cierre.append(("Rieles horizontales (madera)", f"{ml_rieles_z:.1f} mL"))
+                else:
+                    items_cierre.append(("Perfiles metálicos (soporte)", f"{n_apoyos_z} piezas"))
+                    items_cierre.append(("Rieles horizontales (perfil)", f"{ml_rieles_z:.1f} mL"))
+                items_cierre.append(("Tornillos de fijación", f"{tornillos_z} unidades"))
+
+            # =====================================================
+            # 1.B — PANELES TIPO ACMAFOR (provisional móvil)
+            # =====================================================
+            elif tipo_cierre.startswith("Paneles tipo Acmafor"):
+                largo_panel_ac = 3.50  # panel móvil estándar
+                n_paneles_ac = math.ceil(largo_cierre / largo_panel_ac) if largo_cierre > 0 else 0
+                n_bases_ac = (n_paneles_ac + 1) if n_paneles_ac > 0 else 0
+                n_abraz_ac = n_paneles_ac * 2  # abrazaderas de unión entre paneles
+
+                st.success(f"Paneles Acmafor (3,50×2,00m): {n_paneles_ac} unidades")
+                st.info(f"Bases de hormigón móviles: {n_bases_ac} · Abrazaderas: {n_abraz_ac}")
+                st.caption("Cierre rápido de montar/desmontar. No entrega privacidad; "
+                           "puedes complementarlo con malla Rachel (abajo).")
+
+                items_cierre.append(("Paneles Acmafor provisionales", f"{n_paneles_ac} unidades"))
+                items_cierre.append(("Base hormigón móvil", f"{n_bases_ac} unidades"))
+                items_cierre.append(("Abrazaderas de unión", f"{n_abraz_ac} unidades"))
+
+            # =====================================================
+            # 1.C — MALLA ESLABONADA / SIMPLE TORSIÓN
+            # =====================================================
+            elif tipo_cierre.startswith("Malla eslabonada"):
+                largo_rollo_me = st.selectbox(
+                    "Largo del rollo de malla", ["10m", "20m", "25m"], index=2,
+                    key="cierre_me_rollo")
+                sop_me = st.selectbox(
+                    "Postes de soporte", ["Metálicos (tubo/PHS)", "Madera (polines)"],
+                    key="cierre_me_sop")
+                largo_rollo_me_v = float(largo_rollo_me.replace("m", ""))
+
+                n_rollos_me = math.ceil(largo_cierre / largo_rollo_me_v) if largo_cierre > 0 else 0
+                n_postes_me = (math.ceil(largo_cierre / sep_apoyo_v) + 1) if largo_cierre > 0 else 0
+                ml_alambre_me = 3 * largo_cierre  # 3 hebras tensoras (sup/medio/inf)
+
+                st.success(f"Malla eslabonada: {n_rollos_me} rollos de {largo_rollo_me}")
+                st.info(f"Postes: {n_postes_me} · Alambre tensor: {ml_alambre_me:.1f} mL (3 hebras)")
+
+                items_cierre.append(("Malla eslabonada (rollos)", f"{n_rollos_me} rollos de {largo_rollo_me}"))
+                if sop_me.startswith("Metálicos"):
+                    items_cierre.append(("Postes metálicos / tubo PHS", f"{n_postes_me} piezas"))
+                else:
+                    items_cierre.append(("Polines de soporte", f"{n_postes_me} piezas"))
+                items_cierre.append(("Alambre tensor", f"{ml_alambre_me:.1f} mL"))
+
+            # =====================================================
+            # 2.A — PLANCHAS DE OSB / AGLOMERADA (madera)
+            # =====================================================
+            elif tipo_cierre.startswith("Planchas de OSB"):
+                area_plancha_osb = 1.22 * 2.44  # plancha estándar (≈2,98 m²)
+                n_planchas_osb = math.ceil((area_cierre / area_plancha_osb) * factor_desp) if area_cierre > 0 else 0
+                n_pies_osb = (math.ceil(largo_cierre / 0.60) + 1) if largo_cierre > 0 else 0  # pies derechos c/0,60m
+                ml_soleras_osb = 2 * largo_cierre  # solera sup + inf
+                n_diag_osb = math.ceil(largo_cierre / sep_apoyo_v) if largo_cierre > 0 else 0  # 1 diagonal por vano
+                tornillos_osb = n_planchas_osb * 20  # ~20 fijaciones por plancha
+
+                st.success(f"Planchas de OSB (1,22×2,44m): {n_planchas_osb} unidades "
+                           f"(c/{desp_cierre}% desp.)")
+                st.info(f"Pies derechos: {n_pies_osb} · Soleras: {ml_soleras_osb:.1f} mL · "
+                        f"Diagonales: {n_diag_osb} · Tornillos: {tornillos_osb}")
+                st.caption("Panel ciego: excelente barrera visual y de seguridad. "
+                           "Puede pintarse para mejorar la estética urbana.")
+
+                items_cierre.append(("Planchas de OSB", f"{n_planchas_osb} unidades"))
+                items_cierre.append(("Pie derecho (entramado)", f"{n_pies_osb} piezas"))
+                items_cierre.append(("Soleras (entramado)", f"{ml_soleras_osb:.1f} mL"))
+                items_cierre.append(("Diagonales", f"{n_diag_osb} piezas"))
+                items_cierre.append(("Tornillos de fijación", f"{tornillos_osb} unidades"))
+
+            # =====================================================
+            # 2.B — TABLAS DE PINO (empalizada)
+            # =====================================================
+            elif tipo_cierre.startswith("Tablas de Pino"):
+                orient_t = st.selectbox(
+                    "Orientación de las tablas", ["Horizontal", "Vertical"],
+                    key="cierre_t_orient")
+                largo_tabla_t = st.selectbox(
+                    "Largo tabla pino", ["3,20m", "4,00m"], key="cierre_t_largo")
+                ancho_tabla_t = st.selectbox(
+                    "Ancho tabla", ['1x4" (≈0,10m)', '1x6" (≈0,15m)'], key="cierre_t_ancho")
+
+                largo_tabla_t_v = float(largo_tabla_t.replace("m", "").replace(",", "."))
+                ancho_tabla_t_v = 0.10 if "0,10" in ancho_tabla_t else 0.15
+
+                # Filas de tablas necesarias para cubrir la altura (o el largo si es vertical)
+                if orient_t == "Horizontal":
+                    filas_t = math.ceil(alto_cierre / ancho_tabla_t_v) if alto_cierre > 0 else 0
+                    ml_tablas_t = filas_t * largo_cierre
+                else:  # vertical
+                    filas_t = math.ceil(largo_cierre / ancho_tabla_t_v) if largo_cierre > 0 else 0
+                    ml_tablas_t = filas_t * alto_cierre
+                n_tablas_t = math.ceil((ml_tablas_t / largo_tabla_t_v) * factor_desp) if largo_tabla_t_v > 0 else 0
+                n_postes_t = (math.ceil(largo_cierre / sep_apoyo_v) + 1) if largo_cierre > 0 else 0
+                clavos_t = n_tablas_t * 4  # ~4 clavos por tabla
+
+                st.success(f"Tablas de pino ({largo_tabla_t}): {n_tablas_t} unidades "
+                           f"(c/{desp_cierre}% desp.)")
+                st.info(f"Polines de soporte: {n_postes_t} · Clavos: {clavos_t}")
+
+                items_cierre.append(("Tablas de pino", f"{n_tablas_t} unidades de {largo_tabla_t}"))
+                items_cierre.append(("Polines de soporte", f"{n_postes_t} piezas"))
+                items_cierre.append(("Clavos", f"{clavos_t} unidades"))
+
+            # =====================================================
+            # 3 — COMPLEMENTOS DE PLÁSTICO Y SEÑALIZACIÓN (checkbox)
+            # =====================================================
+            st.write("---")
+            st.subheader("➕ Complementos (opcional)")
+
+            usar_rachel = st.checkbox(
+                "Agregar malla Rachel (sombra / control de polvo / privacidad)",
+                key="cierre_rachel")
+            if usar_rachel:
+                color_rachel = st.selectbox("Color malla Rachel", ["Verde", "Negra"],
+                                            key="cierre_rachel_color")
+                largo_rollo_rachel = 50.0  # rollo estándar 50 m
+                m2_rachel = area_cierre * factor_desp
+                n_rollos_rachel = math.ceil(largo_cierre / largo_rollo_rachel) if largo_cierre > 0 else 0
+                st.info(f"Malla Rachel {color_rachel}: {n_rollos_rachel} rollos (≈{m2_rachel:.1f} m²)")
+                items_cierre.append((f"Malla Rachel {color_rachel}",
+                                     f"{n_rollos_rachel} rollos (≈{m2_rachel:.1f} m²)"))
+
+            usar_senal = st.checkbox(
+                "Agregar malla plástica de señalización (naranja, faena / excavaciones)",
+                key="cierre_senal")
+            if usar_senal:
+                ml_senal = st.number_input(
+                    "Metros a señalizar (mL)", value=float(largo_cierre), min_value=0.0, step=1.0,
+                    key="cierre_senal_ml")
+                n_rollos_senal = math.ceil(ml_senal / 50.0) if ml_senal > 0 else 0
+                st.info(f"Malla señalización naranja: {n_rollos_senal} rollos de 50m")
+                items_cierre.append(("Malla señalización naranja", f"{n_rollos_senal} rollos de 50m"))
+
+            # Registrar para PDF y presupuesto solo si hay un cierre real cubicado
+            if largo_cierre > 0:
+                nombre_partida_cierre = tipo_cierre.split(" (")[0]
+                registrar_pdf("Cierres Perimetrales y Faena", nombre_partida_cierre, items_cierre)
+
     if ver_rubro(horm):
             with st.expander("Hormigón y Movimiento de tierra", expanded=False):
                 if ver(horm, "excavacion"):
@@ -5529,238 +5761,6 @@ if option == "Cubicacion":
 
                     if area_ais > 0 and (usar_fieltro or usar_aislante):
                         registrar_pdf("Cubierta / Techumbre", "Aislación y Fieltro", items_ais)
-
-# ============================
-# CIERRES PERIMETRALES Y FAENA
-# ============================
-    if ver_rubro(cierres) and rubro_permitido("cierres"):
-        with st.expander("Cierres Perimetrales y Faena", expanded=False):
-            st.caption("Cierres provisionales de obra: delimitan la faena, impiden el acceso "
-                       "de terceros y protegen a peatones y trabajadores.")
-
-            # Nota técnica OGUC
-            st.warning(
-                "⚖️ **Normativa (OGUC):** El cierre provisional **no debe invadir la vía "
-                "pública** más allá de lo autorizado y debe mantener condiciones de seguridad "
-                "e higiene durante toda la ejecución de la obra (Ordenanza General de "
-                "Urbanismo y Construcciones)."
-            )
-
-            # --- Datos generales del cierre ---
-            cg1, cg2 = st.columns(2)
-            with cg1:
-                largo_cierre = st.number_input(
-                    "Largo total del cierre (mL)", value=0.0, min_value=0.0, step=1.0,
-                    key="cierre_largo")
-            with cg2:
-                alto_cierre = st.number_input(
-                    "Altura del cierre (m)", value=2.0, min_value=0.0, step=0.1,
-                    key="cierre_alto")
-
-            area_cierre = largo_cierre * alto_cierre
-            st.info(f"Superficie de cierre: {area_cierre:.2f} m²  ·  Largo: {largo_cierre:.2f} mL")
-
-            tipo_cierre = st.selectbox(
-                "Tipo de cierre",
-                [
-                    "Planchas de Zinc Alum (metálico opaco)",
-                    "Paneles tipo Acmafor (provisional móvil)",
-                    "Malla eslabonada / simple torsión",
-                    "Planchas de OSB / Aglomerada (madera)",
-                    "Tablas de Pino (empalizada)",
-                ],
-                key="cierre_tipo",
-            )
-
-            desp_cierre = st.slider("% Desperdicio", 0, 20, 10, key="cierre_desp")
-            factor_desp = 1 + desp_cierre / 100
-
-            # Separación estándar de los apoyos verticales (postes/polines)
-            sep_apoyo = st.selectbox(
-                "Separación entre apoyos verticales (m)", ["2,00", "2,50", "3,00"],
-                index=1, key="cierre_sep_apoyo",
-                help="Distancia estándar entre polines, postes o perfiles de soporte.")
-            sep_apoyo_v = float(sep_apoyo.replace(",", "."))
-
-            # Resumen informativo (estos items NO se cobran: el valor parte con un símbolo)
-            items_cierre = [
-                ("Tipo de cierre", tipo_cierre),
-                ("Largo total", f"≈ {largo_cierre:.2f} mL"),
-                ("Altura", f"≈ {alto_cierre:.2f} m"),
-                ("Superficie", f"≈ {area_cierre:.2f} m²"),
-            ]
-
-            st.write("---")
-            st.subheader("📦 Materiales calculados")
-
-            # =====================================================
-            # 1.A — PLANCHAS DE ZINC ALUM (metálico opaco)
-            # =====================================================
-            if tipo_cierre.startswith("Planchas de Zinc"):
-                largo_plancha_z = st.selectbox(
-                    "Largo plancha zinc", ["2,00m", "2,50m", "3,00m", "3,66m"],
-                    key="cierre_z_largo")
-                sop_z = st.selectbox(
-                    "Estructura de soporte", ["Polines de madera", "Perfiles metálicos"],
-                    key="cierre_z_sop")
-
-                ancho_util_z = 0.80  # ancho útil plancha zinc acanalada
-                n_planchas_z = math.ceil(largo_cierre / ancho_util_z) if largo_cierre > 0 else 0
-                n_planchas_z_d = math.ceil(n_planchas_z * factor_desp)
-                n_apoyos_z = (math.ceil(largo_cierre / sep_apoyo_v) + 1) if largo_cierre > 0 else 0
-                ml_rieles_z = 2 * largo_cierre  # solera superior + inferior
-                tornillos_z = n_planchas_z_d * 10  # ~10 por plancha
-
-                st.success(f"Planchas de zinc ({largo_plancha_z}): {n_planchas_z_d} unidades "
-                           f"(c/{desp_cierre}% desp.)")
-                st.info(f"Apoyos verticales: {n_apoyos_z} · Rieles horizontales: {ml_rieles_z:.1f} mL · "
-                        f"Tornillos: {tornillos_z}")
-
-                items_cierre.append(("Planchas de zinc acanaladas", f"{n_planchas_z_d} unidades de {largo_plancha_z}"))
-                if sop_z == "Polines de madera":
-                    items_cierre.append(("Polines impregnados (soporte)", f"{n_apoyos_z} piezas"))
-                    items_cierre.append(("Rieles horizontales (madera)", f"{ml_rieles_z:.1f} mL"))
-                else:
-                    items_cierre.append(("Perfiles metálicos (soporte)", f"{n_apoyos_z} piezas"))
-                    items_cierre.append(("Rieles horizontales (perfil)", f"{ml_rieles_z:.1f} mL"))
-                items_cierre.append(("Tornillos de fijación", f"{tornillos_z} unidades"))
-
-            # =====================================================
-            # 1.B — PANELES TIPO ACMAFOR (provisional móvil)
-            # =====================================================
-            elif tipo_cierre.startswith("Paneles tipo Acmafor"):
-                largo_panel_ac = 3.50  # panel móvil estándar
-                n_paneles_ac = math.ceil(largo_cierre / largo_panel_ac) if largo_cierre > 0 else 0
-                n_bases_ac = (n_paneles_ac + 1) if n_paneles_ac > 0 else 0
-                n_abraz_ac = n_paneles_ac * 2  # abrazaderas de unión entre paneles
-
-                st.success(f"Paneles Acmafor (3,50×2,00m): {n_paneles_ac} unidades")
-                st.info(f"Bases de hormigón móviles: {n_bases_ac} · Abrazaderas: {n_abraz_ac}")
-                st.caption("Cierre rápido de montar/desmontar. No entrega privacidad; "
-                           "puedes complementarlo con malla Rachel (abajo).")
-
-                items_cierre.append(("Paneles Acmafor provisionales", f"{n_paneles_ac} unidades"))
-                items_cierre.append(("Base hormigón móvil", f"{n_bases_ac} unidades"))
-                items_cierre.append(("Abrazaderas de unión", f"{n_abraz_ac} unidades"))
-
-            # =====================================================
-            # 1.C — MALLA ESLABONADA / SIMPLE TORSIÓN
-            # =====================================================
-            elif tipo_cierre.startswith("Malla eslabonada"):
-                largo_rollo_me = st.selectbox(
-                    "Largo del rollo de malla", ["10m", "20m", "25m"], index=2,
-                    key="cierre_me_rollo")
-                sop_me = st.selectbox(
-                    "Postes de soporte", ["Metálicos (tubo/PHS)", "Madera (polines)"],
-                    key="cierre_me_sop")
-                largo_rollo_me_v = float(largo_rollo_me.replace("m", ""))
-
-                n_rollos_me = math.ceil(largo_cierre / largo_rollo_me_v) if largo_cierre > 0 else 0
-                n_postes_me = (math.ceil(largo_cierre / sep_apoyo_v) + 1) if largo_cierre > 0 else 0
-                ml_alambre_me = 3 * largo_cierre  # 3 hebras tensoras (sup/medio/inf)
-
-                st.success(f"Malla eslabonada: {n_rollos_me} rollos de {largo_rollo_me}")
-                st.info(f"Postes: {n_postes_me} · Alambre tensor: {ml_alambre_me:.1f} mL (3 hebras)")
-
-                items_cierre.append(("Malla eslabonada (rollos)", f"{n_rollos_me} rollos de {largo_rollo_me}"))
-                if sop_me.startswith("Metálicos"):
-                    items_cierre.append(("Postes metálicos / tubo PHS", f"{n_postes_me} piezas"))
-                else:
-                    items_cierre.append(("Polines de soporte", f"{n_postes_me} piezas"))
-                items_cierre.append(("Alambre tensor", f"{ml_alambre_me:.1f} mL"))
-
-            # =====================================================
-            # 2.A — PLANCHAS DE OSB / AGLOMERADA (madera)
-            # =====================================================
-            elif tipo_cierre.startswith("Planchas de OSB"):
-                area_plancha_osb = 1.22 * 2.44  # plancha estándar (≈2,98 m²)
-                n_planchas_osb = math.ceil((area_cierre / area_plancha_osb) * factor_desp) if area_cierre > 0 else 0
-                n_pies_osb = (math.ceil(largo_cierre / 0.60) + 1) if largo_cierre > 0 else 0  # pies derechos c/0,60m
-                ml_soleras_osb = 2 * largo_cierre  # solera sup + inf
-                n_diag_osb = math.ceil(largo_cierre / sep_apoyo_v) if largo_cierre > 0 else 0  # 1 diagonal por vano
-                tornillos_osb = n_planchas_osb * 20  # ~20 fijaciones por plancha
-
-                st.success(f"Planchas de OSB (1,22×2,44m): {n_planchas_osb} unidades "
-                           f"(c/{desp_cierre}% desp.)")
-                st.info(f"Pies derechos: {n_pies_osb} · Soleras: {ml_soleras_osb:.1f} mL · "
-                        f"Diagonales: {n_diag_osb} · Tornillos: {tornillos_osb}")
-                st.caption("Panel ciego: excelente barrera visual y de seguridad. "
-                           "Puede pintarse para mejorar la estética urbana.")
-
-                items_cierre.append(("Planchas de OSB", f"{n_planchas_osb} unidades"))
-                items_cierre.append(("Pie derecho (entramado)", f"{n_pies_osb} piezas"))
-                items_cierre.append(("Soleras (entramado)", f"{ml_soleras_osb:.1f} mL"))
-                items_cierre.append(("Diagonales", f"{n_diag_osb} piezas"))
-                items_cierre.append(("Tornillos de fijación", f"{tornillos_osb} unidades"))
-
-            # =====================================================
-            # 2.B — TABLAS DE PINO (empalizada)
-            # =====================================================
-            elif tipo_cierre.startswith("Tablas de Pino"):
-                orient_t = st.selectbox(
-                    "Orientación de las tablas", ["Horizontal", "Vertical"],
-                    key="cierre_t_orient")
-                largo_tabla_t = st.selectbox(
-                    "Largo tabla pino", ["3,20m", "4,00m"], key="cierre_t_largo")
-                ancho_tabla_t = st.selectbox(
-                    "Ancho tabla", ['1x4" (≈0,10m)', '1x6" (≈0,15m)'], key="cierre_t_ancho")
-
-                largo_tabla_t_v = float(largo_tabla_t.replace("m", "").replace(",", "."))
-                ancho_tabla_t_v = 0.10 if "0,10" in ancho_tabla_t else 0.15
-
-                # Filas de tablas necesarias para cubrir la altura (o el largo si es vertical)
-                if orient_t == "Horizontal":
-                    filas_t = math.ceil(alto_cierre / ancho_tabla_t_v) if alto_cierre > 0 else 0
-                    ml_tablas_t = filas_t * largo_cierre
-                else:  # vertical
-                    filas_t = math.ceil(largo_cierre / ancho_tabla_t_v) if largo_cierre > 0 else 0
-                    ml_tablas_t = filas_t * alto_cierre
-                n_tablas_t = math.ceil((ml_tablas_t / largo_tabla_t_v) * factor_desp) if largo_tabla_t_v > 0 else 0
-                n_postes_t = (math.ceil(largo_cierre / sep_apoyo_v) + 1) if largo_cierre > 0 else 0
-                clavos_t = n_tablas_t * 4  # ~4 clavos por tabla
-
-                st.success(f"Tablas de pino ({largo_tabla_t}): {n_tablas_t} unidades "
-                           f"(c/{desp_cierre}% desp.)")
-                st.info(f"Polines de soporte: {n_postes_t} · Clavos: {clavos_t}")
-
-                items_cierre.append(("Tablas de pino", f"{n_tablas_t} unidades de {largo_tabla_t}"))
-                items_cierre.append(("Polines de soporte", f"{n_postes_t} piezas"))
-                items_cierre.append(("Clavos", f"{clavos_t} unidades"))
-
-            # =====================================================
-            # 3 — COMPLEMENTOS DE PLÁSTICO Y SEÑALIZACIÓN (checkbox)
-            # =====================================================
-            st.write("---")
-            st.subheader("➕ Complementos (opcional)")
-
-            usar_rachel = st.checkbox(
-                "Agregar malla Rachel (sombra / control de polvo / privacidad)",
-                key="cierre_rachel")
-            if usar_rachel:
-                color_rachel = st.selectbox("Color malla Rachel", ["Verde", "Negra"],
-                                            key="cierre_rachel_color")
-                largo_rollo_rachel = 50.0  # rollo estándar 50 m
-                m2_rachel = area_cierre * factor_desp
-                n_rollos_rachel = math.ceil(largo_cierre / largo_rollo_rachel) if largo_cierre > 0 else 0
-                st.info(f"Malla Rachel {color_rachel}: {n_rollos_rachel} rollos (≈{m2_rachel:.1f} m²)")
-                items_cierre.append((f"Malla Rachel {color_rachel}",
-                                     f"{n_rollos_rachel} rollos (≈{m2_rachel:.1f} m²)"))
-
-            usar_senal = st.checkbox(
-                "Agregar malla plástica de señalización (naranja, faena / excavaciones)",
-                key="cierre_senal")
-            if usar_senal:
-                ml_senal = st.number_input(
-                    "Metros a señalizar (mL)", value=float(largo_cierre), min_value=0.0, step=1.0,
-                    key="cierre_senal_ml")
-                n_rollos_senal = math.ceil(ml_senal / 50.0) if ml_senal > 0 else 0
-                st.info(f"Malla señalización naranja: {n_rollos_senal} rollos de 50m")
-                items_cierre.append(("Malla señalización naranja", f"{n_rollos_senal} rollos de 50m"))
-
-            # Registrar para PDF y presupuesto solo si hay un cierre real cubicado
-            if largo_cierre > 0:
-                nombre_partida_cierre = tipo_cierre.split(" (")[0]
-                registrar_pdf("Cierres Perimetrales y Faena", nombre_partida_cierre, items_cierre)
 
 # ============================
 # PRESUPUESTO (Premium)
