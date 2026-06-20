@@ -1,0 +1,30 @@
+name: Mantener ObraCubic despierta
+
+# Mantiene la app de Streamlit despierta visitándola con un navegador real.
+# La app se duerme tras 12 h sin tráfico, así que la visitamos cada 4 horas.
+
+on:
+  schedule:
+    - cron: "0 */4 * * *"   # cada 4 horas (hora UTC)
+  workflow_dispatch:          # permite ejecutarlo a mano desde la pestaña Actions
+
+jobs:
+  keep-awake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Visitar y despertar la app
+        run: python keep_awake.py
