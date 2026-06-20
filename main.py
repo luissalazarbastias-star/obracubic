@@ -6211,6 +6211,54 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
             print("ERROR generando PDF de cubicación:", traceback.format_exc())
             st.error("No se pudo generar el PDF. Revisa que las partidas tengan datos válidos e inténtalo de nuevo.")
 
+    # ------------------------------------------------------------------
+    # Botón: Compartir resumen por WhatsApp
+    # Arma un mensaje limpio con los totales y lo abre en WhatsApp.
+    # No interfiere con el botón de PDF: usa un enlace <a>, no st.button.
+    # ------------------------------------------------------------------
+    if total_hormigon > 0 or total_sacos > 0:
+        import urllib.parse as _wsp_parse
+
+        _nombre_p = st.session_state.get("nombre_proyecto", "").strip()
+        _cabecera = (f"*📋 Cubicación: {_nombre_p}*\n\n" if _nombre_p
+                     else "*📋 Resumen de Cubicación*\n\n")
+
+        _mensaje_wsp = (
+            _cabecera +
+            "*Resumen Total de Materiales* 🏗️\n\n"
+            f"🧱 *Hormigón:* {total_hormigon:.2f} m³\n"
+            f"🛍️ *Cemento:* {total_sacos} sacos\n"
+            f"⛰️ *Gravilla:* {total_gravilla} kg\n"
+            f"🏖️ *Arena:* {total_arena} kg\n"
+            f"💧 *Agua:* {total_agua} lt\n\n"
+            "_Generado con ObraCubic 📲_\n"
+            "obracubic.streamlit.app"
+        )
+
+        _url_wsp = "https://wa.me/?text=" + _wsp_parse.quote(_mensaje_wsp)
+
+        st.markdown(
+            f"""
+            <a href="{_url_wsp}" target="_blank" style="
+                display:block;
+                width:100%;
+                box-sizing:border-box;
+                background-color:#25D366;
+                color:#FFFFFF;
+                text-align:center;
+                padding:13px 20px;
+                border-radius:10px;
+                font-weight:bold;
+                font-size:16px;
+                text-decoration:none;
+                margin-top:10px;
+                box-shadow:0 2px 6px rgba(37,211,102,0.4);
+            ">📲 Compartir resumen por WhatsApp</a>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.caption("Se abrirá WhatsApp con el resumen listo para enviar a tu cliente o barraca.")
+
 
 
 # ============================
