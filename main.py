@@ -6220,18 +6220,18 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
         import urllib.parse as _wsp_parse
 
         _nombre_p = st.session_state.get("nombre_proyecto", "").strip()
-        _cabecera = (f"*📋 Cubicación: {_nombre_p}*\n\n" if _nombre_p
-                     else "*📋 Resumen de Cubicación*\n\n")
+        _cabecera = (f"*Cubicación: {_nombre_p}*\n\n" if _nombre_p
+                     else "*Resumen de Cubicación*\n\n")
 
         _mensaje_wsp = (
             _cabecera +
-            "*Resumen Total de Materiales* 🏗️\n\n"
-            f"🧱 *Hormigón:* {total_hormigon:.2f} m³\n"
-            f"🛍️ *Cemento:* {total_sacos} sacos\n"
-            f"⛰️ *Gravilla:* {total_gravilla} kg\n"
-            f"🏖️ *Arena:* {total_arena} kg\n"
-            f"💧 *Agua:* {total_agua} lt\n\n"
-            "_Generado con ObraCubic 📲_\n"
+            "*RESUMEN TOTAL DE MATERIALES*\n\n"
+            f"*Hormigón:* {total_hormigon:.2f} m3\n"
+            f"*Cemento:* {total_sacos} sacos\n"
+            f"*Gravilla:* {total_gravilla} kg\n"
+            f"*Arena:* {total_arena} kg\n"
+            f"*Agua:* {total_agua} lt\n\n"
+            "_Generado con ObraCubic_\n"
             "obracubic.streamlit.app"
         )
 
@@ -6253,7 +6253,7 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
                 text-decoration:none;
                 margin-top:10px;
                 box-shadow:0 2px 6px rgba(37,211,102,0.4);
-            ">📲 Compartir resumen por WhatsApp</a>
+            ">Compartir resumen por WhatsApp</a>
             """,
             unsafe_allow_html=True,
         )
