@@ -2368,10 +2368,23 @@ if option == "Cubicacion":
                 st.info(f"Malla señalización naranja: {n_rollos_senal} rollos de 50m")
                 items_cierre.append(("Malla señalización naranja", f"{n_rollos_senal} rollos de 50m"))
 
-            # Registrar para PDF y presupuesto solo si hay un cierre real cubicado
+            # Registrar para PDF y presupuesto solo si hay un cierre real cubicado.
+            # Como el tipo se elige con un selectbox, al cambiar de tipo hay que
+            # borrar el registro del tipo anterior (si no, aparecen los dos).
+            _persist_c = st.session_state.setdefault("materiales_persistente", {})
             if largo_cierre > 0:
                 nombre_partida_cierre = tipo_cierre.split(" (")[0]
+                _clave_actual = f"Cierres Perimetrales y Faena||{nombre_partida_cierre}"
+                # Eliminar cualquier OTRO tipo de cierre registrado antes
+                for _k in list(_persist_c.keys()):
+                    if _k.startswith("Cierres Perimetrales y Faena||") and _k != _clave_actual:
+                        _persist_c.pop(_k, None)
                 registrar_pdf("Cierres Perimetrales y Faena", nombre_partida_cierre, items_cierre)
+            else:
+                # Sin largo: no hay cierre cubicado, limpiar todos sus registros
+                for _k in list(_persist_c.keys()):
+                    if _k.startswith("Cierres Perimetrales y Faena||"):
+                        _persist_c.pop(_k, None)
 
     if ver_rubro(horm):
             with st.expander("Hormigón y Movimiento de tierra", expanded=False):
