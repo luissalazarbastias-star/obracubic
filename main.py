@@ -6213,27 +6213,78 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
 
     # ------------------------------------------------------------------
     # Botón: Compartir resumen por WhatsApp
-    # Arma un mensaje limpio con los totales y lo abre en WhatsApp.
-    # No interfiere con el botón de PDF: usa un enlace <a>, no st.button.
+    # Arma un mensaje limpio con TODAS las partidas cubicadas (no solo
+    # hormigón) y lo abre en WhatsApp. No interfiere con el botón de PDF:
+    # usa un enlace <a>, no st.button.
     # ------------------------------------------------------------------
-    if total_hormigon > 0 or total_sacos > 0:
+    _persistente = st.session_state.get("materiales_persistente", {})
+    if total_hormigon > 0 or _persistente:
         import urllib.parse as _wsp_parse
 
         _nombre_p = st.session_state.get("nombre_proyecto", "").strip()
-        _cabecera = (f"*Cubicación: {_nombre_p}*\n\n" if _nombre_p
-                     else "*Resumen de Cubicación*\n\n")
+        _cabecera = (f"*Cubicación: {_nombre_p}*" if _nombre_p
+                     else "*Resumen de Cubicación*")
 
-        _mensaje_wsp = (
-            _cabecera +
-            "*RESUMEN TOTAL DE MATERIALES*\n\n"
-            f"*Hormigón:* {total_hormigon:.2f} m3\n"
-            f"*Cemento:* {total_sacos} sacos\n"
-            f"*Gravilla:* {total_gravilla} kg\n"
-            f"*Arena:* {total_arena} kg\n"
-            f"*Agua:* {total_agua} lt\n\n"
-            "_Generado con ObraCubic_\n"
-            "obracubic.streamlit.app"
+        _lineas = [_cabecera]
+
+        # 1) Resumen agregado de hormigón (si hay volumen)
+        _RUBRO_HORM = "Hormigón y Movimiento de tierra"
+        if total_hormigon > 0:
+            _lineas += [
+                "",
+                "*HORMIGÓN (total)*",
+                f"*Volumen:* {total_hormigon:.2f} m3",
+                f"*Cemento:* {total_sacos} sacos",
+                f"*Gravilla:* {total_gravilla} kg",
+                f"*Arena:* {total_arena} kg",
+                f"*Agua:* {total_agua} lt",
+            ]
+
+        # 2) Resto de partidas cubicadas: SOLO materiales comprables
+        #    (se descartan filas informativas como tipo, largo, volumen, etc.,
+        #     igual que hace el presupuesto)
+        _INFO_WORDS = (
+            "área", "area", "superficie", "volumen", "dosificación", "dosificacion",
+            "espesor", "medida", "tipo", "manos", "capas", "traslape",
+            "dirección", "direccion", "altura", "pendiente", "par inclinado",
+            "pendolón", "pendolon", "metros lineales netos", "acero total",
+            "largo", "orientación", "orientacion", "separación", "separacion",
+            "estructura",
         )
+
+        def _es_comprable(_etq, _val):
+            if any(_w in _etq.lower() for _w in _INFO_WORDS):
+                return False
+            _c, _ = parsear_cantidad(_val)
+            return _c is not None and _c > 0
+
+        _rubros = {}
+        for _bloque in _persistente.values():
+            _rubro = _bloque.get("rubro", "")
+            if _rubro == _RUBRO_HORM:
+                continue  # ya está en el agregado de arriba
+            _rubros.setdefault(_rubro, []).append(_bloque)
+
+        for _rubro, _bloques in _rubros.items():
+            # Conservar solo partidas que tengan al menos un material comprable
+            _bloques_con_mat = []
+            for _bloque in _bloques:
+                _mats = [(_e, _v) for (_e, _v) in _bloque.get("items", [])
+                         if _es_comprable(_e, _v)]
+                if _mats:
+                    _bloques_con_mat.append((_bloque.get("partida", ""), _mats))
+            if not _bloques_con_mat:
+                continue  # rubro sin materiales comprables -> no se muestra
+            _lineas.append("")
+            _lineas.append(f"*{_rubro.upper()}*")
+            for _partida, _mats in _bloques_con_mat:
+                if _partida:
+                    _lineas.append(f"_{_partida}_")
+                for _e, _v in _mats:
+                    _lineas.append(f"- {_e}: {_v}")
+
+        _lineas += ["", "_Generado con ObraCubic_", "obracubic.streamlit.app"]
+        _mensaje_wsp = "\n".join(_lineas)
 
         _url_wsp = "https://wa.me/?text=" + _wsp_parse.quote(_mensaje_wsp)
 
@@ -6257,7 +6308,7 @@ if option == "Cubicacion" and st.session_state.get("usuario"):
             """,
             unsafe_allow_html=True,
         )
-        st.caption("Se abrirá WhatsApp con el resumen listo para enviar a tu cliente o barraca.")
+        st.caption("Se abrirá WhatsApp con el resumen de todas las partidas listo para enviar a tu cliente o barraca.")
 
 
 
