@@ -5260,33 +5260,58 @@ if option == "Cubicacion":
                         estuco_tipo = st.selectbox("Tipo de estuco", list(ESTUCOS.keys()), key="estuco_tipo")
                         est = ESTUCOS[estuco_tipo]
 
-                        es1, es2, es3 = st.columns(3)
-                        with es1:
-                            largo_est = st.number_input("Largo muro (m)", value=0.0, key="largo_est")
-                        with es2:
-                            alto_est = st.number_input("Alto muro (m)", value=0.0, key="alto_est")
-                        with es3:
-                            cant_est = st.number_input("Cantidad muros", value=0, step=1, key="cant_est")
+                        # --- Murallas: cada una con su propio largo y alto ---
+                        st.markdown("**Murallas a estucar** (agrega cada muro con su medida)")
+                        if "secciones_est" not in st.session_state:
+                            st.session_state.secciones_est = [{"largo": 0.0, "alto": 0.0}]
 
-                        ev1, ev2 = st.columns(2)
-                        with ev1:
-                            cant_puertas_est = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_est")
-                            ancho_puerta_est = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_est")
-                            alto_puerta_est = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_est")
-                        with ev2:
-                            cant_ventanas_est = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_est")
-                            ancho_ventana_est = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_est")
-                            alto_ventana_est = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_est")
+                        area_bruta_est = 0.0
+                        for i, sec in enumerate(st.session_state.secciones_est):
+                            cea, ceb, cec = st.columns([3, 3, 1])
+                            with cea:
+                                sec["largo"] = st.number_input(
+                                    f"Largo muro {i+1} (m)", value=sec["largo"],
+                                    min_value=0.0, step=0.1, key=f"est_largo_{i}")
+                            with ceb:
+                                sec["alto"] = st.number_input(
+                                    f"Alto muro {i+1} (m)", value=sec["alto"],
+                                    min_value=0.0, step=0.1, key=f"est_alto_{i}")
+                            with cec:
+                                st.write("")
+                                st.write("")
+                                if len(st.session_state.secciones_est) > 1 and st.button("🗑️", key=f"del_est_{i}"):
+                                    st.session_state.secciones_est.pop(i)
+                                    st.rerun()
+                            area_bruta_est += sec["largo"] * sec["alto"]
+
+                        if st.button("➕ Agregar muro", key="add_est"):
+                            st.session_state.secciones_est.append({"largo": 0.0, "alto": 0.0})
+                            st.rerun()
+
+                        # --- Descuento de puertas / ventanas (opcional) ---
+                        area_vanos_est = 0.0
+                        descontar_vanos_est = st.checkbox(
+                            "Descontar puertas / ventanas", key="est_descontar_vanos",
+                            help="Actívalo solo si las murallas tienen puertas o ventanas.")
+                        if descontar_vanos_est:
+                            ev1, ev2 = st.columns(2)
+                            with ev1:
+                                cant_puertas_est = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_est")
+                                ancho_puerta_est = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_est")
+                                alto_puerta_est = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_est")
+                            with ev2:
+                                cant_ventanas_est = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_est")
+                                ancho_ventana_est = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_est")
+                                alto_ventana_est = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_est")
+                            area_vanos_est = ((cant_puertas_est * ancho_puerta_est * alto_puerta_est) +
+                                              (cant_ventanas_est * ancho_ventana_est * alto_ventana_est))
 
                         espesor_est = st.selectbox("Espesor de aplicación",
                                                     ["5mm (fino)", "10mm (estándar)", "15mm (máximo por capa)", "20mm (2 capas)", "25mm (2 capas)"],
                                                     key="espesor_est")
                         espesor_val = float(espesor_est.split("mm")[0]) / 1000
 
-                        area_bruta_est = largo_est * alto_est * cant_est
-                        area_vanos_est = ((cant_puertas_est * ancho_puerta_est * alto_puerta_est) +
-                                            (cant_ventanas_est * ancho_ventana_est * alto_ventana_est))
-                        area_neta_est = area_bruta_est - area_vanos_est
+                        area_neta_est = max(area_bruta_est - area_vanos_est, 0.0)
 
                         if espesor_val > 0.015:
                             n_capas = 2
