@@ -350,7 +350,7 @@ PRECIOS_REFERENCIALES = [
     # --- Terminaciones ---
     ("pintura", 21000),      # galón
     ("sellador", 12597),
-    ("pasta muro", 15538),
+    ("pasta muro", 18990),   # tarro 25 kg (ref. Tajamar/Sodimac)
     ("cinta", 3521),
     ("estuco", 3521),
     ("cal", 4950),
@@ -5130,77 +5130,126 @@ if option == "Cubicacion":
                         pintura_tipo = st.selectbox("Tipo de pintura", list(PINTURAS.keys()), key="pintura_tipo")
                         st.caption(PINTURAS[pintura_tipo]["descripcion"])
 
-                        p1, p2, p3 = st.columns(3)
-                        with p1:
-                            largo_pin = st.number_input("Largo muro (m)", value=0.0, key="largo_pin")
-                        with p2:
-                            alto_pin = st.number_input("Alto muro (m)", value=0.0, key="alto_pin")
-                        with p3:
-                            cant_pin = st.number_input("Cantidad muros", value=0, step=1, key="cant_pin")
+                        # --- Murallas: cada una con su propio largo y alto ---
+                        st.markdown("**Murallas a pintar** (agrega cada muro con su medida)")
+                        if "secciones_pin" not in st.session_state:
+                            st.session_state.secciones_pin = [{"largo": 0.0, "alto": 0.0}]
 
-                        pv1, pv2 = st.columns(2)
-                        with pv1:
-                            cant_puertas_pin = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_pin")
-                            ancho_puerta_pin = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_pin")
-                            alto_puerta_pin = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_pin")
-                        with pv2:
-                            cant_ventanas_pin = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_pin")
-                            ancho_ventana_pin = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_pin")
-                            alto_ventana_pin = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_pin")
+                        area_bruta_pin = 0.0
+                        for i, sec in enumerate(st.session_state.secciones_pin):
+                            cpa, cpb, cpc = st.columns([3, 3, 1])
+                            with cpa:
+                                sec["largo"] = st.number_input(
+                                    f"Largo muro {i+1} (m)", value=sec["largo"],
+                                    min_value=0.0, step=0.1, key=f"pin_largo_{i}")
+                            with cpb:
+                                sec["alto"] = st.number_input(
+                                    f"Alto muro {i+1} (m)", value=sec["alto"],
+                                    min_value=0.0, step=0.1, key=f"pin_alto_{i}")
+                            with cpc:
+                                st.write("")
+                                st.write("")
+                                if len(st.session_state.secciones_pin) > 1 and st.button("🗑️", key=f"del_pin_{i}"):
+                                    st.session_state.secciones_pin.pop(i)
+                                    st.rerun()
+                            area_bruta_pin += sec["largo"] * sec["alto"]
+
+                        if st.button("➕ Agregar muro", key="add_pin"):
+                            st.session_state.secciones_pin.append({"largo": 0.0, "alto": 0.0})
+                            st.rerun()
+
+                        # --- Descuento de puertas / ventanas (opcional) ---
+                        area_vanos_pin = 0.0
+                        descontar_vanos = st.checkbox(
+                            "Descontar puertas / ventanas", key="pin_descontar_vanos",
+                            help="Actívalo solo si las murallas tienen puertas o ventanas.")
+                        if descontar_vanos:
+                            pv1, pv2 = st.columns(2)
+                            with pv1:
+                                cant_puertas_pin = st.number_input("Cantidad puertas", value=0, step=1, key="cant_puertas_pin")
+                                ancho_puerta_pin = st.number_input("Ancho puerta (m)", value=0.0, key="ancho_puerta_pin")
+                                alto_puerta_pin = st.number_input("Alto puerta (m)", value=0.0, key="alto_puerta_pin")
+                            with pv2:
+                                cant_ventanas_pin = st.number_input("Cantidad ventanas", value=0, step=1, key="cant_ventanas_pin")
+                                ancho_ventana_pin = st.number_input("Ancho ventana (m)", value=0.0, key="ancho_ventana_pin")
+                                alto_ventana_pin = st.number_input("Alto ventana (m)", value=0.0, key="alto_ventana_pin")
+                            area_vanos_pin = ((cant_puertas_pin * ancho_puerta_pin * alto_puerta_pin) +
+                                              (cant_ventanas_pin * ancho_ventana_pin * alto_ventana_pin))
 
                         cant_manos = st.selectbox("Cantidad de manos", ["1 mano", "2 manos", "3 manos"], index=1, key="cant_manos")
                         n_manos = int(cant_manos[0])
 
-                        area_bruta_pin = largo_pin * alto_pin * cant_pin
-                        area_vanos_pin = ((cant_puertas_pin * ancho_puerta_pin * alto_puerta_pin) +
-                                            (cant_ventanas_pin * ancho_ventana_pin * alto_ventana_pin))
-                        area_neta_pin = area_bruta_pin - area_vanos_pin
+                        area_neta_pin = max(area_bruta_pin - area_vanos_pin, 0.0)
 
                         rend_pin = PINTURAS[pintura_tipo]["rendimiento"]
-                        litros_pin = (area_neta_pin * n_manos) / rend_pin
+                        litros_pin = (area_neta_pin * n_manos) / rend_pin if rend_pin else 0.0
 
-                        # Pasta muro
+                        # --- Complementos opcionales (cada uno por selector) ---
                         st.write("---")
-                        st.subheader("🪣 Pasta Muro (Masilla/Compuesto para Juntas)")
-                        st.caption("Se aplica antes del sellador para rellenar juntas e imperfecciones")
-                        kg_pasta = area_neta_pin * 0.30  # 300g por m²
-                        st.info(f"Pasta muro necesaria: {kg_pasta:.1f} kg")
-                        st.success(f"Sacos de 25kg: {kg_pasta/25:.0f} sacos")
+                        st.markdown("**Complementos (opcional)**")
+                        usar_pasta = st.checkbox("Pasta Muro (masilla para juntas)", key="pin_usar_pasta")
+                        usar_cinta = st.checkbox("Cinta para Juntas", key="pin_usar_cinta")
+                        usar_sellador = st.checkbox("Sellador / Imprimante Base", key="pin_usar_sellador")
 
-                        # Cinta para juntas
-                        st.write("---")
-                        st.subheader("📏 Cinta para Juntas")
-                        st.caption("Se aplica sobre las juntas entre planchas antes de la pasta")
-                        ml_cinta = area_neta_pin / 2.88 * 4.84  # metros lineales de juntas por plancha
-                        st.info(f"Metros lineales de cinta: {ml_cinta:.1f} ml")
-                        st.success(f"Rollos de 75m: {ml_cinta/75:.0f} rollos")
+                        kg_pasta = 0.0
+                        tarros_pasta = 0
+                        ml_cinta = 0.0
+                        rollos_cinta = 0
+                        litros_sellador = 0.0
+                        galones_sellador = 0
 
-                        # Sellador/Imprimante
-                        st.write("---")
-                        st.subheader("🖌️ Sellador / Imprimante Base")
-                        st.caption("Se aplica antes de la pintura para mejorar adherencia")
-                        litros_sellador = area_neta_pin / 10  # 1 litro por 10m²
-                        st.info(f"Sellador necesario: {litros_sellador:.1f} litros")
-                        st.success(f"Galones de 4 litros: {litros_sellador/4:.0f} galones")
+                        if usar_pasta:
+                            st.write("---")
+                            st.subheader("🪣 Pasta Muro (Masilla/Compuesto para Juntas)")
+                            st.caption("Se aplica antes del sellador para rellenar juntas e imperfecciones")
+                            kg_pasta = area_neta_pin * 0.30  # 300 g por m²
+                            tarros_pasta = math.ceil(kg_pasta / 25) if kg_pasta > 0 else 0
+                            st.info(f"Pasta muro necesaria: {kg_pasta:.1f} kg")
+                            st.success(f"Tarros de 25kg: {tarros_pasta} tarros")
 
-                        # Pintura
+                        if usar_cinta:
+                            st.write("---")
+                            st.subheader("📏 Cinta para Juntas")
+                            st.caption("Se aplica sobre las juntas entre planchas antes de la pasta")
+                            ml_cinta = area_neta_pin / 2.88 * 4.84  # metros lineales de juntas por plancha
+                            rollos_cinta = math.ceil(ml_cinta / 75) if ml_cinta > 0 else 0
+                            st.info(f"Metros lineales de cinta: {ml_cinta:.1f} ml")
+                            st.success(f"Rollos de 75m: {rollos_cinta} rollos")
+
+                        if usar_sellador:
+                            st.write("---")
+                            st.subheader("🖌️ Sellador / Imprimante Base")
+                            st.caption("Se aplica antes de la pintura para mejorar adherencia")
+                            litros_sellador = area_neta_pin / 10  # 1 litro por 10 m²
+                            galones_sellador = math.ceil(litros_sellador / 4) if litros_sellador > 0 else 0
+                            st.info(f"Sellador necesario: {litros_sellador:.1f} litros")
+                            st.success(f"Galones de 4 litros: {galones_sellador} galones")
+
+                        # --- Pintura ---
                         st.write("---")
                         st.subheader(f"🎨 {pintura_tipo}")
                         st.info(f"Área neta: {area_neta_pin:.2f} m²")
                         st.info(f"Manos: {n_manos} | Rendimiento: {rend_pin} m²/litro")
                         st.info(f"Litros necesarios: {litros_pin:.1f} litros")
-                        st.success(f"Galones de 4 litros: {litros_pin/4:.0f} galones")
-                        st.success(f"Tarros de 1 litro: {litros_pin:.0f} litros")
+                        galones_pin = math.ceil(litros_pin / 4) if litros_pin > 0 else 0
+                        st.success(f"Galones de 4 litros: {galones_pin} galones")
+
                         if area_neta_pin > 0:
-                            registrar_pdf("Terminaciones", "Pintura", [
+                            items_pin = [
                                 ("Tipo", pintura_tipo),
                                 ("Área neta", f"{area_neta_pin:.2f} m²"),
                                 ("Manos", str(n_manos)),
-                                ("Pintura", f"{litros_pin:.1f} litros ({litros_pin/4:.0f} galones)"),
-                                ("Pasta muro", f"{kg_pasta/25:.0f} sacos de 25kg"),
-                                ("Cinta juntas", f"{ml_cinta/75:.0f} rollos de 75m"),
-                                ("Sellador", f"{litros_sellador/4:.0f} galones"),
-                            ])
+                                ("Pintura", f"{litros_pin:.1f} litros ({galones_pin} galones)"),
+                            ]
+                            if usar_pasta:
+                                items_pin.append(("Pasta muro", f"{tarros_pasta} tarros de 25kg"))
+                            if usar_cinta:
+                                items_pin.append(("Cinta juntas", f"{rollos_cinta} rollos de 75m"))
+                            if usar_sellador:
+                                items_pin.append(("Sellador", f"{galones_sellador} galones"))
+                            registrar_pdf("Terminaciones", "Pintura", items_pin)
+                        else:
+                            quitar_pdf("Terminaciones", "Pintura")
 
             # ============================
             # 2. ESTUCO / REVOQUE
