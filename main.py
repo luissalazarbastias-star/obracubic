@@ -5072,6 +5072,10 @@ if option == "Cubicacion":
                     "rendimiento": 12,
                     "descripcion": "Puertas, ventanas, metales"
                 },
+                "Esmalte al Agua (mate)": {
+                    "rendimiento": 10,
+                    "descripcion": "Cielos y zonas húmedas, acabado mate (sin reflejos)"
+                },
                 "Anticorrosivo": {
                     "rendimiento": 8,
                     "descripcion": "Superficies metálicas expuestas"
@@ -5200,7 +5204,10 @@ if option == "Cubicacion":
                         pintura_tipo_cielo = ""
                         if usar_cielo:
                             st.subheader("⬜ Pintura de Cielo")
-                            pintura_tipo_cielo = st.selectbox("Tipo de pintura (cielo)", list(PINTURAS.keys()), key="pintura_tipo_cielo")
+                            # Para cielo solo se usan látex o esmalte al agua (acabado mate):
+                            # disimulan imperfecciones y evitan reflejos de luz.
+                            tipos_cielo = ["Látex Interior", "Esmalte al Agua (mate)"]
+                            pintura_tipo_cielo = st.selectbox("Tipo de pintura (cielo)", tipos_cielo, key="pintura_tipo_cielo")
                             st.caption(PINTURAS[pintura_tipo_cielo]["descripcion"])
 
                             st.markdown("**Cielos a pintar** (agrega cada ambiente: largo x ancho)")
