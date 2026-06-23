@@ -725,6 +725,37 @@ def registrar_pdf(rubro, partida, items):
         "rubro": rubro, "partida": partida, "items": items,
     }
 
+
+def secciones_input(key_prefix, campos, etiqueta="elemento"):
+    """Renderiza un grupo de secciones con botones agregar/quitar.
+    campos: lista de tuplas (clave, label). Cada sección es un dict con esas claves.
+    Devuelve la lista de secciones (cada una un dict). Sirve para cubicar
+    elementos con medidas distintas (tramos de cierre, cimientos, vigas, etc.)."""
+    lista_key = f"sec_{key_prefix}"
+    if lista_key not in st.session_state:
+        st.session_state[lista_key] = [{c[0]: 0.0 for c in campos}]
+
+    for i, sec in enumerate(st.session_state[lista_key]):
+        cols = st.columns([3] * len(campos) + [1])
+        for j, (clave, label) in enumerate(campos):
+            with cols[j]:
+                sec[clave] = st.number_input(
+                    f"{label} {i+1}", value=float(sec.get(clave, 0.0)),
+                    min_value=0.0, step=0.1, key=f"{key_prefix}_{clave}_{i}")
+        with cols[-1]:
+            st.write("")
+            st.write("")
+            if len(st.session_state[lista_key]) > 1 and st.button("🗑️", key=f"del_{key_prefix}_{i}"):
+                st.session_state[lista_key].pop(i)
+                st.rerun()
+
+    if st.button(f"➕ Agregar {etiqueta}", key=f"add_{key_prefix}"):
+        st.session_state[lista_key].append({c[0]: 0.0 for c in campos})
+        st.rerun()
+
+    return st.session_state[lista_key]
+
+
 PESO_BARRAS = {
     "Ø8mm":  0.395,
     "Ø10mm": 0.617,
@@ -2157,19 +2188,13 @@ if option == "Cubicacion":
                 "Urbanismo y Construcciones)."
             )
 
-            # --- Datos generales del cierre ---
-            cg1, cg2 = st.columns(2)
-            with cg1:
-                largo_cierre = st.number_input(
-                    "Largo total del cierre (mL)", value=0.0, min_value=0.0, step=1.0,
-                    key="cierre_largo")
-            with cg2:
-                alto_cierre = st.number_input(
-                    "Altura del cierre (m)", value=2.0, min_value=0.0, step=0.1,
-                    key="cierre_alto")
-
-            area_cierre = largo_cierre * alto_cierre
-            st.info(f"Superficie de cierre: {area_cierre:.2f} m²  ·  Largo: {largo_cierre:.2f} mL")
+            # --- Tramos del cierre: cada uno con su largo y altura ---
+            st.markdown("**Tramos del cierre** (agrega cada tramo con su medida)")
+            _tramos_cierre = secciones_input(
+                "cierre", [("largo", "Largo (mL)"), ("alto", "Alto (m)")], "tramo")
+            largo_cierre = sum(s["largo"] for s in _tramos_cierre)
+            area_cierre = sum(s["largo"] * s["alto"] for s in _tramos_cierre)
+            st.info(f"Superficie total de cierre: {area_cierre:.2f} m²  ·  Largo total: {largo_cierre:.2f} mL")
 
             tipo_cierre = st.selectbox(
                 "Tipo de cierre",
@@ -2197,7 +2222,7 @@ if option == "Cubicacion":
             items_cierre = [
                 ("Tipo de cierre", tipo_cierre),
                 ("Largo total", f"≈ {largo_cierre:.2f} mL"),
-                ("Altura", f"≈ {alto_cierre:.2f} m"),
+                ("Tramos", f"≈ {len(_tramos_cierre)} tramo(s)"),
                 ("Superficie", f"≈ {area_cierre:.2f} m²"),
             ]
 
@@ -2319,13 +2344,9 @@ if option == "Cubicacion":
                 largo_tabla_t_v = float(largo_tabla_t.replace("m", "").replace(",", "."))
                 ancho_tabla_t_v = 0.10 if "0,10" in ancho_tabla_t else 0.15
 
-                # Filas de tablas necesarias para cubrir la altura (o el largo si es vertical)
-                if orient_t == "Horizontal":
-                    filas_t = math.ceil(alto_cierre / ancho_tabla_t_v) if alto_cierre > 0 else 0
-                    ml_tablas_t = filas_t * largo_cierre
-                else:  # vertical
-                    filas_t = math.ceil(largo_cierre / ancho_tabla_t_v) if largo_cierre > 0 else 0
-                    ml_tablas_t = filas_t * alto_cierre
+                # Metros lineales de tabla = área total / ancho de la tabla
+                # (válido en horizontal o vertical, y con tramos de medidas distintas)
+                ml_tablas_t = area_cierre / ancho_tabla_t_v if ancho_tabla_t_v > 0 else 0
                 n_tablas_t = math.ceil((ml_tablas_t / largo_tabla_t_v) * factor_desp) if largo_tabla_t_v > 0 else 0
                 n_postes_t = (math.ceil(largo_cierre / sep_apoyo_v) + 1) if largo_cierre > 0 else 0
                 clavos_t = n_tablas_t * 4  # ~4 clavos por tabla
@@ -3524,16 +3545,11 @@ if option == "Cubicacion":
                             key="mat_mold_cim"
                         )
 
-                        mc1, mc2, mc3 = st.columns(3)
-                        with mc1:
-                            largo_cim_m = st.number_input("Largo cimiento (m)", value=0.0, key="largo_cim_mold")
-                        with mc2:
-                            alto_cim_m = st.number_input("Alto cimiento (m)", value=0.0, key="alto_cim_mold")
-                        with mc3:
-                            cant_cim_m = st.number_input("Cantidad cimientos", value=0, step=1, key="cant_cim_mold")
-
-                        # m² = largo * alto * 2 caras * cantidad
-                        m2_cimiento = largo_cim_m * alto_cim_m * 2 * cant_cim_m
+                        st.markdown("**Cimientos** (agrega cada uno con su medida)")
+                        _sec_cim = secciones_input(
+                            "mold_cim", [("largo", "Largo (m)"), ("alto", "Alto (m)")], "cimiento")
+                        # m² = suma de (largo * alto * 2 caras) de cada cimiento
+                        m2_cimiento = sum(s["largo"] * s["alto"] * 2 for s in _sec_cim)
 
                         st.write("---")
                         st.info(f"Superficie de moldaje: {m2_cimiento:.2f} m²")
@@ -3577,16 +3593,11 @@ if option == "Cubicacion":
                             key="mat_mold_muro"
                         )
 
-                        mm1, mm2, mm3 = st.columns(3)
-                        with mm1:
-                            largo_muro_m = st.number_input("Largo muro (m)", value=0.0, key="largo_muro_mold")
-                        with mm2:
-                            alto_muro_m = st.number_input("Alto muro (m)", value=0.0, key="alto_muro_mold")
-                        with mm3:
-                            cant_muro_m = st.number_input("Cantidad de muros", value=0, step=1, key="cant_muro_mold")
-
-                        # m² = largo * alto * 2 caras * cantidad
-                        m2_muro = largo_muro_m * alto_muro_m * 2 * cant_muro_m
+                        st.markdown("**Muros** (agrega cada uno con su medida)")
+                        _sec_muro_m = secciones_input(
+                            "mold_muro", [("largo", "Largo (m)"), ("alto", "Alto (m)")], "muro")
+                        # m² = suma de (largo * alto * 2 caras) de cada muro
+                        m2_muro = sum(s["largo"] * s["alto"] * 2 for s in _sec_muro_m)
 
                         st.write("---")
                         st.info(f"Superficie de moldaje: {m2_muro:.2f} m²")
@@ -3625,14 +3636,11 @@ if option == "Cubicacion":
                             key="mat_mold_losa"
                         )
 
-                        ml1, ml2 = st.columns(2)
-                        with ml1:
-                            largo_losa_m = st.number_input("Largo losa (m)", value=0.0, key="largo_losa_mold")
-                        with ml2:
-                            ancho_losa_m = st.number_input("Ancho losa (m)", value=0.0, key="ancho_losa_mold")
-
-                        # m² = largo * ancho (solo cara inferior)
-                        m2_losa = largo_losa_m * ancho_losa_m
+                        st.markdown("**Losas** (agrega cada una con su medida)")
+                        _sec_losa = secciones_input(
+                            "mold_losa", [("largo", "Largo (m)"), ("ancho", "Ancho (m)")], "losa")
+                        # m² = suma de (largo * ancho) de cada losa (solo cara inferior)
+                        m2_losa = sum(s["largo"] * s["ancho"] for s in _sec_losa)
 
                         st.write("---")
                         st.info(f"Superficie de moldaje: {m2_losa:.2f} m²")
@@ -3671,18 +3679,12 @@ if option == "Cubicacion":
                             key="mat_mold_viga"
                         )
 
-                        mv1, mv2, mv3, mv4 = st.columns(4)
-                        with mv1:
-                            largo_viga_m = st.number_input("Largo viga (m)", value=0.0, key="largo_viga_mold")
-                        with mv2:
-                            alto_viga_m = st.number_input("Alto viga (m)", value=0.0, key="alto_viga_mold")
-                        with mv3:
-                            ancho_viga_m = st.number_input("Ancho viga (m)", value=0.0, key="ancho_viga_mold")
-                        with mv4:
-                            cant_viga_m = st.number_input("Cantidad vigas", value=0, step=1, key="cant_viga_mold")
-
-                        # m² = (fondo + 2 caras laterales) * largo * cantidad
-                        m2_viga = (ancho_viga_m + (alto_viga_m * 2)) * largo_viga_m * cant_viga_m
+                        st.markdown("**Vigas** (agrega cada una con su medida)")
+                        _sec_viga = secciones_input(
+                            "mold_viga",
+                            [("largo", "Largo (m)"), ("ancho", "Ancho (m)"), ("alto", "Alto (m)")], "viga")
+                        # m² = suma de (fondo + 2 caras laterales) * largo de cada viga
+                        m2_viga = sum((s["ancho"] + s["alto"] * 2) * s["largo"] for s in _sec_viga)
 
                         st.write("---")
                         st.info(f"Superficie de moldaje: {m2_viga:.2f} m²")
