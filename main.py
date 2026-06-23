@@ -5441,16 +5441,16 @@ if option == "Cubicacion":
                         cielo_tipo = st.selectbox("Tipo de cielo", list(CIELOS_TIPOS.keys()), key="cielo_tipo")
                         ci = CIELOS_TIPOS[cielo_tipo]
 
-                        ci1, ci2 = st.columns(2)
-                        with ci1:
-                            largo_ci = st.number_input("Largo habitación (m)", value=0.0, key="largo_ci")
-                        with ci2:
-                            ancho_ci = st.number_input("Ancho habitación (m)", value=0.0, key="ancho_ci")
-
-                        cant_ci = st.number_input("Cantidad de habitaciones", value=0, step=1, key="cant_ci")
+                        st.markdown("**Habitaciones** (agrega cada una con su medida)")
+                        _sec_cielo = secciones_input(
+                            "cielo", [("largo", "Largo (m)"), ("ancho", "Ancho (m)")], "habitación")
                         desp_ci = st.slider("% Desperdicio", 0, 20, 10, key="desp_ci")
 
-                        area_ci = largo_ci * ancho_ci * cant_ci
+                        # Acumulados por habitación (cada una con su propia medida)
+                        area_ci = sum(s["largo"] * s["ancho"] for s in _sec_cielo)
+                        perimetro_ci = sum((s["largo"] + s["ancho"]) * 2 for s in _sec_cielo)
+                        cant_largueros = sum(s["ancho"] / 0.40 for s in _sec_cielo)
+                        cant_conectores = sum((s["ancho"] / 0.40) * (s["largo"] / 1.20) for s in _sec_cielo)
 
                         st.write("---")
                         st.info(f"Área total cielo: {area_ci:.2f} m²")
@@ -5477,22 +5477,17 @@ if option == "Cubicacion":
                         st.subheader("🔩 Estructura de Cielo (Perfiles AT)")
                         st.caption("Perfil AT en todo el perímetro + largueros cada 40cm")
 
-                        # Perfil AT perímetro
-                        perimetro_ci = (largo_ci + ancho_ci) * 2 * cant_ci
+                        # Perfil AT perímetro (perímetro ya acumulado por habitación)
                         largo_perfil_at = st.selectbox("Largo perfil AT", ["2,40m", "3,00m"], key="largo_at")
                         largo_val_at = 2.40 if "2,40" in largo_perfil_at else 3.00
 
-                        cant_perfiles_at = perimetro_ci / largo_val_at
+                        cant_perfiles_at = perimetro_ci / largo_val_at if largo_val_at > 0 else 0
                         cant_perfiles_at_desp = cant_perfiles_at * 1.10
 
-                        # Largueros Portante 40R cada 40cm
-                        cant_largueros = (ancho_ci / 0.40) * cant_ci
+                        # Largueros Portante 40R cada 40cm (ya acumulados por habitación)
                         largo_larguero = st.selectbox("Largo Portante 40R", ["2,40m", "3,00m"], key="largo_larguero")
                         largo_val_larg = 2.40 if "2,40" in largo_larguero else 3.00
                         cant_largueros_desp = cant_largueros * 1.10
-
-                        # Conectores
-                        cant_conectores = cant_largueros * (largo_ci / 1.20)
 
                         # Tornillos
                         tornillos_ci = (cant_perfiles_at_desp + cant_largueros_desp) * 4
