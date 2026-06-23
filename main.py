@@ -5127,7 +5127,11 @@ if option == "Cubicacion":
             if ver(term, "pintura"):
                 with st.expander("1. Pintura", expanded=False):
 
-                        pintura_tipo = st.selectbox("Tipo de pintura", list(PINTURAS.keys()), key="pintura_tipo")
+                        # =========================================================
+                        # PINTURA DE MURO
+                        # =========================================================
+                        st.subheader("🧱 Pintura de Muro")
+                        pintura_tipo = st.selectbox("Tipo de pintura (muro)", list(PINTURAS.keys()), key="pintura_tipo")
                         st.caption(PINTURAS[pintura_tipo]["descripcion"])
 
                         # --- Murallas: cada una con su propio largo y alto ---
@@ -5176,17 +5180,66 @@ if option == "Cubicacion":
                             area_vanos_pin = ((cant_puertas_pin * ancho_puerta_pin * alto_puerta_pin) +
                                               (cant_ventanas_pin * ancho_ventana_pin * alto_ventana_pin))
 
-                        cant_manos = st.selectbox("Cantidad de manos", ["1 mano", "2 manos", "3 manos"], index=1, key="cant_manos")
+                        cant_manos = st.selectbox("Cantidad de manos (muro)", ["1 mano", "2 manos", "3 manos"], index=1, key="cant_manos")
                         n_manos = int(cant_manos[0])
 
-                        area_neta_pin = max(area_bruta_pin - area_vanos_pin, 0.0)
+                        area_neta_muro = max(area_bruta_pin - area_vanos_pin, 0.0)
+                        rend_muro = PINTURAS[pintura_tipo]["rendimiento"]
+                        litros_muro = (area_neta_muro * n_manos) / rend_muro if rend_muro else 0.0
+                        galones_muro = math.ceil(litros_muro / 4) if litros_muro > 0 else 0
 
-                        rend_pin = PINTURAS[pintura_tipo]["rendimiento"]
-                        litros_pin = (area_neta_pin * n_manos) / rend_pin if rend_pin else 0.0
+                        # =========================================================
+                        # PINTURA DE CIELO (opcional, se cubica por separado)
+                        # =========================================================
+                        st.write("---")
+                        usar_cielo = st.checkbox("Incluir pintura de cielo", key="pin_usar_cielo",
+                                                 help="El cielo se cubica por superficie de piso (largo x ancho).")
+                        area_cielo = 0.0
+                        litros_cielo = 0.0
+                        galones_cielo = 0
+                        pintura_tipo_cielo = ""
+                        if usar_cielo:
+                            st.subheader("⬜ Pintura de Cielo")
+                            pintura_tipo_cielo = st.selectbox("Tipo de pintura (cielo)", list(PINTURAS.keys()), key="pintura_tipo_cielo")
+                            st.caption(PINTURAS[pintura_tipo_cielo]["descripcion"])
+
+                            st.markdown("**Cielos a pintar** (agrega cada ambiente: largo x ancho)")
+                            if "secciones_pin_cielo" not in st.session_state:
+                                st.session_state.secciones_pin_cielo = [{"largo": 0.0, "ancho": 0.0}]
+                            for i, sec in enumerate(st.session_state.secciones_pin_cielo):
+                                cca, ccb, ccc = st.columns([3, 3, 1])
+                                with cca:
+                                    sec["largo"] = st.number_input(
+                                        f"Largo ambiente {i+1} (m)", value=sec["largo"],
+                                        min_value=0.0, step=0.1, key=f"pin_cielo_largo_{i}")
+                                with ccb:
+                                    sec["ancho"] = st.number_input(
+                                        f"Ancho ambiente {i+1} (m)", value=sec["ancho"],
+                                        min_value=0.0, step=0.1, key=f"pin_cielo_ancho_{i}")
+                                with ccc:
+                                    st.write("")
+                                    st.write("")
+                                    if len(st.session_state.secciones_pin_cielo) > 1 and st.button("🗑️", key=f"del_pin_cielo_{i}"):
+                                        st.session_state.secciones_pin_cielo.pop(i)
+                                        st.rerun()
+                                area_cielo += sec["largo"] * sec["ancho"]
+
+                            if st.button("➕ Agregar ambiente", key="add_pin_cielo"):
+                                st.session_state.secciones_pin_cielo.append({"largo": 0.0, "ancho": 0.0})
+                                st.rerun()
+
+                            cant_manos_cielo = st.selectbox("Cantidad de manos (cielo)", ["1 mano", "2 manos", "3 manos"], index=1, key="cant_manos_cielo")
+                            n_manos_cielo = int(cant_manos_cielo[0])
+                            rend_cielo = PINTURAS[pintura_tipo_cielo]["rendimiento"]
+                            litros_cielo = (area_cielo * n_manos_cielo) / rend_cielo if rend_cielo else 0.0
+                            galones_cielo = math.ceil(litros_cielo / 4) if litros_cielo > 0 else 0
+
+                        # Superficie total a pintar (muro + cielo) para complementos
+                        area_total_pintar = area_neta_muro + area_cielo
 
                         # --- Complementos opcionales (cada uno por selector) ---
                         st.write("---")
-                        st.markdown("**Complementos (opcional)**")
+                        st.markdown("**Complementos (opcional)** — sobre la superficie total a pintar")
                         usar_pasta = st.checkbox("Pasta Muro (masilla para juntas)", key="pin_usar_pasta")
                         usar_cinta = st.checkbox("Cinta para Juntas", key="pin_usar_cinta")
                         usar_sellador = st.checkbox("Sellador / Imprimante Base", key="pin_usar_sellador")
@@ -5202,7 +5255,7 @@ if option == "Cubicacion":
                             st.write("---")
                             st.subheader("🪣 Pasta Muro (Masilla/Compuesto para Juntas)")
                             st.caption("Se aplica antes del sellador para rellenar juntas e imperfecciones")
-                            kg_pasta = area_neta_pin * 0.30  # 300 g por m²
+                            kg_pasta = area_total_pintar * 0.30  # 300 g por m²
                             tarros_pasta = math.ceil(kg_pasta / 25) if kg_pasta > 0 else 0
                             st.info(f"Pasta muro necesaria: {kg_pasta:.1f} kg")
                             st.success(f"Tarros de 25kg: {tarros_pasta} tarros")
@@ -5211,7 +5264,7 @@ if option == "Cubicacion":
                             st.write("---")
                             st.subheader("📏 Cinta para Juntas")
                             st.caption("Se aplica sobre las juntas entre planchas antes de la pasta")
-                            ml_cinta = area_neta_pin / 2.88 * 4.84  # metros lineales de juntas por plancha
+                            ml_cinta = area_total_pintar / 2.88 * 4.84  # metros lineales de juntas por plancha
                             rollos_cinta = math.ceil(ml_cinta / 75) if ml_cinta > 0 else 0
                             st.info(f"Metros lineales de cinta: {ml_cinta:.1f} ml")
                             st.success(f"Rollos de 75m: {rollos_cinta} rollos")
@@ -5220,27 +5273,36 @@ if option == "Cubicacion":
                             st.write("---")
                             st.subheader("🖌️ Sellador / Imprimante Base")
                             st.caption("Se aplica antes de la pintura para mejorar adherencia")
-                            litros_sellador = area_neta_pin / 10  # 1 litro por 10 m²
+                            litros_sellador = area_total_pintar / 10  # 1 litro por 10 m²
                             galones_sellador = math.ceil(litros_sellador / 4) if litros_sellador > 0 else 0
                             st.info(f"Sellador necesario: {litros_sellador:.1f} litros")
                             st.success(f"Galones de 4 litros: {galones_sellador} galones")
 
-                        # --- Pintura ---
+                        # --- Resultados de pintura (muro y cielo por separado) ---
                         st.write("---")
-                        st.subheader(f"🎨 {pintura_tipo}")
-                        st.info(f"Área neta: {area_neta_pin:.2f} m²")
-                        st.info(f"Manos: {n_manos} | Rendimiento: {rend_pin} m²/litro")
-                        st.info(f"Litros necesarios: {litros_pin:.1f} litros")
-                        galones_pin = math.ceil(litros_pin / 4) if litros_pin > 0 else 0
-                        st.success(f"Galones de 4 litros: {galones_pin} galones")
+                        st.subheader("🎨 Resumen de Pintura")
+                        st.markdown(f"**Muro — {pintura_tipo}**")
+                        st.info(f"Área muro: {area_neta_muro:.2f} m²  |  Manos: {n_manos}")
+                        st.success(f"Pintura muro: {litros_muro:.1f} litros ({galones_muro} galones de 4 L)")
+                        if usar_cielo:
+                            st.markdown(f"**Cielo — {pintura_tipo_cielo}**")
+                            st.info(f"Área cielo: {area_cielo:.2f} m²  |  Manos: {n_manos_cielo}")
+                            st.success(f"Pintura cielo: {litros_cielo:.1f} litros ({galones_cielo} galones de 4 L)")
 
-                        if area_neta_pin > 0:
-                            items_pin = [
-                                ("Tipo", pintura_tipo),
-                                ("Área neta", f"{area_neta_pin:.2f} m²"),
-                                ("Manos", str(n_manos)),
-                                ("Pintura", f"{litros_pin:.1f} litros ({galones_pin} galones)"),
-                            ]
+                        if area_neta_muro > 0 or area_cielo > 0:
+                            items_pin = []
+                            if area_neta_muro > 0:
+                                items_pin += [
+                                    ("Tipo muro", pintura_tipo),
+                                    ("Área muro", f"{area_neta_muro:.2f} m²"),
+                                    ("Pintura muro", f"{litros_muro:.1f} litros ({galones_muro} galones)"),
+                                ]
+                            if usar_cielo and area_cielo > 0:
+                                items_pin += [
+                                    ("Tipo cielo", pintura_tipo_cielo),
+                                    ("Área cielo", f"{area_cielo:.2f} m²"),
+                                    ("Pintura cielo", f"{litros_cielo:.1f} litros ({galones_cielo} galones)"),
+                                ]
                             if usar_pasta:
                                 items_pin.append(("Pasta muro", f"{tarros_pasta} tarros de 25kg"))
                             if usar_cinta:
