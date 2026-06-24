@@ -1139,6 +1139,109 @@ def generar_pdf_cubicacion(
     return buffer
 
 
+def generar_excel_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_usuario=None):
+    """Genera el presupuesto en formato Excel (.xlsx). Solo Plan Pro Élite.
+    Devuelve un BytesIO listo para descargar."""
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    NARANJA_HEX = "FF6B00"
+    GRIS_HEX = "F2F2F2"
+    blanco = Font(color="FFFFFF", bold=True)
+    negrita = Font(bold=True)
+    fill_naranja = PatternFill("solid", fgColor=NARANJA_HEX)
+    fill_gris = PatternFill("solid", fgColor=GRIS_HEX)
+    centro = Alignment(horizontal="center", vertical="center")
+    derecha = Alignment(horizontal="right")
+    borde = Border(*[Side(style="thin", color="DDDDDD")] * 4)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Presupuesto"
+
+    du = datos_usuario or {}
+    fila = 1
+    # Encabezado profesional
+    ws.cell(row=fila, column=1, value=du.get("empresa") or "ObraCubic").font = Font(bold=True, size=16, color=NARANJA_HEX)
+    fila += 1
+    if du.get("rut"):
+        ws.cell(row=fila, column=1, value=f"RUT: {du['rut']}"); fila += 1
+    contacto = " · ".join([x for x in [du.get("correo"), du.get("telefono")] if x])
+    if contacto:
+        ws.cell(row=fila, column=1, value=contacto); fila += 1
+    ws.cell(row=fila, column=1, value=f"Proyecto: {nombre_proyecto or '-'}").font = negrita
+    fila += 1
+    if cliente:
+        ws.cell(row=fila, column=1, value=f"Cliente: {cliente}"); fila += 1
+    from datetime import datetime as _dt
+    ws.cell(row=fila, column=1, value=f"Fecha: {_dt.now().strftime('%d/%m/%Y')}")
+    fila += 2
+
+    # Cabecera de la tabla
+    encabezados = ["Rubro", "Partida", "Material", "Cantidad", "Unidad", "Precio unit. (neto)", "Subtotal (neto)"]
+    for col, txt in enumerate(encabezados, start=1):
+        c = ws.cell(row=fila, column=col, value=txt)
+        c.font = blanco; c.fill = fill_naranja; c.alignment = centro; c.border = borde
+    fila += 1
+
+    # Filas de materiales
+    for it in datos_pres.get("items", []):
+        valores = [
+            it.get("rubro", ""), it.get("partida", ""), it.get("material", ""),
+            round(it.get("cantidad", 0), 2), it.get("unidad", ""),
+            it.get("precio", 0), it.get("subtotal", 0),
+        ]
+        for col, v in enumerate(valores, start=1):
+            c = ws.cell(row=fila, column=col, value=v)
+            c.border = borde
+            if col in (6, 7):
+                c.number_format = '#,##0'; c.alignment = derecha
+            elif col == 4:
+                c.alignment = derecha
+        fila += 1
+
+    fila += 1
+    # Totales
+    def fila_total(etiqueta, valor, resaltar=False):
+        nonlocal fila
+        ws.cell(row=fila, column=6, value=etiqueta).font = negrita
+        ws.cell(row=fila, column=6).alignment = derecha
+        c = ws.cell(row=fila, column=7, value=round(valor))
+        c.number_format = '#,##0'; c.alignment = derecha; c.font = negrita
+        if resaltar:
+            for col in (6, 7):
+                ws.cell(row=fila, column=col).fill = fill_naranja
+                ws.cell(row=fila, column=col).font = blanco
+        else:
+            for col in (6, 7):
+                ws.cell(row=fila, column=col).fill = fill_gris
+        fila += 1
+
+    fila_total("Subtotal materiales", datos_pres.get("subtotal_materiales", 0))
+    fila_total("Mano de obra", datos_pres.get("mano_obra", 0))
+    fila_total(f"Margen ({datos_pres.get('margen_pct', 0):.0f}%)", datos_pres.get("margen", 0))
+    fila_total("Neto (sin IVA)", datos_pres.get("neto", 0))
+    fila_total("IVA (19%)", datos_pres.get("iva", 0))
+    fila_total("TOTAL CON IVA", datos_pres.get("total", 0), resaltar=True)
+
+    # Ancho de columnas
+    anchos = [22, 24, 34, 11, 9, 18, 18]
+    for i, w in enumerate(anchos, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    # Nota al pie
+    fila += 1
+    ws.cell(row=fila, column=1,
+            value="Generado con ObraCubic · Estimación referencial. Verifique los valores antes de comprar.").font = Font(italic=True, size=8, color="888888")
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+
 def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_usuario=None):
     """Genera un PDF del presupuesto con desglose, IVA y total."""
     buffer = io.BytesIO()
@@ -6097,6 +6200,7 @@ if option == "Presupuesto":
                         sub = m["cantidad"] * precio
                         subtotal_materiales += sub
                         items_presupuesto.append({
+                            "rubro": rubro, "partida": partida,
                             "material": m["material"], "cantidad": m["cantidad"],
                             "unidad": m["unidad"], "precio": precio, "subtotal": sub,
                         })
@@ -6235,6 +6339,29 @@ if option == "Presupuesto":
                 import traceback
                 print("ERROR generando PDF de presupuesto:", traceback.format_exc())
                 st.error("No se pudo generar el PDF. Intenta de nuevo.")
+
+        # --- Exportar a Excel (.xlsx) — solo Plan Pro Élite ---
+        if puede_exportar_excel():
+            if st.button("📊 Exportar a Excel (.xlsx)", use_container_width=True):
+                try:
+                    xlsx_buffer = generar_excel_presupuesto(
+                        nombre_pres, st.session_state["presupuesto_actual"], cliente_pres or None,
+                        datos_usuario=datos_usuario_pdf()
+                    )
+                    nombre_xlsx = f"Presupuesto_{nombre_pres or 'obracubic'}.xlsx".replace(" ", "_")
+                    st.download_button(
+                        label="⬇️ Descargar presupuesto Excel",
+                        data=xlsx_buffer,
+                        file_name=nombre_xlsx,
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                    )
+                except Exception:
+                    import traceback
+                    print("ERROR generando Excel de presupuesto:", traceback.format_exc())
+                    st.error("No se pudo generar el Excel. Intenta de nuevo.")
+        else:
+            st.caption("📊 La exportación a Excel está disponible en el Plan Pro Élite.")
     else:
         st.caption("Agrega al menos un material con precio o mano de obra para generar el PDF.")
 
