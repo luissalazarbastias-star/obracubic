@@ -95,6 +95,31 @@ def eliminar_proyecto(proyecto_id):
     supabase.table("proyectos").delete().eq("id", proyecto_id).execute()
 
 
+def listar_bitacora(usuario_id, proyecto):
+    """Devuelve las entradas de bitácora de un proyecto, más recientes primero."""
+    try:
+        res = supabase.table("bitacora").select("id, nota, foto, creado_en") \
+            .eq("usuario_id", usuario_id).eq("proyecto", proyecto) \
+            .order("creado_en", desc=True).execute()
+        return res.data or []
+    except Exception:
+        return []
+
+
+def guardar_bitacora(usuario_id, proyecto, nota, foto_base64=None):
+    """Inserta una entrada de bitácora (nota y, opcionalmente, una foto en base64)."""
+    supabase.table("bitacora").insert({
+        "usuario_id": usuario_id,
+        "proyecto": proyecto,
+        "nota": nota,
+        "foto": foto_base64,
+    }).execute()
+
+
+def eliminar_bitacora(entrada_id):
+    supabase.table("bitacora").delete().eq("id", entrada_id).execute()
+
+
 def cargar_precios_usuario(usuario_id):
     """Devuelve un dict {material: precio} con los precios guardados del usuario."""
     try:
@@ -1464,6 +1489,9 @@ with nav_col:
             opciones_menu = ["Inicio", "Crear Proyecto", "Cubicacion", "Presupuesto", "Planes"]
         else:
             opciones_menu = ["Inicio", "Crear Proyecto", "Cubicacion", "Planes"]
+        # Bitácora de obra: solo Plan Pro Élite
+        if puede_bitacora():
+            opciones_menu.insert(-1, "Bitácora")
     else:
         # Usuario sin cuenta: acceso limitado
         opciones_menu = ["Inicio", "Cubicacion", "Planes"]
@@ -6364,6 +6392,98 @@ if option == "Presupuesto":
             st.caption("📊 La exportación a Excel está disponible en el Plan Pro Élite.")
     else:
         st.caption("Agrega al menos un material con precio o mano de obra para generar el PDF.")
+
+
+# ============================
+# BITÁCORA DE OBRA (Pro Élite)
+# ============================
+if option == "Bitácora":
+    st.header("📓 Bitácora de Obra")
+
+    if not puede_bitacora():
+        st.warning("La Bitácora de obra está disponible en el **Plan Pro Élite**.")
+    else:
+        usuario = st.session_state.get("usuario") or {}
+        usuario_id = usuario.get("id")
+
+        # Nombre del proyecto al que se asocia la bitácora
+        proyecto_bit = st.text_input(
+            "Proyecto",
+            value=st.session_state.get("proyecto", {}).get("nombre", ""),
+            placeholder="Ej: Casa Don Pedro - Angol",
+            key="bitacora_proyecto",
+        )
+
+        if not proyecto_bit:
+            st.info("Escribe el nombre del proyecto para ver y agregar entradas a su bitácora.")
+        else:
+            st.caption("Registra el avance de la obra: anota lo realizado y adjunta una foto.")
+
+            # --- Nueva entrada ---
+            with st.expander("➕ Nueva entrada", expanded=True):
+                nota_bit = st.text_area(
+                    "Nota / avance del día",
+                    placeholder="Ej: Se hormigonó el radier del living. Faltan terminaciones de borde.",
+                    key="bitacora_nota",
+                )
+                foto_bit = st.file_uploader(
+                    "Foto (opcional)", type=["jpg", "jpeg", "png"], key="bitacora_foto",
+                    help="Adjunta una foto del avance. Se reduce automáticamente para ahorrar espacio.",
+                )
+                if st.button("💾 Guardar entrada", type="primary"):
+                    if not nota_bit.strip() and not foto_bit:
+                        st.error("Escribe una nota o adjunta una foto.")
+                    else:
+                        foto_b64 = None
+                        try:
+                            if foto_bit is not None:
+                                import base64
+                                from PIL import Image
+                                import io as _io
+                                img = Image.open(foto_bit)
+                                img = img.convert("RGB")
+                                # Reducir a un máximo de 1024px de ancho para ahorrar espacio
+                                if img.width > 1024:
+                                    nuevo_alto = int(img.height * 1024 / img.width)
+                                    img = img.resize((1024, nuevo_alto))
+                                buf_img = _io.BytesIO()
+                                img.save(buf_img, format="JPEG", quality=70)
+                                foto_b64 = base64.b64encode(buf_img.getvalue()).decode("utf-8")
+                            guardar_bitacora(usuario_id, proyecto_bit, nota_bit.strip(), foto_b64)
+                            st.success("Entrada guardada en la bitácora.")
+                            st.rerun()
+                        except Exception:
+                            import traceback
+                            print("ERROR guardando bitácora:", traceback.format_exc())
+                            st.error("No se pudo guardar la entrada. Intenta de nuevo.")
+
+            # --- Historial de entradas ---
+            st.write("---")
+            st.subheader(f"Historial — {proyecto_bit}")
+            entradas = listar_bitacora(usuario_id, proyecto_bit)
+            if not entradas:
+                st.caption("Aún no hay entradas para este proyecto.")
+            for e in entradas:
+                fecha_txt = (e.get("creado_en") or "")[:16].replace("T", " ")
+                with st.container(border=True):
+                    cols = st.columns([5, 1])
+                    with cols[0]:
+                        st.markdown(f"**🗓️ {fecha_txt}**")
+                    with cols[1]:
+                        if st.button("🗑️", key=f"del_bit_{e['id']}", help="Eliminar entrada"):
+                            try:
+                                eliminar_bitacora(e["id"])
+                                st.rerun()
+                            except Exception:
+                                st.error("No se pudo eliminar.")
+                    if e.get("nota"):
+                        st.write(e["nota"])
+                    if e.get("foto"):
+                        try:
+                            import base64
+                            st.image(base64.b64decode(e["foto"]), use_container_width=True)
+                        except Exception:
+                            st.caption("(No se pudo mostrar la foto)")
 
 
 # ============================
