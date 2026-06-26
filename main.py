@@ -1492,6 +1492,9 @@ with nav_col:
         # Bitácora de obra: solo Plan Pro Élite
         if puede_bitacora():
             opciones_menu.insert(-1, "Bitácora")
+        # APU (presupuesto avanzado): solo Plan Pro Élite
+        if puede_apu():
+            opciones_menu.insert(-1, "APU")
     else:
         # Usuario sin cuenta: acceso limitado
         opciones_menu = ["Inicio", "Cubicacion", "Planes"]
@@ -6484,6 +6487,105 @@ if option == "Bitácora":
                             st.image(base64.b64decode(e["foto"]), use_container_width=True)
                         except Exception:
                             st.caption("(No se pudo mostrar la foto)")
+
+
+# ============================
+# APU — ANÁLISIS DE PRECIOS UNITARIOS (Pro Élite)
+# ============================
+if option == "APU":
+    st.header("🔬 Análisis de Precios Unitarios (APU)")
+
+    if not puede_apu():
+        st.warning("El Análisis de Precios Unitarios está disponible en el **Plan Pro Élite**.")
+    else:
+        st.caption(
+            "Desglosa el precio de una partida por unidad (m³, m², ml, etc.): "
+            "materiales, mano de obra, herramientas y gastos generales."
+        )
+
+        # --- Datos de la partida ---
+        ac1, ac2, ac3 = st.columns([3, 1, 2])
+        with ac1:
+            apu_partida = st.text_input("Partida", placeholder="Ej: Hormigón G-25 en radier", key="apu_partida")
+        with ac2:
+            apu_unidad = st.text_input("Unidad", value="m³", key="apu_unidad")
+        with ac3:
+            apu_cantidad = st.number_input("Cantidad total de la partida", min_value=0.0, value=0.0, step=1.0,
+                                           key="apu_cantidad", help="Para obtener el total de la partida (opcional).")
+
+        import pandas as pd
+
+        # --- Materiales ---
+        st.subheader("1. Materiales")
+        df_mat = pd.DataFrame(st.session_state.get("apu_mat_data",
+                              [{"Descripción": "", "Unidad": "", "Cantidad": 0.0, "Precio unitario": 0}]))
+        df_mat = st.data_editor(
+            df_mat, num_rows="dynamic", use_container_width=True, key="apu_mat",
+            column_config={
+                "Cantidad": st.column_config.NumberColumn(format="%.2f", help="Cantidad por unidad de partida"),
+                "Precio unitario": st.column_config.NumberColumn(format="%d", help="Precio neto (sin IVA)"),
+            },
+        )
+        st.session_state["apu_mat_data"] = df_mat.to_dict("records")
+        sub_mat = float((df_mat["Cantidad"].fillna(0) * df_mat["Precio unitario"].fillna(0)).sum())
+        st.info(f"Subtotal materiales: {fmt_clp(sub_mat)} por {apu_unidad or 'unidad'}")
+
+        # --- Mano de obra ---
+        st.subheader("2. Mano de obra")
+        df_mo = pd.DataFrame(st.session_state.get("apu_mo_data",
+                             [{"Descripción": "", "Cantidad": 0.0, "Precio unitario": 0}]))
+        df_mo = st.data_editor(
+            df_mo, num_rows="dynamic", use_container_width=True, key="apu_mo",
+            column_config={
+                "Cantidad": st.column_config.NumberColumn(format="%.2f", help="HH o jornada por unidad"),
+                "Precio unitario": st.column_config.NumberColumn(format="%d"),
+            },
+        )
+        st.session_state["apu_mo_data"] = df_mo.to_dict("records")
+        sub_mo = float((df_mo["Cantidad"].fillna(0) * df_mo["Precio unitario"].fillna(0)).sum())
+        st.info(f"Subtotal mano de obra: {fmt_clp(sub_mo)} por {apu_unidad or 'unidad'}")
+
+        # --- Porcentajes ---
+        st.subheader("3. Recargos")
+        rc1, rc2, rc3 = st.columns(3)
+        with rc1:
+            pct_leyes = st.number_input("Leyes sociales (% sobre M.O.)", min_value=0.0, value=0.0, step=1.0, key="apu_leyes")
+        with rc2:
+            pct_herr = st.number_input("Herramientas (% sobre M.O.)", min_value=0.0, value=5.0, step=1.0, key="apu_herr")
+        with rc3:
+            pct_ggu = st.number_input("Gastos grales. + utilidad (%)", min_value=0.0, value=25.0, step=1.0, key="apu_ggu")
+
+        monto_leyes = sub_mo * (pct_leyes / 100)
+        monto_herr = sub_mo * (pct_herr / 100)
+        costo_directo = sub_mat + sub_mo + monto_leyes + monto_herr
+        monto_ggu = costo_directo * (pct_ggu / 100)
+        precio_unitario = costo_directo + monto_ggu
+
+        # --- Resultado ---
+        st.write("---")
+        st.subheader("Precio unitario")
+        with st.container(border=True):
+            st.markdown(f"Materiales: **{fmt_clp(sub_mat)}**")
+            st.markdown(f"Mano de obra: **{fmt_clp(sub_mo)}**")
+            st.markdown(f"Leyes sociales ({pct_leyes:.0f}%): **{fmt_clp(monto_leyes)}**")
+            st.markdown(f"Herramientas ({pct_herr:.0f}%): **{fmt_clp(monto_herr)}**")
+            st.markdown(f"Costo directo: **{fmt_clp(costo_directo)}**")
+            st.markdown(f"Gastos grales. + utilidad ({pct_ggu:.0f}%): **{fmt_clp(monto_ggu)}**")
+            st.markdown(
+                f"<div style='margin-top:8px;padding:10px;background:#1E1E1E;border-radius:8px;'>"
+                f"<span style='color:#fff;'>Precio unitario ({apu_unidad or 'unidad'}): </span>"
+                f"<span style='font-size:22px;font-weight:700;color:#FF6B00;'>{fmt_clp(precio_unitario)}</span></div>",
+                unsafe_allow_html=True,
+            )
+            if apu_cantidad > 0:
+                total_partida = precio_unitario * apu_cantidad
+                st.markdown(
+                    f"<div style='margin-top:6px;'>Total de la partida "
+                    f"({apu_cantidad:.2f} {apu_unidad or 'unidad'}): "
+                    f"<span style='font-size:20px;font-weight:700;color:#1E8E3E;'>{fmt_clp(total_partida)}</span></div>",
+                    unsafe_allow_html=True,
+                )
+        st.caption("Valores netos (sin IVA). Estimación referencial.")
 
 
 # ============================
