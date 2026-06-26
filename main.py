@@ -306,6 +306,50 @@ def fmt_clp(valor):
         return "$0"
 
 
+# Etiquetas que NO son materiales comprables (datos informativos) — usado por el APU
+APU_NO_MATERIALES = [
+    "área", "area", "superficie", "volumen", "dosificación", "dosificacion",
+    "espesor", "medida", "tipo", "manos", "capas", "traslape", "tramos",
+    "dirección x", "dirección y", "direccion x", "direccion y", "altura",
+    "pendiente", "par inclinado", "pendolón", "pendolon", "largo", "ancho",
+    "metros lineales netos", "acero total",
+]
+
+
+def materiales_de_partida_apu(bloque):
+    """Devuelve [(material, cantidad, unidad)] comprables de un bloque de cubicación."""
+    out = []
+    for etiqueta, valor in bloque.get("items", []):
+        eb = etiqueta.lower()
+        if any(p in eb for p in APU_NO_MATERIALES):
+            continue
+        cant, uni = parsear_cantidad(valor)
+        if cant is None or cant <= 0:
+            continue
+        # Conversiones básicas para que la unidad tenga sentido de compra
+        if uni and "kg" in uni.lower():
+            if "gravilla" in eb:
+                cant, uni = round(cant / 1500, 2), "m³"
+            elif "arena" in eb:
+                cant, uni = round(cant / 1600, 2), "m³"
+        out.append((etiqueta, round(cant, 2), uni or ""))
+    return out
+
+
+def medida_de_partida_apu(bloque):
+    """Detecta (cantidad, unidad) de la medida base de la partida: volumen, área,
+    superficie o largo. Devuelve (0, '') si no la encuentra."""
+    claves = ["volumen", "área", "area", "superficie", "largo total", "metros lineales"]
+    for etiqueta, valor in bloque.get("items", []):
+        eb = etiqueta.lower()
+        if any(c in eb for c in claves):
+            limpio = str(valor).replace("≈", "").strip()
+            cant, uni = parsear_cantidad(limpio)
+            if cant and cant > 0:
+                return round(cant, 2), (uni or "")
+    return 0.0, ""
+
+
 # Precios referenciales NETOS (sin IVA). Valores de ejemplo, el usuario los ajusta.
 # La coincidencia es por palabra clave dentro del nombre del material.
 PRECIOS_REFERENCIALES = [
@@ -6499,51 +6543,85 @@ if option == "APU":
         st.warning("El Análisis de Precios Unitarios está disponible en el **Plan Pro Élite**.")
     else:
         st.caption(
-            "Desglosa el precio de una partida por unidad (m³, m², ml, etc.): "
-            "materiales, mano de obra, herramientas y gastos generales."
+            "Arma el precio de una partida automáticamente desde tu cubicación: "
+            "se cargan solos los materiales y precios; tú agregas la mano de obra y los recargos."
         )
+        import pandas as pd
+
+        st.session_state.setdefault("apu_unidad", "m³")
+        st.session_state.setdefault("apu_cantidad", 0.0)
+        st.session_state.setdefault("apu_load_n", 0)
+
+        # --- Generar automático desde una partida cubicada ---
+        persistente_apu = st.session_state.get("materiales_persistente", {})
+        if persistente_apu:
+            with st.expander("⚡ Generar automático desde una partida cubicada", expanded=True):
+                claves = list(persistente_apu.keys())
+                etiquetas = [f"{persistente_apu[k].get('rubro','')} — {persistente_apu[k].get('partida','')}"
+                             for k in claves]
+                sel_idx = st.selectbox("Partida cubicada", range(len(claves)),
+                                       format_func=lambda i: etiquetas[i], key="apu_sel_partida")
+                if st.button("⚡ Cargar materiales de esta partida", type="primary"):
+                    bloque = persistente_apu[claves[sel_idx]]
+                    mats = materiales_de_partida_apu(bloque)
+                    medida, uni_med = medida_de_partida_apu(bloque)
+                    st.session_state["apu_mat_data"] = [
+                        {"Descripción": mat, "Unidad": uni, "Cantidad": cant,
+                         "Precio unitario": precio_referencial(mat)}
+                        for (mat, cant, uni) in mats
+                    ] or [{"Descripción": "", "Unidad": "", "Cantidad": 0.0, "Precio unitario": 0}]
+                    st.session_state["apu_partida"] = bloque.get("partida", "")
+                    if medida > 0:
+                        st.session_state["apu_cantidad"] = medida
+                        st.session_state["apu_unidad"] = uni_med
+                    st.session_state["apu_load_n"] += 1  # refrescar la tabla
+                    st.success(f"Cargados {len(mats)} materiales. Revisa precios y agrega la mano de obra.")
+                    st.rerun()
+        else:
+            st.info("💡 Cubica una partida en la sección **Cubicacion** y luego vuelve aquí para generar su APU automático. También puedes llenarlo a mano abajo.")
 
         # --- Datos de la partida ---
         ac1, ac2, ac3 = st.columns([3, 1, 2])
         with ac1:
             apu_partida = st.text_input("Partida", placeholder="Ej: Hormigón G-25 en radier", key="apu_partida")
         with ac2:
-            apu_unidad = st.text_input("Unidad", value="m³", key="apu_unidad")
+            apu_unidad = st.text_input("Unidad", key="apu_unidad")
         with ac3:
-            apu_cantidad = st.number_input("Cantidad total de la partida", min_value=0.0, value=0.0, step=1.0,
-                                           key="apu_cantidad", help="Para obtener el total de la partida (opcional).")
+            apu_cantidad = st.number_input("Medida de la partida (para el precio unitario)",
+                                           min_value=0.0, step=1.0, key="apu_cantidad",
+                                           help="La cantidad total (m³, m², ml). El precio unitario = total ÷ esta medida.")
 
-        import pandas as pd
+        n = st.session_state["apu_load_n"]
 
-        # --- Materiales ---
+        # --- Materiales (cantidades totales de la partida) ---
         st.subheader("1. Materiales")
         df_mat = pd.DataFrame(st.session_state.get("apu_mat_data",
                               [{"Descripción": "", "Unidad": "", "Cantidad": 0.0, "Precio unitario": 0}]))
         df_mat = st.data_editor(
-            df_mat, num_rows="dynamic", use_container_width=True, key="apu_mat",
+            df_mat, num_rows="dynamic", use_container_width=True, key=f"apu_mat_{n}",
             column_config={
-                "Cantidad": st.column_config.NumberColumn(format="%.2f", help="Cantidad por unidad de partida"),
+                "Cantidad": st.column_config.NumberColumn(format="%.2f", help="Cantidad total de la partida"),
                 "Precio unitario": st.column_config.NumberColumn(format="%d", help="Precio neto (sin IVA)"),
             },
         )
         st.session_state["apu_mat_data"] = df_mat.to_dict("records")
         sub_mat = float((df_mat["Cantidad"].fillna(0) * df_mat["Precio unitario"].fillna(0)).sum())
-        st.info(f"Subtotal materiales: {fmt_clp(sub_mat)} por {apu_unidad or 'unidad'}")
+        st.info(f"Subtotal materiales: {fmt_clp(sub_mat)}")
 
-        # --- Mano de obra ---
+        # --- Mano de obra (total de la partida) ---
         st.subheader("2. Mano de obra")
         df_mo = pd.DataFrame(st.session_state.get("apu_mo_data",
                              [{"Descripción": "", "Cantidad": 0.0, "Precio unitario": 0}]))
         df_mo = st.data_editor(
             df_mo, num_rows="dynamic", use_container_width=True, key="apu_mo",
             column_config={
-                "Cantidad": st.column_config.NumberColumn(format="%.2f", help="HH o jornada por unidad"),
+                "Cantidad": st.column_config.NumberColumn(format="%.2f", help="HH o jornadas totales"),
                 "Precio unitario": st.column_config.NumberColumn(format="%d"),
             },
         )
         st.session_state["apu_mo_data"] = df_mo.to_dict("records")
         sub_mo = float((df_mo["Cantidad"].fillna(0) * df_mo["Precio unitario"].fillna(0)).sum())
-        st.info(f"Subtotal mano de obra: {fmt_clp(sub_mo)} por {apu_unidad or 'unidad'}")
+        st.info(f"Subtotal mano de obra: {fmt_clp(sub_mo)}")
 
         # --- Porcentajes ---
         st.subheader("3. Recargos")
@@ -6559,11 +6637,12 @@ if option == "APU":
         monto_herr = sub_mo * (pct_herr / 100)
         costo_directo = sub_mat + sub_mo + monto_leyes + monto_herr
         monto_ggu = costo_directo * (pct_ggu / 100)
-        precio_unitario = costo_directo + monto_ggu
+        total_partida = costo_directo + monto_ggu
+        precio_unitario = (total_partida / apu_cantidad) if apu_cantidad > 0 else 0.0
 
         # --- Resultado ---
         st.write("---")
-        st.subheader("Precio unitario")
+        st.subheader("Resultado")
         with st.container(border=True):
             st.markdown(f"Materiales: **{fmt_clp(sub_mat)}**")
             st.markdown(f"Mano de obra: **{fmt_clp(sub_mo)}**")
@@ -6573,18 +6652,19 @@ if option == "APU":
             st.markdown(f"Gastos grales. + utilidad ({pct_ggu:.0f}%): **{fmt_clp(monto_ggu)}**")
             st.markdown(
                 f"<div style='margin-top:8px;padding:10px;background:#1E1E1E;border-radius:8px;'>"
-                f"<span style='color:#fff;'>Precio unitario ({apu_unidad or 'unidad'}): </span>"
-                f"<span style='font-size:22px;font-weight:700;color:#FF6B00;'>{fmt_clp(precio_unitario)}</span></div>",
+                f"<span style='color:#fff;'>Total de la partida: </span>"
+                f"<span style='font-size:22px;font-weight:700;color:#1E8E3E;'>{fmt_clp(total_partida)}</span></div>",
                 unsafe_allow_html=True,
             )
             if apu_cantidad > 0:
-                total_partida = precio_unitario * apu_cantidad
                 st.markdown(
-                    f"<div style='margin-top:6px;'>Total de la partida "
-                    f"({apu_cantidad:.2f} {apu_unidad or 'unidad'}): "
-                    f"<span style='font-size:20px;font-weight:700;color:#1E8E3E;'>{fmt_clp(total_partida)}</span></div>",
+                    f"<div style='margin-top:6px;padding:10px;background:#1E1E1E;border-radius:8px;'>"
+                    f"<span style='color:#fff;'>Precio unitario ({apu_unidad or 'unidad'}): </span>"
+                    f"<span style='font-size:22px;font-weight:700;color:#FF6B00;'>{fmt_clp(precio_unitario)}</span></div>",
                     unsafe_allow_html=True,
                 )
+            else:
+                st.caption("💡 Ingresa la medida de la partida arriba para ver el precio unitario.")
         st.caption("Valores netos (sin IVA). Estimación referencial.")
 
 
