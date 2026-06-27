@@ -95,6 +95,22 @@ def eliminar_proyecto(proyecto_id):
     supabase.table("proyectos").delete().eq("id", proyecto_id).execute()
 
 
+def _limpiar_formulario_proyecto():
+    """Limpia el formulario de creación y deja todo listo para un proyecto nuevo
+    (rubros, partidas, datos y materiales acumulados), y navega a 'Crear Proyecto'."""
+    for k in list(st.session_state.keys()):
+        if k.startswith("usar_") or k.startswith("p_"):
+            st.session_state.pop(k, None)
+    for k in ["input_nombre_proy", "input_tipo_obra", "input_profesional",
+              "nombre_nuevo_proyecto_guardar"]:
+        st.session_state.pop(k, None)
+    st.session_state["proyecto_creado"] = False
+    st.session_state["proyecto"] = {}
+    st.session_state["materiales_persistente"] = {}
+    st.session_state["_goto"] = "Crear Proyecto"
+    st.session_state["vista_cuenta"] = False
+
+
 def listar_bitacora(usuario_id, proyecto):
     """Devuelve las entradas de bitácora de un proyecto, más recientes primero."""
     try:
@@ -1794,23 +1810,9 @@ if st.session_state.get("vista_cuenta"):
                     st.caption(f"⏳ Tu plan vence el **{_fv.strftime('%d/%m/%Y')}** (en {_dias} días).")
             except Exception:
                 pass
-        cc1, cc2 = st.columns(2)
-        with cc1:
-            if st.button("Cerrar sesión", use_container_width=True):
-                try:
-                    supabase.auth.sign_out()
-                except Exception:
-                    pass
-                for k in ["usuario", "usuario_nombre", "usuario_plan",
-                          "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales",
-                          "usuario_plan_vence", "usuario_empresa", "usuario_rut",
-                          "usuario_telefono", "usuario_logo_url"]:
-                    st.session_state.pop(k, None)
-                st.rerun()
-        with cc2:
-            if st.button("← Volver a la app", type="primary", use_container_width=True):
-                st.session_state["vista_cuenta"] = False
-                st.rerun()
+        if st.button("← Volver a la app", type="primary", use_container_width=True):
+            st.session_state["vista_cuenta"] = False
+            st.rerun()
 
         # ---------------------------------------
         # MIS PROYECTOS
@@ -1882,37 +1884,56 @@ if st.session_state.get("vista_cuenta"):
                     "Elimina uno o pásate a Premium para guardar más."
                 )
 
-        # --- Lista de proyectos guardados ---
+        # --- Barra compacta: [ Desplegable ] [ ➕ Nuevo ] [ 🗑️ Eliminar ] ---
+        st.write("")
         if proyectos:
-            st.write("")
-            for p in proyectos:
-                fecha = (p.get("actualizado_en") or "")[:10]
-                col_n, col_c, col_e = st.columns([3, 1, 1])
-                with col_n:
-                    st.markdown(f"**{p['nombre']}**")
-                    if fecha:
-                        st.caption(f"Actualizado: {fecha}")
-                with col_c:
-                    if st.button("Cargar", key=f"cargar_{p['id']}", use_container_width=True):
-                        try:
-                            datos = cargar_proyecto(p["id"])
-                            for k, v in datos.items():
-                                st.session_state[k] = v
-                            st.session_state["_proyecto_cargado"] = True
-                            st.session_state["_goto"] = "Cubicacion"
-                            st.session_state["vista_cuenta"] = False
-                            st.rerun()
-                        except Exception:
-                            st.error("No se pudo cargar el proyecto.")
-                with col_e:
-                    if st.button("Eliminar", key=f"elim_{p['id']}", use_container_width=True):
-                        try:
-                            eliminar_proyecto(p["id"])
-                            st.rerun()
-                        except Exception:
-                            st.error("No se pudo eliminar.")
+            nombres_proy = [p["nombre"] for p in proyectos]
+            tb1, tb2, tb3 = st.columns([4, 1, 1])
+            with tb1:
+                sel_nombre = st.selectbox(
+                    "Proyecto", nombres_proy, key="sel_proyecto_guardado",
+                    label_visibility="collapsed",
+                )
+            with tb2:
+                nuevo_click = st.button("➕", use_container_width=True,
+                                        help="Nuevo proyecto (empezar de cero)")
+            with tb3:
+                elim_click = st.button("🗑️", use_container_width=True,
+                                       help="Eliminar el proyecto seleccionado")
+
+            proy_sel = next((p for p in proyectos if p["nombre"] == sel_nombre), None)
+
+            abrir_click = st.button("📂 Abrir proyecto seleccionado", type="primary",
+                                    use_container_width=True)
+
+            # --- Acciones ---
+            if abrir_click and proy_sel:
+                try:
+                    datos = cargar_proyecto(proy_sel["id"])
+                    for k, v in datos.items():
+                        st.session_state[k] = v
+                    st.session_state["_proyecto_cargado"] = True
+                    st.session_state["_goto"] = "Cubicacion"
+                    st.session_state["vista_cuenta"] = False
+                    st.rerun()
+                except Exception:
+                    st.error("No se pudo cargar el proyecto.")
+
+            if elim_click and proy_sel:
+                try:
+                    eliminar_proyecto(proy_sel["id"])
+                    st.rerun()
+                except Exception:
+                    st.error("No se pudo eliminar.")
+
+            if nuevo_click:
+                _limpiar_formulario_proyecto()
+                st.rerun()
         else:
             st.info("Todavía no tienes proyectos guardados.")
+            if st.button("➕ Nuevo proyecto", type="primary", use_container_width=True):
+                _limpiar_formulario_proyecto()
+                st.rerun()
 
         # ---------------------------------------
         # MIS DATOS PROFESIONALES (solo Pro, para el PDF)
@@ -1963,45 +1984,65 @@ if st.session_state.get("vista_cuenta"):
                     st.error("No se pudieron guardar los datos. Intenta de nuevo.")
 
         # ---------------------------------------
-        # MIS PRECIOS (solo planes de pago)
+        # PANEL: MI CUENTA Y CONFIGURACIÓN
+        # (Mis precios + Cerrar sesión, agrupados y fuera de la vista de cubicación)
         # ---------------------------------------
-        if puede_presupuesto():
-            st.write("---")
-            st.subheader("💲 Mis precios")
-            st.caption("Ajusta el precio de cada material (neto, sin IVA) y guarda tu lista. "
-                       "Se aplicará automáticamente en tus presupuestos. Los valores que ves son referenciales.")
+        st.write("---")
+        with st.expander("👤 Mi Cuenta y Configuración", expanded=False):
+            # --- Mis precios (solo planes de pago) ---
+            if puede_presupuesto():
+                st.markdown("##### 💲 Mis precios")
+                st.caption("Ajusta el precio neto (sin IVA) de cada material y guarda tu lista. "
+                           "Se aplicará automáticamente en tus presupuestos. Los valores son referenciales.")
 
-            # Cargar precios guardados del usuario
-            mis_precios = cargar_precios_usuario(usuario["id"])
-            nuevos_precios = {}
+                mis_precios = cargar_precios_usuario(usuario["id"])
+                rubros_cat = list(CATALOGO_MATERIALES.keys())
+                rubro_sel = st.selectbox("Rubro", rubros_cat, key="miprecio_rubro_sel")
 
-            for rubro_cat, materiales_cat in CATALOGO_MATERIALES.items():
-                with st.expander(f"📦 {rubro_cat}", expanded=False):
-                    for material, unidad in materiales_cat:
-                        # Prioridad: precio guardado del usuario > referencial
-                        valor_inicial = mis_precios.get(material, precio_referencial(material))
-                        col_m, col_p = st.columns([3, 2])
-                        with col_m:
-                            st.markdown(f"**{material}**")
-                            st.caption(f"por {unidad}")
-                        with col_p:
-                            p = st.number_input(
-                                f"Precio {material}",
-                                min_value=0, value=int(valor_inicial), step=100,
-                                key=f"miprecio_{rubro_cat}_{material}".replace(" ", "_"),
-                                label_visibility="collapsed",
-                            )
-                        nuevos_precios[material] = p
+                for material, unidad in CATALOGO_MATERIALES[rubro_sel]:
+                    valor_inicial = mis_precios.get(material, precio_referencial(material))
+                    _key = f"miprecio_{rubro_sel}_{material}".replace(" ", "_")
+                    st.session_state.setdefault(_key, int(valor_inicial))
+                    col_m, col_p = st.columns([3, 2])
+                    with col_m:
+                        st.markdown(f"**{material}**")
+                        st.caption(f"por {unidad}")
+                    with col_p:
+                        st.number_input(
+                            f"Precio {material}", min_value=0, step=100,
+                            key=_key, label_visibility="collapsed",
+                        )
 
-            st.write("")
-            if st.button("💾 Guardar mi lista de precios", type="primary", use_container_width=True, key="btn_guardar_mis_precios"):
+                if st.button("💾 Guardar mi lista de precios", type="primary",
+                             use_container_width=True, key="btn_guardar_mis_precios"):
+                    try:
+                        # Reúne TODOS los materiales (los editados desde session_state,
+                        # los no abiertos desde el valor guardado/referencial).
+                        nuevos_precios = {}
+                        for _rc, _mats in CATALOGO_MATERIALES.items():
+                            for _mat, _u in _mats:
+                                _k = f"miprecio_{_rc}_{_mat}".replace(" ", "_")
+                                nuevos_precios[_mat] = st.session_state.get(
+                                    _k, int(mis_precios.get(_mat, precio_referencial(_mat))))
+                        guardar_precios_usuario(usuario["id"], nuevos_precios)
+                        st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
+                        st.success("¡Tu lista de precios fue guardada! Se aplicará en tus próximos presupuestos.")
+                    except Exception:
+                        st.error("No se pudieron guardar los precios. Intenta de nuevo.")
+                st.write("---")
+
+            # --- Cerrar sesión ---
+            if st.button("🚪 Cerrar sesión", use_container_width=True, key="btn_cerrar_sesion_cfg"):
                 try:
-                    guardar_precios_usuario(usuario["id"], nuevos_precios)
-                    # Refrescar el dict en memoria para que el presupuesto los use
-                    st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
-                    st.success("¡Tu lista de precios fue guardada! Se aplicará en tus próximos presupuestos.")
+                    supabase.auth.sign_out()
                 except Exception:
-                    st.error("No se pudieron guardar los precios. Intenta de nuevo.")
+                    pass
+                for k in ["usuario", "usuario_nombre", "usuario_plan",
+                          "precios_usuario_cargados", "precios_usuario_dict", "_precios_actuales",
+                          "usuario_plan_vence", "usuario_empresa", "usuario_rut",
+                          "usuario_telefono", "usuario_logo_url"]:
+                    st.session_state.pop(k, None)
+                st.rerun()
 
         # Términos y condiciones (siempre accesibles con sesión)
         st.write("---")
