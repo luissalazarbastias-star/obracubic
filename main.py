@@ -1453,11 +1453,11 @@ def generar_pdf_apu(datos_apu, datos_usuario=None):
     S.append(Paragraph(f"Subtotal materiales: <b>{clp(datos_apu.get('sub_mat', 0))}</b>", h_meta))
 
     # Mano de obra
-    filas_mo = [[m.get("Descripción", ""), "", f"{m.get('Cantidad', 0):.2f}",
+    filas_mo = [[m.get("Descripción", ""), m.get("Unidad", ""), f"{m.get('Cantidad', 0):.2f}",
                  clp(m.get("Precio unitario", 0)),
                  clp(m.get("Cantidad", 0) * m.get("Precio unitario", 0))]
                 for m in datos_apu.get("mano_obra", []) if m.get("Descripción")]
-    tabla("2. Mano de obra", filas_mo, ["Descripción", "", "Cantidad", "P. unitario", "Subtotal"])
+    tabla("2. Mano de obra", filas_mo, ["Descripción", "Unidad", "Cantidad", "P. unitario", "Subtotal"])
     S.append(Paragraph(f"Subtotal mano de obra: <b>{clp(datos_apu.get('sub_mo', 0))}</b>", h_meta))
 
     # Recargos y totales
@@ -6763,12 +6763,13 @@ if option == "APU":
                     if mo_rate > 0:
                         st.session_state["apu_mo_data"] = [
                             {"Descripción": f"Mano de obra ({nombre_partida})",
+                             "Unidad": uni_med,
                              "Cantidad": medida if medida > 0 else 0.0,
                              "Precio unitario": mo_rate}
                         ]
                     else:
                         st.session_state["apu_mo_data"] = [
-                            {"Descripción": "", "Cantidad": 0.0, "Precio unitario": 0}]
+                            {"Descripción": "", "Unidad": "", "Cantidad": 0.0, "Precio unitario": 0}]
                     st.session_state["apu_partida"] = nombre_partida
                     if medida > 0:
                         st.session_state["apu_cantidad"] = medida
@@ -6811,12 +6812,18 @@ if option == "APU":
         # --- Mano de obra (total de la partida) ---
         st.subheader("2. Mano de obra")
         df_mo = pd.DataFrame(st.session_state.get("apu_mo_data",
-                             [{"Descripción": "", "Cantidad": 0.0, "Precio unitario": 0}]))
+                             [{"Descripción": "", "Unidad": "", "Cantidad": 0.0, "Precio unitario": 0}]))
+        # Asegurar columnas y orden (por compatibilidad con datos antiguos)
+        for _col in ["Descripción", "Unidad", "Cantidad", "Precio unitario"]:
+            if _col not in df_mo.columns:
+                df_mo[_col] = "" if _col in ("Descripción", "Unidad") else 0
+        df_mo = df_mo[["Descripción", "Unidad", "Cantidad", "Precio unitario"]]
         df_mo = st.data_editor(
             df_mo, num_rows="dynamic", use_container_width=True, key=f"apu_mo_{n}",
             column_config={
-                "Cantidad": st.column_config.NumberColumn(format="%.2f", help="HH o jornadas totales"),
-                "Precio unitario": st.column_config.NumberColumn(format="%d"),
+                "Unidad": st.column_config.TextColumn(help="Unidad de la partida (m², ml, m³)"),
+                "Cantidad": st.column_config.NumberColumn(format="%.2f", help="Cantidad en la unidad de la partida"),
+                "Precio unitario": st.column_config.NumberColumn(format="%d", help="Lo que cobras por esa unidad"),
             },
         )
         st.session_state["apu_mo_data"] = df_mo.to_dict("records")
