@@ -493,6 +493,57 @@ def precio_referencial(material):
     return 0
 
 
+# Mano de obra referencial NETA por unidad de medida de la partida (CLP).
+# OJO: son valores de ejemplo. Ajústalos a los de tu zona (igual que los materiales).
+# La unidad corresponde a la medida de la partida: hormigones por m³, terminaciones
+# por m², cierres/zócalos por ml. La coincidencia es por palabra clave en la partida.
+MANO_OBRA_REFERENCIAL = [
+    # (palabra_clave_en_minusculas, precio_neto_por_unidad). Más específico primero.
+    # --- Moldajes (por m²) — antes que losa/viga/pilar para no confundir ---
+    ("moldaje", 7000),
+    # --- Hormigones (por m³) ---
+    ("emplantillado", 15000),
+    ("sobrecimiento", 22000),
+    ("cimiento", 20000),
+    ("radier", 14000),
+    ("losa", 25000),
+    ("pilar", 35000),
+    ("viga", 32000),
+    ("muro horm", 28000),
+    ("hormig", 22000),
+    # --- Albañilería y tabiques (por m²) ---
+    ("ladrillo", 16000),
+    ("bloque", 14000),
+    ("tabique", 12000),
+    ("metalcon", 12000),
+    # --- Terminaciones (por m²) ---
+    ("estuco", 6500),
+    ("pintura", 2800),
+    ("cielo", 8000),
+    ("revestimiento", 7000),
+    ("cerámic", 9000),
+    ("ceramic", 9000),
+    ("piso", 6500),
+    ("pavimento", 6500),
+    # --- Cubierta (por m²) ---
+    ("cubierta", 9000),
+    ("techumbre", 9000),
+    # --- Cierres y zócalos (por ml) ---
+    ("cierre", 8000),
+    ("zócalo", 2000),
+    ("zocalo", 2000),
+]
+
+
+def mano_obra_referencial(partida):
+    """Precio referencial de mano de obra por unidad de medida según el nombre de la partida."""
+    nombre = (partida or "").lower()
+    for clave, precio in MANO_OBRA_REFERENCIAL:
+        if clave in nombre:
+            return precio
+    return 0
+
+
 # Opciones de marca/tipo por material (precios NETOS). El usuario elige una o usa "Otro".
 # La coincidencia es por palabra clave en el nombre del material.
 OPCIONES_PRECIO = {
@@ -6565,17 +6616,29 @@ if option == "APU":
                     bloque = persistente_apu[claves[sel_idx]]
                     mats = materiales_de_partida_apu(bloque)
                     medida, uni_med = medida_de_partida_apu(bloque)
+                    nombre_partida = bloque.get("partida", "")
                     st.session_state["apu_mat_data"] = [
                         {"Descripción": mat, "Unidad": uni, "Cantidad": cant,
                          "Precio unitario": precio_referencial(mat)}
                         for (mat, cant, uni) in mats
                     ] or [{"Descripción": "", "Unidad": "", "Cantidad": 0.0, "Precio unitario": 0}]
-                    st.session_state["apu_partida"] = bloque.get("partida", "")
+                    # Mano de obra referencial automática (según la partida y su medida)
+                    mo_rate = mano_obra_referencial(nombre_partida)
+                    if mo_rate > 0 and medida > 0:
+                        st.session_state["apu_mo_data"] = [
+                            {"Descripción": f"Mano de obra ({nombre_partida})",
+                             "Cantidad": medida, "Precio unitario": mo_rate}
+                        ]
+                    else:
+                        st.session_state["apu_mo_data"] = [
+                            {"Descripción": "", "Cantidad": 0.0, "Precio unitario": 0}]
+                    st.session_state["apu_partida"] = nombre_partida
                     if medida > 0:
                         st.session_state["apu_cantidad"] = medida
                         st.session_state["apu_unidad"] = uni_med
-                    st.session_state["apu_load_n"] += 1  # refrescar la tabla
-                    st.success(f"Cargados {len(mats)} materiales. Revisa precios y agrega la mano de obra.")
+                    st.session_state["apu_load_n"] += 1  # refrescar las tablas
+                    mo_msg = " y mano de obra referencial" if mo_rate > 0 else ""
+                    st.success(f"Cargados {len(mats)} materiales{mo_msg}. Revisa y ajusta los valores.")
                     st.rerun()
         else:
             st.info("💡 Cubica una partida en la sección **Cubicacion** y luego vuelve aquí para generar su APU automático. También puedes llenarlo a mano abajo.")
@@ -6613,7 +6676,7 @@ if option == "APU":
         df_mo = pd.DataFrame(st.session_state.get("apu_mo_data",
                              [{"Descripción": "", "Cantidad": 0.0, "Precio unitario": 0}]))
         df_mo = st.data_editor(
-            df_mo, num_rows="dynamic", use_container_width=True, key="apu_mo",
+            df_mo, num_rows="dynamic", use_container_width=True, key=f"apu_mo_{n}",
             column_config={
                 "Cantidad": st.column_config.NumberColumn(format="%.2f", help="HH o jornadas totales"),
                 "Precio unitario": st.column_config.NumberColumn(format="%d"),
