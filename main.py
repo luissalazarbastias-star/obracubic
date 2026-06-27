@@ -6760,10 +6760,11 @@ if option == "APU":
                     ] or [{"Descripción": "", "Unidad": "", "Cantidad": 0.0, "Precio unitario": 0}]
                     # Mano de obra referencial automática (según la partida y su medida)
                     mo_rate = mano_obra_referencial(nombre_partida)
-                    if mo_rate > 0 and medida > 0:
+                    if mo_rate > 0:
                         st.session_state["apu_mo_data"] = [
                             {"Descripción": f"Mano de obra ({nombre_partida})",
-                             "Cantidad": medida, "Precio unitario": mo_rate}
+                             "Cantidad": medida if medida > 0 else 0.0,
+                             "Precio unitario": mo_rate}
                         ]
                     else:
                         st.session_state["apu_mo_data"] = [
