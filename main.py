@@ -1362,6 +1362,142 @@ def generar_excel_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_u
     return buf
 
 
+def generar_pdf_apu(datos_apu, datos_usuario=None):
+    """Genera el PDF del Análisis de Precios Unitarios de una partida. Pro Élite.
+    Devuelve un BytesIO."""
+    import io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
+                                    TableStyle, HRFlowable)
+
+    NARANJA = colors.HexColor("#FF6B00")
+    CARBON = colors.HexColor("#1E1E1E")
+    GRIS = colors.HexColor("#F2F2F2")
+    VERDE = colors.HexColor("#1E8E3E")
+
+    estilos = getSampleStyleSheet()
+    h_titulo = ParagraphStyle("t", parent=estilos["Title"], fontName="Helvetica-Bold",
+                              fontSize=20, textColor=NARANJA, alignment=0, spaceAfter=2)
+    h_meta = ParagraphStyle("m", parent=estilos["Normal"], fontName="Helvetica",
+                            fontSize=9, textColor=CARBON, leading=13)
+    h_sec = ParagraphStyle("s", parent=estilos["Heading2"], fontName="Helvetica-Bold",
+                           fontSize=12, textColor=CARBON, spaceBefore=10, spaceAfter=4)
+    celda = ParagraphStyle("c", parent=estilos["Normal"], fontName="Helvetica", fontSize=8.5, leading=11)
+    celda_b = ParagraphStyle("cb", parent=estilos["Normal"], fontName="Helvetica-Bold",
+                             fontSize=8.5, textColor=colors.white, leading=11)
+
+    def clp(v):
+        try:
+            return "$" + f"{int(round(v)):,}".replace(",", ".")
+        except Exception:
+            return "$0"
+
+    def sup(texto):
+        """Convierte ² y ³ a superíndice válido en reportlab."""
+        return str(texto).replace("²", "<super>2</super>").replace("³", "<super>3</super>")
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+                            topMargin=1.6 * cm, bottomMargin=1.6 * cm,
+                            title="ObraCubic - APU", author="ObraCubic")
+    S = []
+    du = datos_usuario or {}
+    S.append(Paragraph(du.get("empresa") or "ObraCubic", h_titulo))
+    linea = []
+    if du.get("rut"):
+        linea.append(f"RUT: {du['rut']}")
+    if du.get("telefono"):
+        linea.append(du["telefono"])
+    if du.get("email"):
+        linea.append(du["email"])
+    if linea:
+        S.append(Paragraph("  ·  ".join(linea), h_meta))
+    S.append(Paragraph("Análisis de Precios Unitarios (APU)", ParagraphStyle(
+        "x", parent=h_meta, fontName="Helvetica-Bold", fontSize=11, textColor=CARBON)))
+    from datetime import datetime as _dt
+    S.append(Paragraph(
+        f"Partida: <b>{datos_apu.get('partida') or '-'}</b>  ·  "
+        f"Unidad: <b>{sup(datos_apu.get('unidad') or '-')}</b>  ·  "
+        f"Medida: <b>{datos_apu.get('cantidad', 0):.2f}</b>  ·  "
+        f"Fecha: {_dt.now().strftime('%d/%m/%Y')}", h_meta))
+    S.append(Spacer(1, 4))
+    S.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=8))
+
+    def tabla(titulo, filas, encabezados):
+        S.append(Paragraph(titulo, h_sec))
+        data = [[Paragraph(h, celda_b) for h in encabezados]]
+        for f in filas:
+            data.append([Paragraph(sup(c), celda) for c in f])
+        anchos = [6.6 * cm, 2.2 * cm, 2.4 * cm, 2.7 * cm, 3.0 * cm]
+        t = Table(data, colWidths=anchos)
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), NARANJA),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, GRIS]),
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#DDDDDD")),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        S.append(t)
+
+    # Materiales
+    filas_mat = [[m.get("Descripción", ""), m.get("Unidad", ""),
+                  f"{m.get('Cantidad', 0):.2f}", clp(m.get("Precio unitario", 0)),
+                  clp(m.get("Cantidad", 0) * m.get("Precio unitario", 0))]
+                 for m in datos_apu.get("materiales", []) if m.get("Descripción")]
+    tabla("1. Materiales", filas_mat, ["Descripción", "Unidad", "Cantidad", "P. unitario", "Subtotal"])
+    S.append(Paragraph(f"Subtotal materiales: <b>{clp(datos_apu.get('sub_mat', 0))}</b>", h_meta))
+
+    # Mano de obra
+    filas_mo = [[m.get("Descripción", ""), "", f"{m.get('Cantidad', 0):.2f}",
+                 clp(m.get("Precio unitario", 0)),
+                 clp(m.get("Cantidad", 0) * m.get("Precio unitario", 0))]
+                for m in datos_apu.get("mano_obra", []) if m.get("Descripción")]
+    tabla("2. Mano de obra", filas_mo, ["Descripción", "", "Cantidad", "P. unitario", "Subtotal"])
+    S.append(Paragraph(f"Subtotal mano de obra: <b>{clp(datos_apu.get('sub_mo', 0))}</b>", h_meta))
+
+    # Recargos y totales
+    S.append(Paragraph("3. Recargos y totales", h_sec))
+    res = [
+        ("Leyes sociales", clp(datos_apu.get("leyes", 0))),
+        ("Herramientas", clp(datos_apu.get("herr", 0))),
+        ("Costo directo", clp(datos_apu.get("costo_directo", 0))),
+        ("Gastos grales. + utilidad", clp(datos_apu.get("ggu", 0))),
+    ]
+    tr = Table([[Paragraph(a, celda), Paragraph(b, ParagraphStyle("r", parent=celda, alignment=2))]
+                for a, b in res], colWidths=[12.9 * cm, 4.0 * cm])
+    tr.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, -2), 0.4, colors.HexColor("#DDDDDD")),
+                            ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
+    S.append(tr)
+
+    # Total y precio unitario
+    S.append(Spacer(1, 6))
+    total_box = Table([
+        [Paragraph("Total de la partida", ParagraphStyle("tb", parent=celda, textColor=colors.white, fontName="Helvetica-Bold", fontSize=11)),
+         Paragraph(clp(datos_apu.get("total", 0)), ParagraphStyle("tv", parent=celda, textColor=colors.white, fontName="Helvetica-Bold", fontSize=13, alignment=2))],
+        [Paragraph(sup(f"Precio unitario ({datos_apu.get('unidad') or 'unidad'})"), ParagraphStyle("pb", parent=celda, textColor=colors.white, fontName="Helvetica-Bold", fontSize=11)),
+         Paragraph(clp(datos_apu.get("precio_unitario", 0)), ParagraphStyle("pv", parent=celda, textColor=colors.white, fontName="Helvetica-Bold", fontSize=13, alignment=2))],
+    ], colWidths=[12.9 * cm, 4.0 * cm])
+    total_box.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), VERDE),
+        ("BACKGROUND", (0, 1), (-1, 1), NARANJA),
+        ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+    ]))
+    S.append(total_box)
+
+    S.append(Spacer(1, 10))
+    S.append(Paragraph("Valores netos (sin IVA). Estimación referencial generada con ObraCubic.",
+                       ParagraphStyle("pie", parent=h_meta, fontSize=7.5, textColor=colors.HexColor("#888888"))))
+    doc.build(S)
+    buf.seek(0)
+    return buf
+
+
 def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_usuario=None):
     """Genera un PDF del presupuesto con desglose, IVA y total."""
     buffer = io.BytesIO()
@@ -6729,6 +6865,29 @@ if option == "APU":
             else:
                 st.caption("💡 Ingresa la medida de la partida arriba para ver el precio unitario.")
         st.caption("Valores netos (sin IVA). Estimación referencial.")
+
+        # --- Exportar APU a PDF ---
+        if st.button("📄 Exportar APU a PDF", use_container_width=True):
+            try:
+                datos_apu = {
+                    "partida": apu_partida, "unidad": apu_unidad, "cantidad": apu_cantidad,
+                    "materiales": st.session_state.get("apu_mat_data", []),
+                    "mano_obra": st.session_state.get("apu_mo_data", []),
+                    "sub_mat": sub_mat, "sub_mo": sub_mo,
+                    "leyes": monto_leyes, "herr": monto_herr,
+                    "costo_directo": costo_directo, "ggu": monto_ggu,
+                    "total": total_partida, "precio_unitario": precio_unitario,
+                }
+                pdf_apu = generar_pdf_apu(datos_apu, datos_usuario=datos_usuario_pdf())
+                nombre_apu = f"APU_{apu_partida or 'partida'}.pdf".replace(" ", "_")
+                st.download_button(
+                    "⬇️ Descargar APU en PDF", data=pdf_apu, file_name=nombre_apu,
+                    mime="application/pdf", use_container_width=True,
+                )
+            except Exception:
+                import traceback
+                print("ERROR generando PDF de APU:", traceback.format_exc())
+                st.error("No se pudo generar el PDF del APU. Intenta de nuevo.")
 
 
 # ============================
