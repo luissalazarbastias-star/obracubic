@@ -505,7 +505,7 @@ MANO_OBRA_REFERENCIAL = [
     ("emplantillado", 15000),
     ("sobrecimiento", 22000),
     ("cimiento", 20000),
-    ("radier", 14000),
+    ("radier", 5000),     # por m² (superficie)
     ("losa", 25000),
     ("pilar", 35000),
     ("viga", 32000),
@@ -777,7 +777,7 @@ def calcular_materiales(volumen_m3, dosificacion):
         "agua_lt":       round(vol * dos["agua_lt"]),
     }
 
-def mostrar_materiales(materiales, rubro=None, partida=None):
+def mostrar_materiales(materiales, rubro=None, partida=None, medida=None):
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Cemento",   f"{materiales['cemento_sacos']} sacos")
     m2.metric("Gravilla",  f"{materiales['gravilla_kg']} kg")
@@ -792,12 +792,18 @@ def mostrar_materiales(materiales, rubro=None, partida=None):
             for k in ("cemento_sacos", "gravilla_kg", "arena_kg", "agua_lt")
         )
         if tiene_datos:
-            registrar_pdf(rubro, partida, [
+            items = []
+            # medida = (etiqueta, valor) informativo de la partida (superficie/volumen),
+            # va primero para que el APU pueda detectarla. No se cobra (es info).
+            if medida:
+                items.append(medida)
+            items += [
                 ("Cemento", f"{materiales['cemento_sacos']} sacos"),
                 ("Gravilla", f"{materiales['gravilla_kg']} kg"),
                 ("Arena", f"{materiales['arena_kg']} kg"),
                 ("Agua", f"{materiales['agua_lt']} lt"),
-            ])
+            ]
+            registrar_pdf(rubro, partida, items)
         else:
             quitar_pdf(rubro, partida)
 
@@ -2854,7 +2860,8 @@ if option == "Cubicacion":
                         st.write("---")
                         st.info(f"Volumen neto emplantillado: {vol_emp_total:.2f} m³")
                         st.success(f"Volumen con {emp_perdida}% pérdida: {vol_emp_final:.2f} m³")
-                        mostrar_materiales(mat_emp, "Hormigón y Movimiento de tierra", "Emplantillado")
+                        mostrar_materiales(mat_emp, "Hormigón y Movimiento de tierra", "Emplantillado",
+                                           medida=("Volumen", f"{vol_emp_final:.2f} m³"))
 
                 # Recalculo FUERA del expander
                 _vol_emp = st.session_state.get("_emp_vol", 0)
@@ -3034,7 +3041,8 @@ if option == "Cubicacion":
                             mat_cim = calcular_materiales(vol_pilares, dos_cim)
                             st.session_state["mat_cim"] = mat_cim
                             st.session_state["vol_pilares"] = vol_pilares
-                            mostrar_materiales(mat_cim, "Hormigón y Movimiento de tierra", "Cimiento")
+                            mostrar_materiales(mat_cim, "Hormigón y Movimiento de tierra", "Cimiento",
+                                           medida=("Volumen", f"{vol_pilares:.2f} m³"))
                         else:
                             st.caption("Selecciona al menos un tipo de cimiento para calcular.")
 
@@ -3044,7 +3052,8 @@ if option == "Cubicacion":
                         mat_cim = calcular_materiales(vol_pilares, st.session_state.get("dos_cim", "G-20"))
                         st.session_state["mat_cim"] = mat_cim
                         st.session_state["vol_pilares"] = vol_pilares
-                        mostrar_materiales(mat_cim, "Hormigón y Movimiento de tierra", "Cimiento")
+                        mostrar_materiales(mat_cim, "Hormigón y Movimiento de tierra", "Cimiento",
+                                           medida=("Volumen", f"{vol_pilares:.2f} m³"))
 
                 _vol_cim = st.session_state.get("_cim_vol", 0)
                 _dos_cim = st.session_state.get("_cim_dos", "G-20")
@@ -3105,7 +3114,8 @@ if option == "Cubicacion":
                         st.text(f"Volumen bruto total: {vol_sc_total:.2f} m³")
                         st.text(f"Descuento vanos: -{vol_vanos_sc:.2f} m³")
                         st.info(f"Volumen neto sobrecimiento: {vol_sc_neto:.2f} m³")
-                        mostrar_materiales(mat_sc, "Hormigón y Movimiento de tierra", "Sobrecimiento")
+                        mostrar_materiales(mat_sc, "Hormigón y Movimiento de tierra", "Sobrecimiento",
+                                           medida=("Volumen", f"{vol_sc_neto:.2f} m³"))
 
                         st.session_state["_sc_vol"] = vol_sc_neto
                         st.session_state["_sc_dos"] = dos_sc
@@ -3113,7 +3123,8 @@ if option == "Cubicacion":
                         mat_sc = calcular_materiales(vol_sc_neto, dos_sc)
                         st.session_state["mat_sc"] = mat_sc
                         st.session_state["vol_sc_neto"] = vol_sc_neto
-                        mostrar_materiales(mat_sc, "Hormigón y Movimiento de tierra", "Sobrecimiento")
+                        mostrar_materiales(mat_sc, "Hormigón y Movimiento de tierra", "Sobrecimiento",
+                                           medida=("Volumen", f"{vol_sc_neto:.2f} m³"))
 
                 _vol_sc = st.session_state.get("_sc_vol", 0)
                 _dos_sc = st.session_state.get("_sc_dos", "G-20")
@@ -3181,7 +3192,8 @@ if option == "Cubicacion":
                             st.info(f"Volumen neto radier: {vol_radier:.2f} m³")
                             st.info(f"Área total radier: {area_radier_total:.2f} m²")
                             st.success(f"Volumen con {rad_perdida}% pérdida: {vol_radier_final:.2f} m³")
-                            mostrar_materiales(mat_rad, "Hormigón y Movimiento de tierra", "Radier")
+                            mostrar_materiales(mat_rad, "Hormigón y Movimiento de tierra", "Radier",
+                                               medida=("Superficie", f"{area_radier_total:.2f} m²"))
 
                             if usar_malla:
                                 st.write("---")
