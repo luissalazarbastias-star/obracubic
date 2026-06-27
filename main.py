@@ -338,8 +338,9 @@ def materiales_de_partida_apu(bloque):
 
 def medida_de_partida_apu(bloque):
     """Detecta (cantidad, unidad) de la medida base de la partida: volumen, área,
-    superficie o largo. Devuelve (0, '') si no la encuentra."""
-    claves = ["volumen", "área", "area", "superficie", "largo total", "metros lineales"]
+    superficie, largo o acero total. Devuelve (0, '') si no la encuentra."""
+    claves = ["volumen", "área", "area", "superficie", "largo total",
+              "metros lineales", "acero total"]
     for etiqueta, valor in bloque.get("items", []):
         eb = etiqueta.lower()
         if any(c in eb for c in claves):
@@ -493,45 +494,46 @@ def precio_referencial(material):
     return 0
 
 
-# Mano de obra referencial NETA por unidad de medida de la partida (CLP).
-# OJO: son valores de ejemplo. Ajústalos a los de tu zona (igual que los materiales).
-# La unidad corresponde a la medida de la partida: hormigones por m³, terminaciones
-# por m², cierres/zócalos por ml. La coincidencia es por palabra clave en la partida.
+# Mano de obra referencial NETA por unidad (CLP), SIN leyes sociales (esas se
+# suman aparte en el APU, ~28%). Calculada como costo de cuadrilla/día / rendimiento,
+# con jornales y rendimientos de referencia para zona central de Chile (factor 1.0,
+# incluye Maule/Curicó). Son valores referenciales: ajustalos a tu obra.
+# Hormigones por m3, emplantillado/radier/terminaciones por m2, cierres/zocalos por ml.
 MANO_OBRA_REFERENCIAL = [
     # (palabra_clave_en_minusculas, precio_neto_por_unidad). Más específico primero.
     # --- Moldajes (por m²) — antes que losa/viga/pilar para no confundir ---
-    ("moldaje", 7000),
-    # --- Hormigones (por m³) ---
-    ("emplantillado", 15000),
-    ("sobrecimiento", 22000),
-    ("cimiento", 20000),
-    ("radier", 5000),     # por m² (superficie)
-    ("losa", 25000),
-    ("pilar", 35000),
-    ("viga", 32000),
-    ("muro horm", 28000),
-    ("hormig", 22000),
+    ("moldaje", 8600),
+    # --- Hormigones ---
+    ("emplantillado", 5000),   # por m² (capa delgada)
+    ("sobrecimiento", 25000),  # por m³
+    ("cimiento", 19000),       # por m³
+    ("radier", 5000),          # por m² (superficie)
+    ("losa", 13000),           # por m³
+    ("pilar", 31000),          # por m³
+    ("viga", 25000),           # por m³
+    ("muro horm", 25000),      # por m³
+    ("hormig", 22000),         # por m³ (genérico)
     # --- Albañilería y tabiques (por m²) ---
-    ("ladrillo", 16000),
-    ("bloque", 14000),
-    ("tabique", 12000),
-    ("metalcon", 12000),
+    ("ladrillo", 9700),
+    ("bloque", 8500),
+    ("tabique", 7000),
+    ("metalcon", 7000),
     # --- Terminaciones (por m²) ---
-    ("estuco", 6500),
-    ("pintura", 2800),
-    ("cielo", 8000),
-    ("revestimiento", 7000),
-    ("cerámic", 9000),
-    ("ceramic", 9000),
-    ("piso", 6500),
-    ("pavimento", 6500),
+    ("estuco", 4800),
+    ("pintura", 1800),
+    ("cielo", 6900),
+    ("revestimiento", 9700),
+    ("cerámic", 7300),
+    ("ceramic", 7300),
+    ("piso", 5500),
+    ("pavimento", 5500),
     # --- Cubierta (por m²) ---
-    ("cubierta", 9000),
-    ("techumbre", 9000),
+    ("cubierta", 7000),
+    ("techumbre", 7000),
     # --- Cierres y zócalos (por ml) ---
-    ("cierre", 8000),
-    ("zócalo", 2000),
-    ("zocalo", 2000),
+    ("cierre", 6000),
+    ("zócalo", 1500),
+    ("zocalo", 1500),
 ]
 
 
@@ -2831,6 +2833,7 @@ if option == "Cubicacion":
                                     st.session_state.secciones_emp.pop()
 
                         vol_emp_total = 0.0
+                        area_emp_total = 0.0
                         for i, sec in enumerate(st.session_state.secciones_emp):
                             st.markdown(f"**Sección {i+1}**")
                             em1, em2, em3 = st.columns(3)
@@ -2843,6 +2846,7 @@ if option == "Cubicacion":
                             vol_sec_emp = sec["largo"] * sec["ancho"] * sec["espesor"]
                             st.caption(f"Volumen sección {i+1}: {vol_sec_emp:.2f} m³")
                             vol_emp_total += vol_sec_emp
+                            area_emp_total += sec["largo"] * sec["ancho"]
 
                         emp_perdida = st.slider("% Pérdida", 0, 15, 5, key="emp_perdida")
                         dos_emp = st.selectbox("Dosificación", list(DOSIFICACIONES.keys()),
@@ -2861,7 +2865,7 @@ if option == "Cubicacion":
                         st.info(f"Volumen neto emplantillado: {vol_emp_total:.2f} m³")
                         st.success(f"Volumen con {emp_perdida}% pérdida: {vol_emp_final:.2f} m³")
                         mostrar_materiales(mat_emp, "Hormigón y Movimiento de tierra", "Emplantillado",
-                                           medida=("Volumen", f"{vol_emp_final:.2f} m³"))
+                                           medida=("Superficie", f"{area_emp_total:.2f} m²"))
 
                 # Recalculo FUERA del expander
                 _vol_emp = st.session_state.get("_emp_vol", 0)
@@ -4606,6 +4610,7 @@ if option == "Cubicacion":
                     st.session_state["pdf_largo_esq"] = 0
                     if largo_tab_mu > 0 and total_canales_final > 0:
                         items_metalcon = [
+                            ("Superficie", f"{m2_aislacion_neta:.2f} m²"),
                             ("Canales", f"{total_canales_final:.0f} de {largo_canal_mu}m"),
                             ("Montantes perf. (medio)", f"{total_mont_medio:.0f} de {largo_mont_medio}m"),
                             ("Montantes normales", f"{total_mont_normal:.0f} de {largo_mont_esq}m"),
@@ -4719,6 +4724,7 @@ if option == "Cubicacion":
                             st.info(f"Clavos aprox.: {clavos:.0f} unidades")
                         if largo_tab_ma > 0:
                             registrar_pdf("Muros", "Tabique Madera", [
+                                ("Superficie", f"{m2_papel_neto:.2f} m²"),
                                 ("Tipo madera", madera_tipo),
                                 ("Soleras y carreras", f"{cant_soleras_ma:.0f} de {largo_mad}m"),
                                 ("Montantes", f"{total_mont_ma:.0f} de {largo_mad}m"),
@@ -6644,15 +6650,16 @@ if option == "Presupuesto":
 # BITÁCORA DE OBRA (Pro Élite)
 # ============================
 if option == "Bitácora":
-    st.header("📓 Bitácora de Obra")
+    st.header("📓 Libro de Obra")
 
     if not puede_bitacora():
-        st.warning("La Bitácora de obra está disponible en el **Plan Pro Élite**.")
+        st.warning("El Libro de Obra está disponible en el **Plan Pro Élite**.")
     else:
+        from datetime import date as _date
         usuario = st.session_state.get("usuario") or {}
         usuario_id = usuario.get("id")
 
-        # Nombre del proyecto al que se asocia la bitácora
+        # Nombre del proyecto al que se asocia el libro de obra
         proyecto_bit = st.text_input(
             "Proyecto",
             value=st.session_state.get("proyecto", {}).get("nombre", ""),
@@ -6661,25 +6668,40 @@ if option == "Bitácora":
         )
 
         if not proyecto_bit:
-            st.info("Escribe el nombre del proyecto para ver y agregar entradas a su bitácora.")
+            st.info("Escribe el nombre del proyecto para ver y agregar registros a su libro de obra.")
         else:
-            st.caption("Registra el avance de la obra: anota lo realizado y adjunta una foto.")
+            st.caption("Registro diario de terreno: personal, novedades, clima e hitos del día, con foto.")
 
-            # --- Nueva entrada ---
+            # --- Nueva entrada (registro de terreno) ---
             with st.expander("➕ Nueva entrada", expanded=True):
-                nota_bit = st.text_area(
-                    "Nota / avance del día",
-                    placeholder="Ej: Se hormigonó el radier del living. Faltan terminaciones de borde.",
-                    key="bitacora_nota",
+                fecha_bit = st.date_input("📅 Fecha", value=_date.today(), key="bitacora_fecha")
+                personal_bit = st.text_input(
+                    "👷 Personal en Faena",
+                    placeholder="Ej: 2 maestros, 1 ayudante, 1 ITO",
+                    key="bitacora_personal",
+                )
+                novedades_bit = st.text_area(
+                    "✍️ Novedades, Clima e Hitos del Día",
+                    placeholder="Ej: Lluvia en la mañana, se paralizó hormigonado. Llegó camión con fierro. Se recibió material para radier.",
+                    key="bitacora_novedades",
                 )
                 foto_bit = st.file_uploader(
-                    "Foto (opcional)", type=["jpg", "jpeg", "png"], key="bitacora_foto",
+                    "📷 Foto (opcional)", type=["jpg", "jpeg", "png"], key="bitacora_foto",
                     help="Adjunta una foto del avance. Se reduce automáticamente para ahorrar espacio.",
                 )
                 if st.button("💾 Guardar entrada", type="primary"):
-                    if not nota_bit.strip() and not foto_bit:
-                        st.error("Escribe una nota o adjunta una foto.")
+                    if not personal_bit.strip() and not novedades_bit.strip() and not foto_bit:
+                        st.error("Completa al menos las novedades, el personal o adjunta una foto.")
                     else:
+                        # Unir los campos en un solo texto formateado para la columna 'nota'
+                        # (así no rompemos la tabla existente en Supabase).
+                        partes = [f"📅 Fecha: {fecha_bit.strftime('%d/%m/%Y')}"]
+                        if personal_bit.strip():
+                            partes.append(f"👷 Personal: {personal_bit.strip()}")
+                        if novedades_bit.strip():
+                            partes.append(f"✍️ Notas del día: {novedades_bit.strip()}")
+                        nota_final = "\n".join(partes)
+
                         foto_b64 = None
                         try:
                             if foto_bit is not None:
@@ -6695,8 +6717,8 @@ if option == "Bitácora":
                                 buf_img = _io.BytesIO()
                                 img.save(buf_img, format="JPEG", quality=70)
                                 foto_b64 = base64.b64encode(buf_img.getvalue()).decode("utf-8")
-                            guardar_bitacora(usuario_id, proyecto_bit, nota_bit.strip(), foto_b64)
-                            st.success("Entrada guardada en la bitácora.")
+                            guardar_bitacora(usuario_id, proyecto_bit, nota_final, foto_b64)
+                            st.success("Entrada guardada en el libro de obra.")
                             st.rerun()
                         except Exception:
                             import traceback
@@ -6710,11 +6732,15 @@ if option == "Bitácora":
             if not entradas:
                 st.caption("Aún no hay entradas para este proyecto.")
             for e in entradas:
-                fecha_txt = (e.get("creado_en") or "")[:16].replace("T", " ")
+                registrado = (e.get("creado_en") or "")[:16].replace("T", " ")
                 with st.container(border=True):
                     cols = st.columns([5, 1])
                     with cols[0]:
-                        st.markdown(f"**🗓️ {fecha_txt}**")
+                        st.markdown(
+                            f"<span style='color:#FF6B00;font-weight:700;'>🗓️ Registrado:</span> "
+                            f"<span style='color:#9A9A9A;'>{registrado}</span>",
+                            unsafe_allow_html=True,
+                        )
                     with cols[1]:
                         if st.button("🗑️", key=f"del_bit_{e['id']}", help="Eliminar entrada"):
                             try:
@@ -6722,8 +6748,11 @@ if option == "Bitácora":
                                 st.rerun()
                             except Exception:
                                 st.error("No se pudo eliminar.")
+                    # Mostrar el texto formateado línea por línea para que se lea ordenado
                     if e.get("nota"):
-                        st.write(e["nota"])
+                        for linea in str(e["nota"]).split("\n"):
+                            if linea.strip():
+                                st.markdown(linea)
                     if e.get("foto"):
                         try:
                             import base64
@@ -6765,13 +6794,19 @@ if option == "APU":
                     mats = materiales_de_partida_apu(bloque)
                     medida, uni_med = medida_de_partida_apu(bloque)
                     nombre_partida = bloque.get("partida", "")
+                    rubro_bloque = bloque.get("rubro", "")
                     st.session_state["apu_mat_data"] = [
                         {"Descripción": mat, "Unidad": uni, "Cantidad": cant,
                          "Precio unitario": precio_referencial(mat)}
                         for (mat, cant, uni) in mats
                     ] or [{"Descripción": "", "Unidad": "", "Cantidad": 0.0, "Precio unitario": 0}]
-                    # Mano de obra referencial automática (según la partida y su medida)
-                    mo_rate = mano_obra_referencial(nombre_partida)
+                    # Mano de obra referencial automática (según la partida y su medida).
+                    # El acero (enfierradura) se cobra por kg y comparte nombres con el
+                    # hormigón (Losa, Pilar...), así que se distingue por el rubro.
+                    if "acero" in rubro_bloque.lower():
+                        mo_rate = 300  # enfierradura ~$300/kg neto (referencial)
+                    else:
+                        mo_rate = mano_obra_referencial(nombre_partida)
                     if mo_rate > 0:
                         st.session_state["apu_mo_data"] = [
                             {"Descripción": f"Mano de obra ({nombre_partida})",
@@ -6846,7 +6881,8 @@ if option == "APU":
         st.subheader("3. Recargos")
         rc1, rc2, rc3 = st.columns(3)
         with rc1:
-            pct_leyes = st.number_input("Leyes sociales (% sobre M.O.)", min_value=0.0, value=0.0, step=1.0, key="apu_leyes")
+            pct_leyes = st.number_input("Leyes sociales (% sobre M.O.)", min_value=0.0, value=28.0, step=1.0, key="apu_leyes",
+                                        help="Costo del empleador (AFP no, pero sí SIS, cesantía, mutual, gratificación, vacaciones). En Chile ~25-30%.")
         with rc2:
             pct_herr = st.number_input("Herramientas (% sobre M.O.)", min_value=0.0, value=5.0, step=1.0, key="apu_herr")
         with rc3:
