@@ -10,6 +10,13 @@ import json
 from datetime import datetime, timezone, timedelta
 from supabase import create_client
 
+# Menú de navegación profesional (si no está instalado, se usa el radio normal)
+try:
+    from streamlit_option_menu import option_menu
+    _HAY_OPTION_MENU = True
+except Exception:
+    _HAY_OPTION_MENU = False
+
 # --- CONFIGURACIÓN VISUAL DE LA APP ---
 st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
@@ -1763,9 +1770,11 @@ with _lc2:
 if "nav_option" not in st.session_state:
     st.session_state["nav_option"] = "Cubicacion" if st.session_state.get("ir_a_cubicacion") else "Inicio"
 
-# Cambio de sección solicitado por un botón (se aplica ANTES de crear el radio)
+# Cambio de sección solicitado por un botón (se aplica ANTES de crear el menú)
 if st.session_state.get("_goto"):
     st.session_state["nav_option"] = st.session_state.pop("_goto")
+    # Forzar que la barra de pestañas se re-sincronice con la nueva sección
+    st.session_state["_nav_menu_v"] = st.session_state.get("_nav_menu_v", 0) + 1
 
 def _salir_cuenta():
     # Al tocar el menú, salir de la vista de cuenta
@@ -1791,13 +1800,49 @@ with nav_col:
     # Si la opción guardada ya no está disponible, volver a Inicio
     if st.session_state.get("nav_option") not in opciones_menu:
         st.session_state["nav_option"] = "Inicio"
-    option = st.radio(
-        "Ir a:",
-        opciones_menu,
-        horizontal=True,
-        key="nav_option",
-        on_change=_salir_cuenta,
-    )
+
+    try:
+        idx_actual = opciones_menu.index(st.session_state["nav_option"])
+    except (ValueError, KeyError):
+        idx_actual = 0
+
+    if _HAY_OPTION_MENU:
+        # Barra de navegación profesional con íconos
+        ICONOS_MENU = {
+            "Inicio": "house-door", "Crear Proyecto": "folder-plus",
+            "Cubicacion": "rulers", "Presupuesto": "cash-coin",
+            "Bitácora": "journal-text", "APU": "clipboard-data", "Planes": "gem",
+        }
+        iconos = [ICONOS_MENU.get(o, "circle") for o in opciones_menu]
+        nav_key = f"nav_menu_{st.session_state.get('_nav_menu_v', 0)}"
+        seleccion = option_menu(
+            menu_title=None,
+            options=opciones_menu,
+            icons=iconos,
+            orientation="horizontal",
+            default_index=idx_actual,
+            key=nav_key,
+            styles={
+                "container": {"padding": "0!important", "background-color": "transparent"},
+                "icon": {"color": "#FAFAFA", "font-size": "13px"},
+                "nav-link": {
+                    "font-size": "14px", "color": "#FAFAFA",
+                    "background-color": "#2A2A2A", "border-radius": "8px",
+                    "padding": "8px 12px", "margin": "3px", "--hover-color": "#3A3A3A",
+                },
+                "nav-link-selected": {"background-color": "#FF6B00", "color": "white"},
+            },
+        )
+        if seleccion != st.session_state.get("nav_option"):
+            st.session_state["nav_option"] = seleccion
+            st.session_state["vista_cuenta"] = False
+        option = seleccion
+    else:
+        # Fallback: radio de siempre si la librería no está instalada
+        option = st.radio(
+            "Ir a:", opciones_menu, horizontal=True,
+            key="nav_option", on_change=_salir_cuenta,
+        )
 with cuenta_col:
     st.write("")
     label_cuenta = "👤 Mi cuenta" if st.session_state.get("usuario") else "👤 Iniciar sesión"
