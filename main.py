@@ -21,7 +21,7 @@ except Exception:
 st.set_page_config(
     page_title="ObraCubic - Grandes Cosas Comienzan Aquí",
     page_icon="https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%202.png",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="auto"
 )
 
 st.markdown("""
@@ -1761,27 +1761,23 @@ if "secciones_emp" not in st.session_state:
 # ============================
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%201.png"
 
-# Logo centrado en el área principal (se ve en teléfono y computador)
-_lc1, _lc2, _lc3 = st.columns([2, 1, 2])
-with _lc2:
-    st.image(URL_DEL_LOGO, use_container_width=True)
-
-# Selector de navegación SIEMPRE visible (no en el sidebar)
+# Logo + navegación en la BARRA LATERAL (se muestra/oculta con la flecha ☰)
 if "nav_option" not in st.session_state:
     st.session_state["nav_option"] = "Cubicacion" if st.session_state.get("ir_a_cubicacion") else "Inicio"
 
 # Cambio de sección solicitado por un botón (se aplica ANTES de crear el menú)
 if st.session_state.get("_goto"):
     st.session_state["nav_option"] = st.session_state.pop("_goto")
-    # Forzar que la barra de pestañas se re-sincronice con la nueva sección
     st.session_state["_nav_menu_v"] = st.session_state.get("_nav_menu_v", 0) + 1
 
 def _salir_cuenta():
     # Al tocar el menú, salir de la vista de cuenta
     st.session_state["vista_cuenta"] = False
 
-nav_col, cuenta_col = st.columns([3, 1])
-with nav_col:
+with st.sidebar:
+    st.image(URL_DEL_LOGO, use_container_width=True)
+    st.write("")
+
     if st.session_state.get("usuario"):
         # Con cuenta: menú completo, pero Presupuesto solo para planes Pro
         if puede_presupuesto():
@@ -1797,17 +1793,17 @@ with nav_col:
     else:
         # Usuario sin cuenta: acceso limitado
         opciones_menu = ["Inicio", "Cubicacion", "Planes"]
+
     # Si la opción guardada ya no está disponible, volver a Inicio
     if st.session_state.get("nav_option") not in opciones_menu:
         st.session_state["nav_option"] = "Inicio"
-
     try:
         idx_actual = opciones_menu.index(st.session_state["nav_option"])
     except (ValueError, KeyError):
         idx_actual = 0
 
     if _HAY_OPTION_MENU:
-        # Barra de navegación profesional con íconos
+        # Menú lateral profesional con íconos (vertical)
         ICONOS_MENU = {
             "Inicio": "house-door", "Crear Proyecto": "folder-plus",
             "Cubicacion": "rulers", "Presupuesto": "cash-coin",
@@ -1819,16 +1815,16 @@ with nav_col:
             menu_title=None,
             options=opciones_menu,
             icons=iconos,
-            orientation="horizontal",
+            orientation="vertical",
             default_index=idx_actual,
             key=nav_key,
             styles={
                 "container": {"padding": "0!important", "background-color": "transparent"},
-                "icon": {"color": "#FAFAFA", "font-size": "13px"},
+                "icon": {"color": "#FAFAFA", "font-size": "16px"},
                 "nav-link": {
-                    "font-size": "14px", "color": "#FAFAFA",
-                    "background-color": "#2A2A2A", "border-radius": "8px",
-                    "padding": "8px 12px", "margin": "3px", "--hover-color": "#3A3A3A",
+                    "font-size": "15px", "color": "#FAFAFA", "text-align": "left",
+                    "background-color": "transparent", "border-radius": "8px",
+                    "padding": "10px 14px", "margin": "2px 0", "--hover-color": "#2A2A2A",
                 },
                 "nav-link-selected": {"background-color": "#FF6B00", "color": "white"},
             },
@@ -1839,12 +1835,10 @@ with nav_col:
         option = seleccion
     else:
         # Fallback: radio de siempre si la librería no está instalada
-        option = st.radio(
-            "Ir a:", opciones_menu, horizontal=True,
-            key="nav_option", on_change=_salir_cuenta,
-        )
-with cuenta_col:
+        option = st.radio("Ir a:", opciones_menu, key="nav_option", on_change=_salir_cuenta)
+
     st.write("")
+    st.markdown("---")
     label_cuenta = "👤 Mi cuenta" if st.session_state.get("usuario") else "👤 Iniciar sesión"
     if st.button(label_cuenta, type="primary", use_container_width=True, key="btn_cuenta"):
         st.session_state["vista_cuenta"] = True
@@ -1852,8 +1846,6 @@ with cuenta_col:
 
 if option == "Cubicacion":
     st.session_state["ir_a_cubicacion"] = False
-
-st.write("---")
 
 # ============================
 # VISTA CUENTA: INICIAR SESIÓN / REGISTRO  (REAL con Supabase)
