@@ -20,6 +20,41 @@ st.set_page_config(
 st.markdown("""
     <style>
     [data-testid="stToolbar"] {visibility: hidden !important;}
+
+    /* ===== Menú de navegación y toggles tipo "pills" (ObraCubic) ===== */
+    div[role="radiogroup"] {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    /* Cada opción como pill */
+    div[role="radiogroup"] > label {
+        background: #2A2A2A;
+        border: 1px solid #3A3A3A;
+        border-radius: 999px;
+        padding: 6px 16px;
+        margin: 0 !important;
+        cursor: pointer;
+        transition: background .15s ease, border-color .15s ease;
+    }
+    div[role="radiogroup"] > label:hover {
+        border-color: #FF6B00;
+    }
+    /* Ocultar el círculo del radio para que se vea como pill */
+    div[role="radiogroup"] > label > div:first-child {
+        display: none !important;
+    }
+    /* Opción seleccionada: naranja ObraCubic */
+    div[role="radiogroup"] > label:has(input:checked) {
+        background: #FF6B00 !important;
+        border-color: #FF6B00 !important;
+    }
+    div[role="radiogroup"] > label:has(input:checked) p {
+        color: #FFFFFF !important;
+        font-weight: 600;
+    }
+    div[role="radiogroup"] label p {
+        font-size: 0.95rem;
+    }
     </style>
 """, unsafe_allow_html=True)
 
