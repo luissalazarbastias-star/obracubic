@@ -28,6 +28,29 @@ st.markdown("""
     <style>
     [data-testid="stToolbar"] {visibility: hidden !important;}
 
+    /* ===== Botón para REABRIR la barra lateral: siempre visible y destacado ===== */
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"] {
+        visibility: visible !important;
+        opacity: 1 !important;
+        display: flex !important;
+        z-index: 999999 !important;
+        top: 0.6rem !important;
+        left: 0.6rem !important;
+    }
+    [data-testid="stSidebarCollapsedControl"] button,
+    [data-testid="collapsedControl"] button {
+        background-color: #FF6B00 !important;
+        color: #FFFFFF !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,.45) !important;
+    }
+    [data-testid="stSidebarCollapsedControl"] svg,
+    [data-testid="collapsedControl"] svg {
+        color: #FFFFFF !important;
+        fill: #FFFFFF !important;
+    }
+
     /* ===== Menú de navegación y toggles tipo "pills" (ObraCubic) ===== */
     div[role="radiogroup"] {
         flex-wrap: wrap;
