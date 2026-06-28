@@ -4,3 +4,4 @@ reportlab
 supabase
 openpyxl
 Pillow
+streamlit-option-menu
