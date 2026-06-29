@@ -200,12 +200,13 @@ def guardar_precios_usuario(usuario_id, precios):
 
 
 def cargar_datos_profesional(usuario_id):
-    """Carga empresa, rut y teléfono del usuario desde Supabase a la sesión."""
+    """Carga empresa, rut, teléfono y logo del usuario desde Supabase a la sesión."""
     try:
-        perfil = supabase.table("perfiles").select("empresa, rut, telefono").eq("id", usuario_id).single().execute()
+        perfil = supabase.table("perfiles").select("empresa, rut, telefono, logo_base64").eq("id", usuario_id).single().execute()
         st.session_state["usuario_empresa"] = perfil.data.get("empresa")
         st.session_state["usuario_rut"] = perfil.data.get("rut")
         st.session_state["usuario_telefono"] = perfil.data.get("telefono")
+        st.session_state["usuario_logo_url"] = perfil.data.get("logo_base64")
     except Exception:
         pass
 
@@ -217,6 +218,14 @@ def guardar_datos_profesional(usuario_id, empresa, rut, telefono):
         "rut": rut or None,
         "telefono": telefono or None,
     }).eq("id", usuario_id).execute()
+
+
+def guardar_logo_usuario(usuario_id, logo_b64):
+    """Guarda (o quita, si logo_b64 es None) el logo del usuario en Supabase."""
+    supabase.table("perfiles").update({
+        "logo_base64": logo_b64 or None,
+    }).eq("id", usuario_id).execute()
+    st.session_state["usuario_logo_url"] = logo_b64 or None
 
 
 def refrescar_plan_usuario():
@@ -981,37 +990,55 @@ LOGO_OBRACUBIC_URL = "https://raw.githubusercontent.com/luissalazarbastias-star/
 
 def _obtener_logo_pdf(datos_usuario, estilo_fallback, ancho=2*cm, alto=2*cm):
     """Devuelve un flowable de logo para el PDF.
-    - Si el usuario es Pro y tiene logo personalizado, usa ese.
+    - Si el usuario es Pro y tiene logo personalizado (base64 o URL), usa ese.
     - Si no, usa el logo de ObraCubic.
+    - Mantiene la proporción del logo dentro de la caja (ancho x alto).
     - Si algo falla (red, formato), devuelve un espacio vacío sin romper el PDF.
     """
     import urllib.request
+    import base64 as _b64
     from reportlab.platypus import Image as RLImage
+    from reportlab.lib.utils import ImageReader
 
-    # Determinar qué URL de logo usar
-    logo_url = LOGO_OBRACUBIC_URL
+    def _img_proporcional(data_bytes):
+        """Crea un RLImage escalado para caber en (ancho x alto) sin deformarse."""
+        bio = io.BytesIO(data_bytes)
+        ir = ImageReader(bio)
+        iw, ih = ir.getSize()
+        if not iw or not ih:
+            raise ValueError("imagen sin dimensiones")
+        escala = min(ancho / iw, alto / ih)
+        bio.seek(0)
+        return RLImage(bio, width=iw * escala, height=ih * escala)
+
+    # 1) Logo personalizado del usuario (solo Pro), puede ser base64 o URL
+    logo_bytes = None
     try:
-        usa_logo_personalizado = (
-            datos_usuario
-            and datos_usuario.get("logo_url")
-            and "puede_pdf_con_logo" in globals()
-            and puede_pdf_con_logo()
-        )
-        if usa_logo_personalizado:
-            logo_url = datos_usuario["logo_url"]
+        if (datos_usuario and datos_usuario.get("logo_url")
+                and "puede_pdf_con_logo" in globals() and puede_pdf_con_logo()):
+            val = datos_usuario["logo_url"]
+            if isinstance(val, str) and val.startswith("http"):
+                req = urllib.request.Request(val, headers={"User-Agent": "Mozilla/5.0"})
+                logo_bytes = urllib.request.urlopen(req, timeout=8).read()
+            elif val:
+                b64 = val.split(",", 1)[1] if val.startswith("data:") else val
+                logo_bytes = _b64.b64decode(b64)
     except Exception:
-        logo_url = LOGO_OBRACUBIC_URL
+        logo_bytes = None
 
-    # Intentar descargar el logo elegido; si falla, intentar el de ObraCubic; si todo falla, vacío
-    for url_intento in (logo_url, LOGO_OBRACUBIC_URL):
+    if logo_bytes:
         try:
-            req = urllib.request.Request(url_intento, headers={"User-Agent": "Mozilla/5.0"})
-            logo_data = urllib.request.urlopen(req, timeout=8).read()
-            return RLImage(io.BytesIO(logo_data), width=ancho, height=alto)
+            return _img_proporcional(logo_bytes)
         except Exception:
-            continue
-    # Si ni el personalizado ni el de ObraCubic cargaron, espacio vacío (no rompe el PDF)
-    return Paragraph("", estilo_fallback)
+            pass
+
+    # 2) Fallback: logo de ObraCubic (URL)
+    try:
+        req = urllib.request.Request(LOGO_OBRACUBIC_URL, headers={"User-Agent": "Mozilla/5.0"})
+        logo_data = urllib.request.urlopen(req, timeout=8).read()
+        return _img_proporcional(logo_data)
+    except Exception:
+        return Paragraph("", estilo_fallback)
 
 
 def _filas_datos_profesional(datos_usuario):
@@ -2083,6 +2110,53 @@ if st.session_state.get("vista_cuenta"):
                 except Exception:
                     st.error("No se pudieron guardar los datos. Intenta de nuevo.")
 
+            # --- Logo de la empresa para el PDF ---
+            st.markdown("##### 🖼️ Logo de tu empresa")
+            st.caption("Aparecerá en el encabezado de tus PDF. Ideal: PNG con fondo transparente. "
+                       "Si no subes uno, se usa el logo de ObraCubic.")
+
+            logo_actual = st.session_state.get("usuario_logo_url")
+            if logo_actual:
+                try:
+                    import base64 as _b64v
+                    _raw = logo_actual.split(",", 1)[1] if str(logo_actual).startswith("data:") else logo_actual
+                    st.image(_b64v.b64decode(_raw), width=140, caption="Logo actual")
+                except Exception:
+                    st.caption("(No se pudo mostrar el logo guardado)")
+
+            logo_file = st.file_uploader(
+                "Subir logo (PNG o JPG)", type=["png", "jpg", "jpeg"], key="up_logo_empresa"
+            )
+            lcol1, lcol2 = st.columns(2)
+            with lcol1:
+                if st.button("💾 Guardar logo", type="primary", use_container_width=True,
+                             key="btn_guardar_logo", disabled=(logo_file is None)):
+                    try:
+                        from PIL import Image as _PILImage
+                        import base64 as _b64s
+                        img = _PILImage.open(logo_file)
+                        if img.mode not in ("RGB", "RGBA"):
+                            img = img.convert("RGBA")
+                        # Reducir a máx. 300px de lado (suficiente y liviano para el PDF)
+                        img.thumbnail((300, 300))
+                        buf = io.BytesIO()
+                        img.save(buf, format="PNG")
+                        logo_b64 = _b64s.b64encode(buf.getvalue()).decode("utf-8")
+                        guardar_logo_usuario(usuario["id"], logo_b64)
+                        st.success("¡Logo guardado! Aparecerá en tus próximos PDF.")
+                        st.rerun()
+                    except Exception:
+                        st.error("No se pudo guardar el logo. Prueba con otra imagen (PNG o JPG).")
+            with lcol2:
+                if st.button("🗑️ Quitar logo", use_container_width=True,
+                             key="btn_quitar_logo", disabled=(not logo_actual)):
+                    try:
+                        guardar_logo_usuario(usuario["id"], None)
+                        st.success("Logo quitado. Tus PDF usarán el logo de ObraCubic.")
+                        st.rerun()
+                    except Exception:
+                        st.error("No se pudo quitar el logo. Intenta de nuevo.")
+
         # ---------------------------------------
         # PANEL: MI CUENTA Y CONFIGURACIÓN
         # (Mis precios + Cerrar sesión, agrupados y fuera de la vista de cubicación)
@@ -2167,7 +2241,7 @@ if st.session_state.get("vista_cuenta"):
                         st.session_state["usuario"] = {"id": res.user.id, "email": res.user.email}
                         # Cargar perfil (nombre, plan y vencimiento)
                         try:
-                            perfil = supabase.table("perfiles").select("nombre, plan, plan_vence, empresa, rut, telefono").eq("id", res.user.id).single().execute()
+                            perfil = supabase.table("perfiles").select("nombre, plan, plan_vence, empresa, rut, telefono, logo_base64").eq("id", res.user.id).single().execute()
                             st.session_state["usuario_nombre"] = perfil.data.get("nombre")
                             plan_bd = perfil.data.get("plan", "gratis")
                             vence = perfil.data.get("plan_vence")
@@ -2178,6 +2252,7 @@ if st.session_state.get("vista_cuenta"):
                             st.session_state["usuario_empresa"] = perfil.data.get("empresa")
                             st.session_state["usuario_rut"] = perfil.data.get("rut")
                             st.session_state["usuario_telefono"] = perfil.data.get("telefono")
+                            st.session_state["usuario_logo_url"] = perfil.data.get("logo_base64")
                         except Exception:
                             st.session_state["usuario_plan"] = "gratis"
                             st.session_state["usuario_plan_vence"] = None
