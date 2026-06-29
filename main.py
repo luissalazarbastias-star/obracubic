@@ -1564,8 +1564,13 @@ def generar_pdf_apu(datos_apu, datos_usuario=None):
     return buf
 
 
-def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_usuario=None):
-    """Genera un PDF del presupuesto con desglose, IVA y total."""
+def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_usuario=None, detallado=False):
+    """Genera un PDF del presupuesto con desglose, IVA y total.
+
+    detallado=True  -> tabla por material (precio y subtotal de cada material).
+    detallado=False -> tabla por partida (solo el total de cada partida),
+                       para que el Plan Pro Básico no muestre el desglose tipo APU.
+    """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, pagesize=letter,
@@ -1629,28 +1634,44 @@ def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_usu
     ]))
     story.append(tabla_header)
 
-    # Tabla de materiales
-    story.append(Paragraph("Materiales", estilo_seccion))
-    filas = [["Material", "Cantidad", "Precio unit.", "Subtotal"]]
-    for it in datos_pres.get("items", []):
-        unidad = it.get("unidad", "")
-        unidad_pdf = unidad.replace("m³", "m3").replace("m²", "m2")
-        cant = it.get("cantidad", 0)
-        cant_str = f"{cant:.2f} {unidad_pdf}" if unidad in ("m³", "kg") else f"{cant:.0f} {unidad_pdf}"
-        filas.append([
-            it.get("material", ""),
-            cant_str,
-            _clp(it.get("precio", 0)),
-            _clp(it.get("subtotal", 0)),
-        ])
-    tabla_mat = Table(filas, colWidths=[7*cm, 4*cm, 3*cm, 3*cm])
+    # Tabla de materiales (Pro Élite) o resumen por partida (Pro Básico)
+    if detallado:
+        story.append(Paragraph("Materiales", estilo_seccion))
+        filas = [["Material", "Cantidad", "Precio unit.", "Subtotal"]]
+        for it in datos_pres.get("items", []):
+            unidad = it.get("unidad", "")
+            unidad_pdf = unidad.replace("m³", "m3").replace("m²", "m2")
+            cant = it.get("cantidad", 0)
+            cant_str = f"{cant:.2f} {unidad_pdf}" if unidad in ("m³", "kg") else f"{cant:.0f} {unidad_pdf}"
+            filas.append([
+                it.get("material", ""),
+                cant_str,
+                _clp(it.get("precio", 0)),
+                _clp(it.get("subtotal", 0)),
+            ])
+        tabla_mat = Table(filas, colWidths=[7*cm, 4*cm, 3*cm, 3*cm])
+    else:
+        story.append(Paragraph("Presupuesto por partida", estilo_seccion))
+        # Agrupar los materiales por (rubro, partida) y sumar solo el total
+        grupos = []          # [[rubro, partida, total], ...] preservando el orden
+        indice = {}
+        for it in datos_pres.get("items", []):
+            clave = (it.get("rubro", ""), it.get("partida", ""))
+            if clave not in indice:
+                indice[clave] = len(grupos)
+                grupos.append([it.get("rubro", ""), it.get("partida", ""), 0])
+            grupos[indice[clave]][2] += it.get("subtotal", 0)
+        filas = [["Rubro", "Partida", "Subtotal"]]
+        for rubro, partida, total in grupos:
+            filas.append([rubro, partida, _clp(total)])
+        tabla_mat = Table(filas, colWidths=[5*cm, 8*cm, 4*cm])
     tabla_mat.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), NARANJA),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
-        ("ALIGN", (0, 0), (0, -1), "LEFT"),
+        ("ALIGN", (-1, 0), (-1, -1), "RIGHT"),
+        ("ALIGN", (0, 0), (-2, -1), "LEFT"),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FFF3E9")]),
         ("TOPPADDING", (0, 0), (-1, -1), 5),
@@ -6709,6 +6730,11 @@ if option == "Presupuesto":
     # --- Exportar presupuesto a PDF ---
     st.write("---")
     st.subheader("📄 Exportar presupuesto")
+    if not puede_apu():
+        st.caption(
+            "📄 Tu PDF muestra el total por partida. El desglose por material y mano de obra "
+            "(APU automático) está disponible en el Plan Pro Élite."
+        )
     pcol1, pcol2 = st.columns(2)
     with pcol1:
         nombre_pres = st.text_input(
@@ -6725,7 +6751,7 @@ if option == "Presupuesto":
             try:
                 pdf_buffer = generar_pdf_presupuesto(
                     nombre_pres, st.session_state["presupuesto_actual"], cliente_pres or None,
-                    datos_usuario=datos_usuario_pdf()
+                    datos_usuario=datos_usuario_pdf(), detallado=puede_apu()
                 )
                 nombre_archivo = f"Presupuesto_{nombre_pres or 'obracubic'}.pdf".replace(" ", "_")
                 st.download_button(
