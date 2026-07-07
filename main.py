@@ -6119,20 +6119,37 @@ if option == "Cubicacion":
                         zocalo_tipo = st.selectbox("Tipo de zócalo", list(ZOCALOS.keys()), key="zocalo_tipo")
                         zoc = ZOCALOS[zocalo_tipo]
 
+                        st.markdown("**Muros / lados** (agrega uno por cada lado del recinto)")
+                        muros_zoc = secciones_input(
+                            "guardapolvo_muros", [("largo", "Largo (m)")], etiqueta="muro"
+                        )
+                        perimetro_zoc = sum(float(m.get("largo", 0) or 0) for m in muros_zoc)
+                        st.caption(f"📏 Suma de todos los muros: {perimetro_zoc:.2f} m")
+
                         zo1, zo2 = st.columns(2)
                         with zo1:
-                            largo_zoc = st.number_input("Metros lineales totales (m)", value=0.0, key="largo_zoc")
-                        with zo2:
                             cant_vanos_zoc = st.number_input("Cantidad de vanos/puertas", value=0, step=1, key="cant_vanos_zoc")
+                        with zo2:
+                            ancho_vano_zoc = st.number_input("Ancho vano promedio (m)", value=0.90, key="ancho_vano_zoc")
 
-                        ancho_vano_zoc = st.number_input("Ancho vano promedio (m)", value=0.90, key="ancho_vano_zoc")
+                        ubic_zoc = st.radio(
+                            "¿Dónde se instala?",
+                            ["Solo abajo (guardapolvo)", "Arriba y abajo"],
+                            key="ubic_zoc", horizontal=True,
+                        )
+
                         largo_pieza_zoc = st.selectbox("Largo por pieza", ["2,40m", "3,00m", "3,20m"], key="largo_pieza_zoc")
                         largo_val_zoc = {"2,40m": 2.40, "3,00m": 3.00, "3,20m": 3.20}[largo_pieza_zoc]
                         desp_zoc = st.slider("% Desperdicio", 0, 20, 10, key="desp_zoc")
 
-                        # Descuento vanos
+                        # Descuento de vanos: aplica al tramo de ABAJO (las puertas lo interrumpen)
                         ml_vanos_zoc = cant_vanos_zoc * ancho_vano_zoc
-                        ml_neto_zoc = largo_zoc - ml_vanos_zoc
+                        ml_abajo_zoc = max(perimetro_zoc - ml_vanos_zoc, 0)
+                        if ubic_zoc == "Arriba y abajo":
+                            # Arriba las molduras corren sobre las puertas: se usa el perímetro completo
+                            ml_neto_zoc = ml_abajo_zoc + perimetro_zoc
+                        else:
+                            ml_neto_zoc = ml_abajo_zoc
 
                         # Piezas
                         cant_piezas_zoc = ml_neto_zoc / largo_val_zoc
@@ -6153,6 +6170,8 @@ if option == "Cubicacion":
                             medida_fijacion = "Clip cada 50cm"
 
                         st.write("---")
+                        if ubic_zoc == "Arriba y abajo":
+                            st.caption(f"Abajo: {ml_abajo_zoc:.2f} m (con descuento de vanos)  ·  Arriba: {perimetro_zoc:.2f} m")
                         st.info(f"Metros lineales netos: {ml_neto_zoc:.2f} ml")
                         st.info(f"Piezas exactas: {cant_piezas_zoc:.1f} unidades")
                         st.success(f"Con {desp_zoc}% desperdicio: {cant_piezas_desp_zoc:.0f} piezas de {largo_val_zoc}m")
@@ -6166,6 +6185,7 @@ if option == "Cubicacion":
                         if ml_neto_zoc > 0:
                             registrar_pdf("Terminaciones", "Zócalos y Guardapolvos", [
                                 ("Tipo", zocalo_tipo),
+                                ("Instalación", ubic_zoc),
                                 ("Metros lineales netos", f"{ml_neto_zoc:.2f} ml"),
                                 ("Piezas (c/desp.)", f"{cant_piezas_desp_zoc:.0f} de {largo_val_zoc}m"),
                                 ("Fijaciones", f"{cant_fijaciones_zoc} unidades"),
