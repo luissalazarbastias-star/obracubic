@@ -1809,6 +1809,58 @@ if "secciones_emp" not in st.session_state:
 # ============================
 URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracubic/refs/heads/main/Foto%201.png"
 
+# ============================================================
+# PANTALLA DE LANZAMIENTO (bloqueo automático hasta el 28 de julio de 2026)
+# Para entrar antes a probar: agrega  ?preview=salazar2026  al final del link
+# ============================================================
+_TZ_CHILE = timezone(timedelta(hours=-4))  # Chile continental en julio (UTC-4)
+_FECHA_LANZAMIENTO = datetime(2026, 7, 28, tzinfo=_TZ_CHILE)
+_CODIGO_PREVIEW = "salazar2026"
+
+def mostrar_lanzamiento(dias_restantes):
+    _a, _b, _c = st.columns([1, 2, 1])
+    with _b:
+        st.image(URL_DEL_LOGO, use_container_width=True)
+    cuenta = (f"Faltan <b>{dias_restantes} día(s)</b>" if dias_restantes > 0
+              else "¡Hoy es el gran día!")
+    st.markdown(
+        "<div style='text-align:center;'>"
+        "<h1 style='color:#FF6B00;margin-bottom:4px;'>🚀 Muy pronto</h1>"
+        "<h2 style='margin-top:0;'>Lanzamiento: 28 de julio de 2026</h2>"
+        f"<p style='font-size:22px;'>{cuenta}</p>"
+        "<p style='color:#888;font-size:16px;'>ObraCubic — cubicación de materiales y "
+        "presupuestos profesionales para la construcción, en minutos.</p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    st.write("---")
+    st.markdown("#### Lo que podrás hacer:")
+    st.markdown(
+        "- 📐 **Cubicar** las principales partidas de tu obra automáticamente\n"
+        "- 💰 **Presupuestos en PDF** con tu logo y datos, listos para el cliente\n"
+        "- 📊 **APU automático** — análisis de precios unitarios (materiales + mano de obra)\n"
+        "- 📓 **Libro de Obra** — bitácora diaria de faena con fotos\n"
+        "- 📱 Desde el **celular o el computador**, sin instalar nada"
+    )
+    st.write("---")
+    st.markdown(
+        "<div style='text-align:center;color:#888;'>¿Preguntas? Escríbenos por WhatsApp: "
+        "<a href='https://wa.me/56932973037' style='color:#25D366;font-weight:600;'>"
+        "+56 9 3297 3037</a></div>",
+        unsafe_allow_html=True,
+    )
+
+# Aplicar el bloqueo (salvo que se entre con el código de vista previa)
+try:
+    _preview_code = st.query_params.get("preview")
+except Exception:
+    _preview_code = None
+_ahora_chile = datetime.now(timezone.utc).astimezone(_TZ_CHILE)
+if _preview_code != _CODIGO_PREVIEW and _ahora_chile.date() < _FECHA_LANZAMIENTO.date():
+    _dias_faltan = (_FECHA_LANZAMIENTO.date() - _ahora_chile.date()).days
+    mostrar_lanzamiento(_dias_faltan)
+    st.stop()
+
 # Logo centrado en el área principal (se ve en teléfono y computador)
 _lc1, _lc2, _lc3 = st.columns([2, 1, 2])
 with _lc2:
