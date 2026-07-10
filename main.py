@@ -1811,11 +1811,11 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 
 # ============================================================
 # PANTALLA DE LANZAMIENTO (bloqueo automático hasta el 28 de julio de 2026)
-# Para entrar antes a probar: agrega  ?preview=salazar2026  al final del link
+# Para entrar antes a probar: agrega  ?preview=obracubic2026  al final del link
 # ============================================================
 _TZ_CHILE = timezone(timedelta(hours=-4))  # Chile continental en julio (UTC-4)
 _FECHA_LANZAMIENTO = datetime(2026, 7, 28, tzinfo=_TZ_CHILE)
-_CODIGO_PREVIEW = "salazar2026"
+_CODIGO_PREVIEW = "obracubic2026"
 _CODIGO_DEMO = "verobra"  # link de demostración para prospectos: ?demo=verobra
 
 def mostrar_lanzamiento(dias_restantes=0):
