@@ -704,6 +704,15 @@ footer{
 .wa-float:hover{transform:scale(1.08);box-shadow:0 8px 30px rgba(37,211,102,0.55);}
 .wa-float svg{width:32px;height:32px;}
 @media(max-width:480px){.wa-float{right:16px;bottom:16px;width:52px;height:52px;}.wa-float svg{width:28px;height:28px;}}
+.countdown{margin-top:34px;background:rgba(232,86,10,0.06);border:1px solid var(--border2);border-radius:14px;padding:16px 20px;display:inline-block;}
+.cd-label{color:var(--o2);font-weight:700;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.cd-timer{display:flex;align-items:flex-start;gap:8px;}
+.cd-unit{display:flex;flex-direction:column;align-items:center;min-width:52px;}
+.cd-unit span{font-size:34px;font-weight:800;color:var(--cream);font-variant-numeric:tabular-nums;line-height:1;}
+.cd-unit small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:5px;}
+.cd-sep{font-size:26px;color:var(--o);font-weight:700;line-height:1;}
+.cd-date{margin-top:12px;color:var(--muted);font-size:13px;}
+.cd-live a{margin-top:6px;display:inline-block;}
 </style>
 </head>
 <body>
@@ -759,6 +768,20 @@ footer{
       <div class="trust-item"><div class="trust-dot"></div>G-5 a G-30 según norma</div>
       <div class="trust-item"><div class="trust-dot"></div>Presupuesto con IVA</div>
       <div class="trust-item"><div class="trust-dot"></div>PDF profesional</div>
+    </div>
+
+    <div class="countdown" id="countdown">
+      <div class="cd-label">🚀 Lanzamiento en</div>
+      <div class="cd-timer">
+        <div class="cd-unit"><span id="cd-days">00</span><small>días</small></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span id="cd-hours">00</span><small>hrs</small></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span id="cd-mins">00</span><small>min</small></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span id="cd-secs">00</span><small>seg</small></div>
+      </div>
+      <div class="cd-date">28 de julio de 2026</div>
     </div>
   </div>
 
@@ -1191,5 +1214,38 @@ footer{
   <svg viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C7.16 0 0 7.16 0 16c0 2.82.74 5.57 2.15 8L0 32l8.2-2.15A15.9 15.9 0 0016 32c8.84 0 16-7.16 16-16S24.84 0 16 0zm0 29.3c-2.5 0-4.95-.67-7.1-1.94l-.51-.3-4.87 1.28 1.3-4.74-.33-.53A13.26 13.26 0 012.7 16C2.7 8.66 8.66 2.7 16 2.7S29.3 8.66 29.3 16 23.34 29.3 16 29.3zm7.3-9.95c-.4-.2-2.37-1.17-2.74-1.3-.37-.13-.63-.2-.9.2-.27.4-1.03 1.3-1.27 1.57-.23.27-.47.3-.87.1-.4-.2-1.69-.62-3.22-1.99-1.19-1.06-1.99-2.37-2.23-2.77-.23-.4-.02-.62.18-.82.18-.18.4-.47.6-.7.2-.23.27-.4.4-.67.13-.27.07-.5-.03-.7-.1-.2-.9-2.17-1.23-2.97-.32-.78-.65-.67-.9-.68l-.77-.01c-.27 0-.7.1-1.07.5-.37.4-1.4 1.37-1.4 3.34s1.43 3.87 1.63 4.14c.2.27 2.82 4.3 6.83 6.03.95.41 1.7.66 2.28.84.96.3 1.83.26 2.52.16.77-.11 2.37-.97 2.7-1.9.33-.94.33-1.74.23-1.9-.1-.17-.37-.27-.77-.47z"/></svg>
 </a>
 
+<script>
+(function(){
+  var target = new Date('2026-07-28T00:00:00-04:00').getTime();
+  // Antes del lanzamiento: los botones que llevan a la app muestran la fecha
+  if(Date.now() < target){
+    document.querySelectorAll('a[href*="obracubic.streamlit.app"]').forEach(function(a){
+      if(/iniciar/i.test(a.textContent)) return; // "Iniciar sesión" se mantiene
+      a.textContent = 'Disponible el 28 de julio';
+    });
+  }
+  var banner = document.getElementById('countdown');
+  if(!banner) return;
+  var ed=document.getElementById('cd-days'), eh=document.getElementById('cd-hours'),
+      em=document.getElementById('cd-mins'), es=document.getElementById('cd-secs');
+  function pad(n){ return String(n).padStart(2,'0'); }
+  var timer = setInterval(tick, 1000);
+  function tick(){
+    var diff = target - Date.now();
+    if(diff <= 0){
+      banner.innerHTML = '<div class="cd-label">🚀 ¡Ya está disponible!</div>'
+        + '<div class="cd-live"><a href="https://obracubic.streamlit.app" class="btn-hero" style="text-decoration:none;">Ir a ObraCubic →</a></div>';
+      clearInterval(timer);
+      return;
+    }
+    var d=Math.floor(diff/86400000); diff-=d*86400000;
+    var h=Math.floor(diff/3600000); diff-=h*3600000;
+    var m=Math.floor(diff/60000); diff-=m*60000;
+    var s=Math.floor(diff/1000);
+    ed.textContent=pad(d); eh.textContent=pad(h); em.textContent=pad(m); es.textContent=pad(s);
+  }
+  tick();
+})();
+</script>
 </body>
 </html>
