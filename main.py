@@ -1817,17 +1817,51 @@ _TZ_CHILE = timezone(timedelta(hours=-4))  # Chile continental en julio (UTC-4)
 _FECHA_LANZAMIENTO = datetime(2026, 7, 28, tzinfo=_TZ_CHILE)
 _CODIGO_PREVIEW = "salazar2026"
 
-def mostrar_lanzamiento(dias_restantes):
+def mostrar_lanzamiento(dias_restantes=0):
+    from streamlit.components.v1 import html as _html_comp
     _a, _b, _c = st.columns([1, 2, 1])
     with _b:
         st.image(URL_DEL_LOGO, use_container_width=True)
-    cuenta = (f"Faltan <b>{dias_restantes} día(s)</b>" if dias_restantes > 0
-              else "¡Hoy es el gran día!")
     st.markdown(
         "<div style='text-align:center;'>"
         "<h1 style='color:#FF6B00;margin-bottom:4px;'>🚀 Muy pronto</h1>"
         "<h2 style='margin-top:0;'>Lanzamiento: 28 de julio de 2026</h2>"
-        f"<p style='font-size:22px;'>{cuenta}</p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    # Temporizador en vivo (corre en el navegador y se actualiza cada segundo)
+    _unit = ("<div style='min-width:58px;'><div id='{id}' style='font-size:42px;"
+             "font-weight:800;color:#FAFAFA;font-variant-numeric:tabular-nums;"
+             "line-height:1;'>00</div><div style='font-size:11px;color:#888;"
+             "text-transform:uppercase;letter-spacing:1px;margin-top:5px;'>{lbl}</div></div>")
+    _sep = "<div style='font-size:34px;color:#FF6B00;font-weight:700;line-height:1;'>:</div>"
+    _timer_html = (
+        "<style>body{margin:0;background:transparent;"
+        "font-family:-apple-system,'Segoe UI',Roboto,sans-serif;}</style>"
+        "<div style='display:flex;justify-content:center;gap:10px;align-items:flex-start;'>"
+        + _unit.format(id="d", lbl="días") + _sep
+        + _unit.format(id="h", lbl="hrs") + _sep
+        + _unit.format(id="m", lbl="min") + _sep
+        + _unit.format(id="s", lbl="seg")
+        + "</div>"
+        "<script>"
+        "var target=new Date('2026-07-28T00:00:00-04:00').getTime();"
+        "function pad(n){return String(n).padStart(2,'0');}"
+        "function tick(){var diff=target-Date.now();if(diff<0)diff=0;"
+        "var d=Math.floor(diff/86400000);diff-=d*86400000;"
+        "var h=Math.floor(diff/3600000);diff-=h*3600000;"
+        "var m=Math.floor(diff/60000);diff-=m*60000;"
+        "var s=Math.floor(diff/1000);"
+        "document.getElementById('d').textContent=pad(d);"
+        "document.getElementById('h').textContent=pad(h);"
+        "document.getElementById('m').textContent=pad(m);"
+        "document.getElementById('s').textContent=pad(s);}"
+        "tick();setInterval(tick,1000);"
+        "</script>"
+    )
+    _html_comp(_timer_html, height=95)
+    st.markdown(
+        "<div style='text-align:center;'>"
         "<p style='color:#888;font-size:16px;'>ObraCubic — cubicación de materiales y "
         "presupuestos profesionales para la construcción, en minutos.</p>"
         "</div>",
