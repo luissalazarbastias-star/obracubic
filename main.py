@@ -3124,7 +3124,7 @@ if option == "Cubicacion":
                     if _k.startswith("Cierres Perimetrales y Faena||"):
                         _persist_c.pop(_k, None)
 
-    if ver_rubro(horm):
+    if ver_rubro(horm) and rubro_permitido("hormigon"):
             with st.expander("Hormigón y Movimiento de tierra", expanded=False):
                 if ver(horm, "excavacion"):
                     with st.expander("1. Excavación", expanded=False):
@@ -4492,7 +4492,7 @@ if option == "Cubicacion":
 # Muros
 # ============================   
 
-    if ver_rubro(muros):
+    if ver_rubro(muros) and rubro_permitido("muros"):
         with st.expander("Muros", expanded=False):
 # ============================
 # MURO DE HORMIGÓN
@@ -5082,7 +5082,7 @@ if option == "Cubicacion":
 # ============================
 # REVESTIMIENTOS
 # ============================
-    if ver_rubro(revest):
+    if ver_rubro(revest) and rubro_permitido("revestimientos"):
             with st.expander("Revestimientos", expanded=False):
 
                 YESO_CARTON = {
