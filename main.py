@@ -1816,6 +1816,7 @@ URL_DEL_LOGO = "https://raw.githubusercontent.com/luissalazarbastias-star/obracu
 _TZ_CHILE = timezone(timedelta(hours=-4))  # Chile continental en julio (UTC-4)
 _FECHA_LANZAMIENTO = datetime(2026, 7, 28, tzinfo=_TZ_CHILE)
 _CODIGO_PREVIEW = "salazar2026"
+_CODIGO_DEMO = "verobra"  # link de demostración para prospectos: ?demo=verobra
 
 def mostrar_lanzamiento(dias_restantes=0):
     from streamlit.components.v1 import html as _html_comp
@@ -1884,13 +1885,26 @@ def mostrar_lanzamiento(dias_restantes=0):
         unsafe_allow_html=True,
     )
 
-# Aplicar el bloqueo (salvo que se entre con el código de vista previa)
+# Aplicar el bloqueo (salvo código de vista previa o de demostración)
 try:
     _preview_code = st.query_params.get("preview")
+    _demo_code = st.query_params.get("demo")
 except Exception:
     _preview_code = None
+    _demo_code = None
+
+# Modo demo: vista previa acotada para prospectos (solo radier, sin cuenta)
+# Solo tiene efecto ANTES del lanzamiento; después todos tienen acceso completo.
 _ahora_chile = datetime.now(timezone.utc).astimezone(_TZ_CHILE)
-if _preview_code != _CODIGO_PREVIEW and _ahora_chile.date() < _FECHA_LANZAMIENTO.date():
+_antes_lanzamiento = _ahora_chile.date() < _FECHA_LANZAMIENTO.date()
+st.session_state["modo_demo"] = (
+    _demo_code == _CODIGO_DEMO
+    and _preview_code != _CODIGO_PREVIEW
+    and _antes_lanzamiento
+)
+
+_acceso_anticipado = (_preview_code == _CODIGO_PREVIEW) or st.session_state["modo_demo"]
+if not _acceso_anticipado and _antes_lanzamiento:
     _dias_faltan = (_FECHA_LANZAMIENTO.date() - _ahora_chile.date()).days
     mostrar_lanzamiento(_dias_faltan)
     st.stop()
@@ -1978,13 +1992,24 @@ with nav_col:
         )
 with cuenta_col:
     st.write("")
-    label_cuenta = "👤 Mi cuenta" if st.session_state.get("usuario") else "👤 Iniciar sesión"
-    if st.button(label_cuenta, type="primary", use_container_width=True, key="btn_cuenta"):
-        st.session_state["vista_cuenta"] = True
-        st.rerun()
+    if st.session_state.get("modo_demo"):
+        st.caption("🔒 Cuentas disponibles el 28 de julio")
+    else:
+        label_cuenta = "👤 Mi cuenta" if st.session_state.get("usuario") else "👤 Iniciar sesión"
+        if st.button(label_cuenta, type="primary", use_container_width=True, key="btn_cuenta"):
+            st.session_state["vista_cuenta"] = True
+            st.rerun()
 
 if option == "Cubicacion":
     st.session_state["ir_a_cubicacion"] = False
+
+if st.session_state.get("modo_demo"):
+    st.markdown(
+        "<div style='background:#2A2A2A;border:1px solid #FF6B00;border-radius:8px;"
+        "padding:8px 14px;text-align:center;color:#FF6B00;font-size:13px;margin:4px 0;'>"
+        "👀 Vista previa de ObraCubic — versión completa el 28 de julio</div>",
+        unsafe_allow_html=True,
+    )
 
 st.write("---")
 
@@ -1992,6 +2017,13 @@ st.write("---")
 # VISTA CUENTA: INICIAR SESIÓN / REGISTRO  (REAL con Supabase)
 # ============================
 if st.session_state.get("vista_cuenta"):
+    if st.session_state.get("modo_demo"):
+        st.info("🔒 La creación de cuentas estará disponible el **28 de julio**. "
+                "Por ahora estás viendo una vista previa de ObraCubic.")
+        if st.button("← Volver al demo", use_container_width=True, key="volver_demo"):
+            st.session_state["vista_cuenta"] = False
+            st.rerun()
+        st.stop()
     if supabase is None:
         st.error("No hay conexión con la base de datos. Intenta más tarde.")
         if st.button("← Volver a la app", use_container_width=True):
@@ -2794,12 +2826,17 @@ if option == "Cubicacion":
     sin_cuenta = not st.session_state.get("usuario")
 
     # Rubros/partidas permitidas sin cuenta: radier, tabiques (madera/metalcon), revestimiento
-    RUBROS_SIN_CUENTA = {"hormigon", "muros", "revestimientos"}
-    PARTIDAS_SIN_CUENTA = {
-        "hormigon": {"radier"},
-        "muros": {"tabique_metalcon", "tabique_madera"},
-        "revestimientos": None,  # None = todas las de ese rubro
-    }
+    if st.session_state.get("modo_demo"):
+        # Modo demo: solo Radier, como muestra
+        RUBROS_SIN_CUENTA = {"hormigon"}
+        PARTIDAS_SIN_CUENTA = {"hormigon": {"radier"}}
+    else:
+        RUBROS_SIN_CUENTA = {"hormigon", "muros", "revestimientos"}
+        PARTIDAS_SIN_CUENTA = {
+            "hormigon": {"radier"},
+            "muros": {"tabique_metalcon", "tabique_madera"},
+            "revestimientos": None,  # None = todas las de ese rubro
+        }
 
     def rubro_permitido(nombre_rubro):
         if not sin_cuenta:
@@ -2838,9 +2875,14 @@ if option == "Cubicacion":
     st.subheader("CUBICACIONES")
 
     if sin_cuenta:
-        st.info("👋 Estás usando ObraCubic **sin cuenta**. Puedes probar la cubicación de "
-                "**radier, tabiques (Metalcon y madera) y revestimientos**. "
-                "**Crea una cuenta gratis** para acceder a todas las partidas, guardar tus proyectos y más.")
+        if st.session_state.get("modo_demo"):
+            st.info("👀 **Vista previa de ObraCubic.** Puedes probar la cubicación de "
+                    "**Radier** como muestra. La versión completa —con las 9 partidas, "
+                    "presupuestos en PDF, APU y más— se lanza el **28 de julio**.")
+        else:
+            st.info("👋 Estás usando ObraCubic **sin cuenta**. Puedes probar la cubicación de "
+                    "**radier, tabiques (Metalcon y madera) y revestimientos**. "
+                    "**Crea una cuenta gratis** para acceder a todas las partidas, guardar tus proyectos y más.")
 
     # pdf_extra se reinicia para reflejar lo que se renderiza en este ciclo,
     # pero el acumulador persistente conserva todo lo cubicado entre secciones.
