@@ -124,17 +124,37 @@ def listar_proyectos(usuario_id):
     except Exception:
         return []
 
+def _aviso_sync():
+    """Aviso amable cuando falla la sincronización con Supabase (mala señal / offline)."""
+    st.warning("⚠️ Sin conexión estable. No se pudo sincronizar con la nube. "
+               "Revisa tu señal e intenta nuevamente en unos segundos.")
+
+
 def guardar_proyecto(usuario_id, nombre, datos):
-    supabase.table("proyectos").insert({
-        "usuario_id": usuario_id, "nombre": nombre, "datos": datos,
-    }).execute()
+    try:
+        supabase.table("proyectos").insert({
+            "usuario_id": usuario_id, "nombre": nombre, "datos": datos,
+        }).execute()
+        return True
+    except Exception:
+        _aviso_sync()
+        return False
 
 def cargar_proyecto(proyecto_id):
-    res = supabase.table("proyectos").select("datos").eq("id", proyecto_id).single().execute()
-    return res.data["datos"] if res.data else {}
+    try:
+        res = supabase.table("proyectos").select("datos").eq("id", proyecto_id).single().execute()
+        return res.data["datos"] if res.data else {}
+    except Exception:
+        _aviso_sync()
+        return {}
 
 def eliminar_proyecto(proyecto_id):
-    supabase.table("proyectos").delete().eq("id", proyecto_id).execute()
+    try:
+        supabase.table("proyectos").delete().eq("id", proyecto_id).execute()
+        return True
+    except Exception:
+        _aviso_sync()
+        return False
 
 
 def _limpiar_formulario_proyecto():
@@ -166,16 +186,26 @@ def listar_bitacora(usuario_id, proyecto):
 
 def guardar_bitacora(usuario_id, proyecto, nota, foto_base64=None):
     """Inserta una entrada de bitácora (nota y, opcionalmente, una foto en base64)."""
-    supabase.table("bitacora").insert({
-        "usuario_id": usuario_id,
-        "proyecto": proyecto,
-        "nota": nota,
-        "foto": foto_base64,
-    }).execute()
+    try:
+        supabase.table("bitacora").insert({
+            "usuario_id": usuario_id,
+            "proyecto": proyecto,
+            "nota": nota,
+            "foto": foto_base64,
+        }).execute()
+        return True
+    except Exception:
+        _aviso_sync()
+        return False
 
 
 def eliminar_bitacora(entrada_id):
-    supabase.table("bitacora").delete().eq("id", entrada_id).execute()
+    try:
+        supabase.table("bitacora").delete().eq("id", entrada_id).execute()
+        return True
+    except Exception:
+        _aviso_sync()
+        return False
 
 
 def cargar_precios_usuario(usuario_id):
@@ -190,13 +220,19 @@ def cargar_precios_usuario(usuario_id):
 def guardar_precios_usuario(usuario_id, precios):
     """Guarda/actualiza un dict {material: precio} para el usuario (upsert)."""
     if not precios:
-        return
+        return True
     filas = [
         {"usuario_id": usuario_id, "material": mat, "precio": int(p)}
         for mat, p in precios.items() if p and p > 0
     ]
-    if filas:
+    if not filas:
+        return True
+    try:
         supabase.table("precios_usuario").upsert(filas, on_conflict="usuario_id,material").execute()
+        return True
+    except Exception:
+        _aviso_sync()
+        return False
 
 
 def cargar_datos_profesional(usuario_id):
@@ -213,19 +249,29 @@ def cargar_datos_profesional(usuario_id):
 
 def guardar_datos_profesional(usuario_id, empresa, rut, telefono):
     """Guarda los datos profesionales del usuario en Supabase."""
-    supabase.table("perfiles").update({
-        "empresa": empresa or None,
-        "rut": rut or None,
-        "telefono": telefono or None,
-    }).eq("id", usuario_id).execute()
+    try:
+        supabase.table("perfiles").update({
+            "empresa": empresa or None,
+            "rut": rut or None,
+            "telefono": telefono or None,
+        }).eq("id", usuario_id).execute()
+        return True
+    except Exception:
+        _aviso_sync()
+        return False
 
 
 def guardar_logo_usuario(usuario_id, logo_b64):
     """Guarda (o quita, si logo_b64 es None) el logo del usuario en Supabase."""
-    supabase.table("perfiles").update({
-        "logo_base64": logo_b64 or None,
-    }).eq("id", usuario_id).execute()
-    st.session_state["usuario_logo_url"] = logo_b64 or None
+    try:
+        supabase.table("perfiles").update({
+            "logo_base64": logo_b64 or None,
+        }).eq("id", usuario_id).execute()
+        st.session_state["usuario_logo_url"] = logo_b64 or None
+        return True
+    except Exception:
+        _aviso_sync()
+        return False
 
 
 def refrescar_plan_usuario():
@@ -786,50 +832,54 @@ Para consultas sobre estos términos, escriba a: *(indique su correo de contacto
 # ============================
 # DATOS DE DOSIFICACIÓN (CBB)
 # ============================
-DOSIFICACIONES = {
-    "G-5": {
-        "descripcion": "Hormigón de muy baja resistencia",
-        "cemento_kg": 170,
-        "gravilla_kg": 1025,
-        "arena_kg": 910,
-        "agua_lt": 195,
-    },
-    "G-10": {
-        "descripcion": "Hormigón de baja resistencia",
-        "cemento_kg": 230,
-        "gravilla_kg": 1055,
-        "arena_kg": 835,
-        "agua_lt": 195,
-    },
-    "G-15": {
-        "descripcion": "Emplantillado, sobrecimientos simples",
-        "cemento_kg": 275,
-        "gravilla_kg": 1070,
-        "arena_kg": 800,
-        "agua_lt": 195,
-    },
-    "G-20": {
-        "descripcion": "Radier, cimientos normales",
-        "cemento_kg": 340,
-        "gravilla_kg": 1095,
-        "arena_kg": 715,
-        "agua_lt": 200,
-    },
-    "G-25": {
-        "descripcion": "Losas estructurales, pilares",
-        "cemento_kg": 380,
-        "gravilla_kg": 1120,
-        "arena_kg": 645,
-        "agua_lt": 200,
-    },
-    "G-30": {
-        "descripcion": "Obras especiales, alta resistencia",
-        "cemento_kg": 440,
-        "gravilla_kg": 1145,
-        "arena_kg": 585,
-        "agua_lt": 200,
-    },
-}
+@st.cache_data
+def _cargar_dosificaciones():
+    """Diccionario de dosificaciones de hormigón (cacheado en memoria)."""
+    return {
+        "G-5": {
+            "descripcion": "Hormigón de muy baja resistencia",
+            "cemento_kg": 170,
+            "gravilla_kg": 1025,
+            "arena_kg": 910,
+            "agua_lt": 195,
+        },
+        "G-10": {
+            "descripcion": "Hormigón de baja resistencia",
+            "cemento_kg": 230,
+            "gravilla_kg": 1055,
+            "arena_kg": 835,
+            "agua_lt": 195,
+        },
+        "G-15": {
+            "descripcion": "Emplantillado, sobrecimientos simples",
+            "cemento_kg": 275,
+            "gravilla_kg": 1070,
+            "arena_kg": 800,
+            "agua_lt": 195,
+        },
+        "G-20": {
+            "descripcion": "Radier, cimientos normales",
+            "cemento_kg": 340,
+            "gravilla_kg": 1095,
+            "arena_kg": 715,
+            "agua_lt": 200,
+        },
+        "G-25": {
+            "descripcion": "Losas estructurales, pilares",
+            "cemento_kg": 380,
+            "gravilla_kg": 1120,
+            "arena_kg": 645,
+            "agua_lt": 200,
+        },
+        "G-30": {
+            "descripcion": "Obras especiales, alta resistencia",
+            "cemento_kg": 440,
+            "gravilla_kg": 1145,
+            "arena_kg": 585,
+            "agua_lt": 200,
+        },
+    }
+DOSIFICACIONES = _cargar_dosificaciones()
 
 # Peso de un saco de cemento (kg). En Chile el saco estándar es de 25 kg.
 KG_POR_SACO_CEMENTO = 25
@@ -951,14 +1001,18 @@ def secciones_input(key_prefix, campos, etiqueta="elemento"):
     return st.session_state[lista_key]
 
 
-PESO_BARRAS = {
-    "Ø8mm":  0.395,
-    "Ø10mm": 0.617,
-    "Ø12mm": 0.888,
-    "Ø16mm": 1.578,
-    "Ø20mm": 2.466,
-    "Ø25mm": 3.854,
-}
+@st.cache_data
+def _cargar_peso_barras():
+    """Peso por metro lineal de barras de acero, en kg/ml (cacheado)."""
+    return {
+        "Ø8mm":  0.395,
+        "Ø10mm": 0.617,
+        "Ø12mm": 0.888,
+        "Ø16mm": 1.578,
+        "Ø20mm": 2.466,
+        "Ø25mm": 3.854,
+    }
+PESO_BARRAS = _cargar_peso_barras()
 RATIO_ACERO = {
     "Losa":    {"ratio": 8,   "unidad": "kg/m2"},
     "Viga":    {"ratio": 120, "unidad": "kg/m3"},
@@ -1114,14 +1168,14 @@ def generar_pdf_cubicacion(
 
     encabezado = Table(
         [[
-            Paragraph(titulo_enc, estilo_titulo),
-            logo
+            logo,
+            Paragraph(titulo_enc, estilo_titulo)
         ]],
-        colWidths=[14.5*cm, 2.5*cm]
+        colWidths=[2.5*cm, 14.5*cm]
     )
     encabezado.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+        ("ALIGN", (0, 0), (0, 0), "LEFT"),
     ]))
     story.append(encabezado)
     story.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=6))
@@ -1633,14 +1687,14 @@ def generar_pdf_presupuesto(nombre_proyecto, datos_pres, cliente=None, datos_usu
 
     encabezado = Table(
         [[
-            Paragraph(titulo_enc, estilo_titulo),
-            logo
+            logo,
+            Paragraph(titulo_enc, estilo_titulo)
         ]],
-        colWidths=[14.5*cm, 2.5*cm]
+        colWidths=[2.5*cm, 14.5*cm]
     )
     encabezado.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+        ("ALIGN", (0, 0), (0, 0), "LEFT"),
     ]))
     story.append(encabezado)
     story.append(HRFlowable(width="100%", thickness=2, color=NARANJA, spaceAfter=6))
@@ -2118,9 +2172,9 @@ if st.session_state.get("vista_cuenta"):
                     else:
                         try:
                             datos = capturar_cubicacion()
-                            guardar_proyecto(usuario["id"], nombre_guardar.strip(), datos)
-                            st.success("¡Proyecto guardado!")
-                            st.rerun()
+                            if guardar_proyecto(usuario["id"], nombre_guardar.strip(), datos):
+                                st.success("¡Proyecto guardado!")
+                                st.rerun()
                         except Exception:
                             st.error("No se pudo guardar el proyecto. Intenta de nuevo.")
             else:
@@ -2316,9 +2370,9 @@ if st.session_state.get("vista_cuenta"):
                                 _k = f"miprecio_{_rc}_{_mat}".replace(" ", "_")
                                 nuevos_precios[_mat] = st.session_state.get(
                                     _k, int(mis_precios.get(_mat, precio_referencial(_mat))))
-                        guardar_precios_usuario(usuario["id"], nuevos_precios)
-                        st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
-                        st.success("¡Tu lista de precios fue guardada! Se aplicará en tus próximos presupuestos.")
+                        if guardar_precios_usuario(usuario["id"], nuevos_precios):
+                            st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
+                            st.success("¡Tu lista de precios fue guardada! Se aplicará en tus próximos presupuestos.")
                     except Exception:
                         st.error("No se pudieron guardar los precios. Intenta de nuevo.")
                 st.write("---")
@@ -6860,10 +6914,10 @@ if option == "Presupuesto":
         if st.button("💾 Guardar mis precios", type="primary"):
             precios_a_guardar = st.session_state.get("_precios_actuales", {})
             try:
-                guardar_precios_usuario(usuario["id"], precios_a_guardar)
-                # Actualizar el dict en memoria
-                st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
-                st.success("¡Precios guardados! Se aplicarán en tus próximos presupuestos.")
+                if guardar_precios_usuario(usuario["id"], precios_a_guardar):
+                    # Actualizar el dict en memoria
+                    st.session_state["precios_usuario_dict"] = cargar_precios_usuario(usuario["id"])
+                    st.success("¡Precios guardados! Se aplicarán en tus próximos presupuestos.")
             except Exception:
                 st.error("No se pudieron guardar los precios. Intenta de nuevo.")
 
@@ -7086,9 +7140,9 @@ if option == "Bitácora":
                                 buf_img = _io.BytesIO()
                                 img.save(buf_img, format="JPEG", quality=70)
                                 foto_b64 = base64.b64encode(buf_img.getvalue()).decode("utf-8")
-                            guardar_bitacora(usuario_id, proyecto_bit, nota_final, foto_b64)
-                            st.success("Entrada guardada en el libro de obra.")
-                            st.rerun()
+                            if guardar_bitacora(usuario_id, proyecto_bit, nota_final, foto_b64):
+                                st.success("Entrada guardada en el libro de obra.")
+                                st.rerun()
                         except Exception:
                             import traceback
                             print("ERROR guardando bitácora:", traceback.format_exc())
